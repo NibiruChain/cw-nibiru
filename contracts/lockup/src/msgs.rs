@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {}
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Lock { blocks: u64 },
 
@@ -15,6 +16,7 @@ pub enum ExecuteMsg {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     LocksByDenomUnlockingAfter {
         denom: String,
