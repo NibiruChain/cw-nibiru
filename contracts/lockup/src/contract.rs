@@ -60,7 +60,7 @@ pub(crate) fn execute_withdraw_funds(
                 return Err(ContractError::FundsAlreadyWithdrawn(id));
             }
 
-            if lock.end_block < env.block.height {
+            if lock.end_block > env.block.height {
                 return Err(ContractError::NotMatured(id));
             }
 
