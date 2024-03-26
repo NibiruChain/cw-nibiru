@@ -1,6 +1,7 @@
 workspaces := "./packages"
 # workspaces := "./packages ./core"
 
+set dotenv-load
 # Displays available recipes by running `just -l`.
 setup:
   #!/usr/bin/env bash
@@ -90,12 +91,47 @@ tidy-update: build-update
   just tidy
 
 gen-schema:
-  #!/usr/bin/env bash
-  for dir in contracts/*/; do
-    dir_name=$(basename $dir)
+    #!/usr/bin/env bash
+    initial_dir=$PWD
+    for dir in contracts/*; do
+        dir_name=$(basename $dir)
+        echo "Generating schema for $dir_name..."
 
-    echo "Generating schema for $dir"
-    cd $dir
-    cargo schema
-    mv ./schema ../../schema/$dir_name
-  done
+        # Change to the contract directory
+        if cd $dir; then
+            # Check if 'cargo schema' can be run successfully
+            if cargo schema; then
+                # Move back to the initial directory
+                cd $initial_dir
+                # Create target schema directory if it doesn't exist
+                mkdir -p schema/$dir_name
+                # Move the generated schema to the target directory
+                if ! mv $dir/schema schema/$dir_name; then
+                    echo "Failed to move schema directory for $dir_name."
+                fi
+            else
+                cd $initial_dir
+            fi
+        else
+            echo "Failed to change directory to $dir."
+        fi
+    done
+
+# Generate schema for all contracts and generate TypeScript code
+gen-ts:
+    #!/usr/bin/env bash
+    just gen-schema
+
+    SCHEMA_DIR="./schema"
+    TS_OUT_DIR="./dist"
+    mkdir -p $TS_OUT_DIR
+    for schema_path in $(find $SCHEMA_DIR -name schema -type d | grep -v "^./schema$"); do
+        contract_name=$(basename $(dirname $schema_path))
+        echo "Generating TypeScript for $contract_name..."
+        cosmwasm-ts-codegen generate \
+            --plugin client \
+            --schema $schema_path \
+            --out $TS_OUT_DIR/$contract_name \
+            --name $contract_name \
+            --no-bundle
+    done
