@@ -51,7 +51,6 @@ shifter     = { path = "contracts/core-shifter" }
 controller  = { path = "contracts/core-controller" }
 lockup      = { path = "contracts/lockup", features = ["library"] }
 incentives  = { path = "contracts/incentives", features = ["library"] }
-broker-bank = { path = "contracts/broker-bank", features = ["library"] }
 
 # deps: else
 anyhow = "1"
