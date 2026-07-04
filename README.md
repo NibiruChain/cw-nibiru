@@ -9,7 +9,6 @@ Wasm smart contract sandbox for Nibiru.
     └── 📂 nibi-stargate # Example contract using nibiru-std for CosmosMsg::Stargate
     └── 📂 incentives    # Generalized incentives over time for locked tokens
     └── 📂 lockup        # For locking and unlocking tokens like LP tokens
-    └── 📂 pricefeed     # CosmWasm prototype of the (now deprecated) x/pricefeed module.
     └── 📂 core-cw3-flex-msig # CW3-flex-multisig with stargate enabled.
     └── 📂 core-shifter       # Calls peg shift and depth shift in x/perp.
     └── 📂 core-controller    # Calls other admin calls from Nibiru foundation.
