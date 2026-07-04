@@ -10,8 +10,6 @@ Wasm smart contract sandbox for Nibiru.
     └── 📂 incentives    # Generalized incentives over time for locked tokens
     └── 📂 lockup        # For locking and unlocking tokens like LP tokens
     └── 📂 core-cw3-flex-msig # CW3-flex-multisig with stargate enabled.
-    └── 📂 core-shifter       # Calls peg shift and depth shift in x/perp.
-    └── 📂 core-controller    # Calls other admin calls from Nibiru foundation.
     └── 📂 core-token-vesting # Token linear vesting contracts with optional cliffs.
     └── 📂 core-token-vesting-v2 # Improved version of core-token-vesting-v2.
 ├── 📂 nibiru-std      # Nibiru standard library for smart contracts

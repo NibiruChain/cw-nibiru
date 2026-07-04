@@ -10,11 +10,6 @@
 
 - [**core-token-vesting**](./core-token-vesting/README.md)
 - [**core-token-vesting-v2**](./core-token-vesting-v2/README.md)
-- [**core-shifter**](./core-shifter/README.md): Simple contract to execute peg shift
-  and depth shift admin calls in x/perp module. This contract is meant to be used
-  to run a bot.
-- [**core-controller**](./core-controller): Admin calls for things like creating
-  perp markets or changing oracle parameters.
 - [**core-compounder**](./core-compounder): Simple contract to allow third parties
   to stake funds without being able to withdraw/unstake them.
 

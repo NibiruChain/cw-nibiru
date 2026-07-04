@@ -484,19 +484,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
-name = "controller"
-version = "0.2.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "nibiru-std",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "core-token-vesting-v2"
 version = "2.1.0"
 dependencies = [
@@ -2815,23 +2802,6 @@ checksum = "f6c99835bad52957e7aa241d3975ed17c1e5f8c92026377d117a606f36b84b16"
 dependencies = [
  "bytes",
  "memmap2 0.6.2",
-]
-
-[[package]]
-name = "shifter"
-version = "0.2.0"
-dependencies = [
- "anyhow",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "cw2",
- "easy-addr",
- "nibiru-ownable",
- "nibiru-std",
- "schemars",
- "serde",
- "thiserror",
 ]
 
 [[package]]

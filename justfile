@@ -17,10 +17,6 @@ install:
 wasm-all:
   bash scripts/wasm-out.sh
 
-# Move binding artifacts to teh local nibiru wasmbin
-wasm-export:
-  bash scripts/wasm-export.sh
-
 # Check if a Wasm smart contract binary is ready for the blockchain
 wasm-check:
   cosmwasm-check artifacts/*.wasm
