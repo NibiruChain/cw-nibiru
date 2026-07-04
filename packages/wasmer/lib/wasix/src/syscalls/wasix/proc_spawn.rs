@@ -46,7 +46,8 @@ pub fn proc_spawn<M: MemorySize>(
     let name = unsafe { get_input_str_ok!(&memory, name, name_len) };
     let args = unsafe { get_input_str_ok!(&memory, args, args_len) };
     let preopen = unsafe { get_input_str_ok!(&memory, preopen, preopen_len) };
-    let working_dir = unsafe { get_input_str_ok!(&memory, working_dir, working_dir_len) };
+    let working_dir =
+        unsafe { get_input_str_ok!(&memory, working_dir, working_dir_len) };
 
     Span::current()
         .record("name", name.as_str())
@@ -146,7 +147,9 @@ pub fn proc_spawn_internal(
     // Replace the STDIO
     let (stdin, stdout, stderr) = {
         let (child_state, child_inodes) = child_env.get_wasi_state_and_inodes();
-        let mut conv_stdio_mode = |mode: WasiStdioMode, fd: WasiFd| -> Result<OptionFd, Errno> {
+        let mut conv_stdio_mode = |mode: WasiStdioMode,
+                                   fd: WasiFd|
+         -> Result<OptionFd, Errno> {
             match mode {
                 WasiStdioMode::Piped => {
                     let (pipe1, pipe2) = Pipe::channel();
@@ -223,26 +226,37 @@ pub fn proc_spawn_internal(
     let mut builder = Some(child_env);
 
     // First we try the built in commands
-    let mut process =
-        match bin_factory.try_built_in(name.clone(), Some(&ctx), &mut new_store, &mut builder) {
-            Ok(a) => a,
-            Err(err) => {
-                if !err.is_not_found() {
-                    error!("builtin failed - {}", err);
-                }
-                // Now we actually spawn the process
-                let child_work =
-                    bin_factory.spawn(name, new_store.take().unwrap(), builder.take().unwrap());
-
-                match __asyncify(&mut ctx, None, async move { Ok(child_work.await) })?
-                    .map_err(|err| Errno::Unknown)
-                {
-                    Ok(Ok(a)) => a,
-                    Ok(Err(err)) => return Ok(Err(conv_spawn_err_to_errno(&err))),
-                    Err(err) => return Ok(Err(err)),
-                }
+    let mut process = match bin_factory.try_built_in(
+        name.clone(),
+        Some(&ctx),
+        &mut new_store,
+        &mut builder,
+    ) {
+        Ok(a) => a,
+        Err(err) => {
+            if !err.is_not_found() {
+                error!("builtin failed - {}", err);
             }
-        };
+            // Now we actually spawn the process
+            let child_work = bin_factory.spawn(
+                name,
+                new_store.take().unwrap(),
+                builder.take().unwrap(),
+            );
+
+            match __asyncify(
+                &mut ctx,
+                None,
+                async move { Ok(child_work.await) },
+            )?
+            .map_err(|err| Errno::Unknown)
+            {
+                Ok(Ok(a)) => a,
+                Ok(Err(err)) => return Ok(Err(conv_spawn_err_to_errno(&err))),
+                Err(err) => return Ok(Err(err)),
+            }
+        }
+    };
 
     // Add the process to the environment state
     {

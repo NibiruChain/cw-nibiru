@@ -13,7 +13,18 @@ pub use super::SocketStatus;
 pub use super::StreamSecurity;
 
 /// Represents a socket ID
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+)]
 pub struct SocketId(u64);
 
 impl From<u64> for SocketId {

@@ -52,7 +52,10 @@ pub trait Callbacks: std::fmt::Debug + Send + Sync + 'static {
     }
 
     /// Create the WASI environment
-    async fn create_env(&self, conf: CreateEnvConfig) -> anyhow::Result<CreateEnvResult> {
+    async fn create_env(
+        &self,
+        conf: CreateEnvConfig,
+    ) -> anyhow::Result<CreateEnvResult> {
         default_create_env(conf).await
     }
 }

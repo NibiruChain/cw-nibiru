@@ -57,7 +57,10 @@ impl<W: WritableJournal, R: ReadableJournal> TransactionJournal<W, R> {
 }
 
 impl<W: WritableJournal> WritableJournal for TransactionJournalTx<W> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         let entry = entry.into_owned();
         let mut state = self.state.lock().unwrap();
         let estimate_size = entry.estimate_size();
@@ -125,8 +128,13 @@ impl<R: ReadableJournal> ReadableJournal for TransactionJournalRx<R> {
     }
 }
 
-impl<W: WritableJournal, R: ReadableJournal> WritableJournal for TransactionJournal<W, R> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+impl<W: WritableJournal, R: ReadableJournal> WritableJournal
+    for TransactionJournal<W, R>
+{
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 
@@ -143,7 +151,9 @@ impl<W: WritableJournal, R: ReadableJournal> WritableJournal for TransactionJour
     }
 }
 
-impl<W: WritableJournal, R: ReadableJournal> ReadableJournal for TransactionJournal<W, R> {
+impl<W: WritableJournal, R: ReadableJournal> ReadableJournal
+    for TransactionJournal<W, R>
+{
     fn read(&self) -> anyhow::Result<Option<LogReadResult<'_>>> {
         self.rx.read()
     }
@@ -153,7 +163,9 @@ impl<W: WritableJournal, R: ReadableJournal> ReadableJournal for TransactionJour
     }
 }
 
-impl Journal for TransactionJournal<Box<DynWritableJournal>, Box<DynReadableJournal>> {
+impl Journal
+    for TransactionJournal<Box<DynWritableJournal>, Box<DynReadableJournal>>
+{
     fn split(self) -> (Box<DynWritableJournal>, Box<DynReadableJournal>) {
         (Box::new(self.tx), Box::new(self.rx))
     }

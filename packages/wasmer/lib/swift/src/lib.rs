@@ -5,7 +5,10 @@ use wasmer_package::utils::from_bytes;
 use wasmer_wasix::{
     bin_factory::BinaryPackage,
     runners::{wasi::WasiRunner, Runner},
-    runtime::{package_loader::BuiltinPackageLoader, task_manager::tokio::TokioTaskManager},
+    runtime::{
+        package_loader::BuiltinPackageLoader,
+        task_manager::tokio::TokioTaskManager,
+    },
     PluggableRuntime,
 };
 
@@ -30,7 +33,10 @@ pub enum WasmerError {
 }
 
 #[uniffi::export]
-pub fn run_package(webc_bytes: Vec<u8>, args: Vec<String>) -> Result<String, WasmerError> {
+pub fn run_package(
+    webc_bytes: Vec<u8>,
+    args: Vec<String>,
+) -> Result<String, WasmerError> {
     let tokio_rt = Runtime::new().unwrap();
     let _enter = tokio_rt.enter();
     let container = err!(from_bytes(webc_bytes));
@@ -40,9 +46,9 @@ pub fn run_package(webc_bytes: Vec<u8>, args: Vec<String>) -> Result<String, Was
     rt.set_engine(Some(wasmer::Engine::default()))
         .set_package_loader(BuiltinPackageLoader::new());
 
-    let pkg = tokio_rt
-        .handle()
-        .block_on(async { BinaryPackage::from_webc(&container, &rt).await.unwrap() });
+    let pkg = tokio_rt.handle().block_on(async {
+        BinaryPackage::from_webc(&container, &rt).await.unwrap()
+    });
 
     if pkg.entrypoint_cmd.is_none() {
         return Ok(format!("This WEBC ({}) has no entrypoint!", pkg.id));
@@ -50,7 +56,8 @@ pub fn run_package(webc_bytes: Vec<u8>, args: Vec<String>) -> Result<String, Was
 
     let entrypoint = pkg.entrypoint_cmd.clone().unwrap();
 
-    let mut stdout = virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
+    let mut stdout =
+        virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
 
     let stdout_2 = stdout.clone();
 

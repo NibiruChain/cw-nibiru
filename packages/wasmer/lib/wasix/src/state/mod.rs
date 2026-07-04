@@ -44,7 +44,10 @@ pub use self::{
 };
 pub use crate::fs::{InodeGuard, InodeWeakGuard};
 use crate::{
-    fs::{fs_error_into_wasi_err, WasiFs, WasiFsRoot, WasiInodes, WasiStateFileGuard},
+    fs::{
+        fs_error_into_wasi_err, WasiFs, WasiFsRoot, WasiInodes,
+        WasiStateFileGuard,
+    },
     syscalls::types::*,
     utils::WasiParkingLot,
 };
@@ -169,14 +172,20 @@ impl WasiState {
             .map_err(fs_error_into_wasi_err)
     }
 
-    pub(crate) fn fs_create_dir<P: AsRef<Path>>(&self, path: P) -> Result<(), Errno> {
+    pub(crate) fn fs_create_dir<P: AsRef<Path>>(
+        &self,
+        path: P,
+    ) -> Result<(), Errno> {
         self.fs
             .root_fs
             .create_dir(path.as_ref())
             .map_err(fs_error_into_wasi_err)
     }
 
-    pub(crate) fn fs_remove_dir<P: AsRef<Path>>(&self, path: P) -> Result<(), Errno> {
+    pub(crate) fn fs_remove_dir<P: AsRef<Path>>(
+        &self,
+        path: P,
+    ) -> Result<(), Errno> {
         self.fs
             .root_fs
             .remove_dir(path.as_ref())
@@ -195,7 +204,10 @@ impl WasiState {
             .map_err(fs_error_into_wasi_err)
     }
 
-    pub(crate) fn fs_remove_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Errno> {
+    pub(crate) fn fs_remove_file<P: AsRef<Path>>(
+        &self,
+        path: P,
+    ) -> Result<(), Errno> {
         self.fs
             .root_fs
             .remove_file(path.as_ref())
@@ -219,17 +231,26 @@ impl WasiState {
     }
 
     /// Get the `VirtualFile` object at stdout
-    pub fn stdout(&self) -> Result<Option<Box<dyn VirtualFile + Send + Sync + 'static>>, FsError> {
+    pub fn stdout(
+        &self,
+    ) -> Result<Option<Box<dyn VirtualFile + Send + Sync + 'static>>, FsError>
+    {
         self.std_dev_get(__WASI_STDOUT_FILENO)
     }
 
     /// Get the `VirtualFile` object at stderr
-    pub fn stderr(&self) -> Result<Option<Box<dyn VirtualFile + Send + Sync + 'static>>, FsError> {
+    pub fn stderr(
+        &self,
+    ) -> Result<Option<Box<dyn VirtualFile + Send + Sync + 'static>>, FsError>
+    {
         self.std_dev_get(__WASI_STDERR_FILENO)
     }
 
     /// Get the `VirtualFile` object at stdin
-    pub fn stdin(&self) -> Result<Option<Box<dyn VirtualFile + Send + Sync + 'static>>, FsError> {
+    pub fn stdin(
+        &self,
+    ) -> Result<Option<Box<dyn VirtualFile + Send + Sync + 'static>>, FsError>
+    {
         self.std_dev_get(__WASI_STDIN_FILENO)
     }
 
@@ -238,7 +259,8 @@ impl WasiState {
     fn std_dev_get(
         &self,
         fd: WasiFd,
-    ) -> Result<Option<Box<dyn VirtualFile + Send + Sync + 'static>>, FsError> {
+    ) -> Result<Option<Box<dyn VirtualFile + Send + Sync + 'static>>, FsError>
+    {
         let ret = WasiStateFileGuard::new(self, fd)?.map(|a| {
             let ret = Box::new(a);
             let ret: Box<dyn VirtualFile + Send + Sync + 'static> = ret;

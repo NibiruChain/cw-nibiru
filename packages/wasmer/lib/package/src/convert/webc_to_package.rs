@@ -8,23 +8,26 @@ use super::ConversionError;
 
 /// Convert a webc image into a directory with a wasmer.toml file that can
 /// be used for generating a new pacakge.
-pub fn webc_to_package_dir(webc: &Container, target_dir: &Path) -> Result<(), ConversionError> {
+pub fn webc_to_package_dir(
+    webc: &Container,
+    target_dir: &Path,
+) -> Result<(), ConversionError> {
     let mut pkg_manifest = wasmer_config::package::Manifest::new_empty();
 
     let manifest = webc.manifest();
     // Convert the package annotation.
 
-    let pkg_annotation = manifest
-        .wapm()
-        .map_err(|err| ConversionError::with_cause("could not read package annotation", err))?;
+    let pkg_annotation = manifest.wapm().map_err(|err| {
+        ConversionError::with_cause("could not read package annotation", err)
+    })?;
     if let Some(ann) = pkg_annotation {
         let mut pkg = wasmer_config::package::Package::new_empty();
 
         pkg.name = ann.name;
         pkg.version = if let Some(raw) = ann.version {
-            let v = raw
-                .parse()
-                .map_err(|e| ConversionError::with_cause("invalid package version", e))?;
+            let v = raw.parse().map_err(|e| {
+                ConversionError::with_cause("invalid package version", e)
+            })?;
             Some(v)
         } else {
             None
@@ -53,10 +56,15 @@ pub fn webc_to_package_dir(webc: &Container, target_dir: &Path) -> Result<(), Co
                 // Not supported.
             }
             webc::metadata::UrlOrManifest::RegistryDependentUrl(raw) => {
-                let (name, version) = if let Some((name, version_raw)) = raw.split_once('@') {
+                let (name, version) = if let Some((name, version_raw)) =
+                    raw.split_once('@')
+                {
                     let version = version_raw.parse().map_err(|err| {
                         ConversionError::with_cause(
-                            format!("Could not parse version of dependency: '{}'", raw),
+                            format!(
+                                "Could not parse version of dependency: '{}'",
+                                raw
+                            ),
                             err,
                         )
                     })?;
@@ -72,9 +80,9 @@ pub fn webc_to_package_dir(webc: &Container, target_dir: &Path) -> Result<(), Co
 
     // Convert filesystem mappings.
 
-    let fs_annotation = manifest
-        .filesystem()
-        .map_err(|err| ConversionError::with_cause("could n ot read fs annotation", err))?;
+    let fs_annotation = manifest.filesystem().map_err(|err| {
+        ConversionError::with_cause("could n ot read fs annotation", err)
+    })?;
     if let Some(ann) = fs_annotation {
         for mapping in ann.0 {
             if mapping.from.is_some() {
@@ -90,7 +98,8 @@ pub fn webc_to_package_dir(webc: &Container, target_dir: &Path) -> Result<(), Co
                 ))
             })?;
 
-            let volume_path = target_dir.join(mapping.volume_name.trim_start_matches('/'));
+            let volume_path =
+                target_dir.join(mapping.volume_name.trim_start_matches('/'));
 
             std::fs::create_dir_all(&volume_path).map_err(|err| {
                 ConversionError::with_cause(
@@ -103,7 +112,10 @@ pub fn webc_to_package_dir(webc: &Container, target_dir: &Path) -> Result<(), Co
             })?;
 
             volume.unpack("/", &volume_path).map_err(|err| {
-                ConversionError::with_cause("could not unpack volume to filesystemt", err)
+                ConversionError::with_cause(
+                    "could not unpack volume to filesystemt",
+                    err,
+                )
             })?;
 
             let mut source_path = mapping
@@ -143,7 +155,10 @@ pub fn webc_to_package_dir(webc: &Container, target_dir: &Path) -> Result<(), Co
 
             std::fs::write(&atom_path, &data).map_err(|err| {
                 ConversionError::with_cause(
-                    format!("Could not write atom to path '{}'", atom_path.display()),
+                    format!(
+                        "Could not write atom to path '{}'",
+                        atom_path.display()
+                    ),
                     err,
                 )
             })?;
@@ -175,10 +190,15 @@ pub fn webc_to_package_dir(webc: &Container, target_dir: &Path) -> Result<(), Co
         }
 
         let atom_annotation = spec
-            .annotation::<webc::metadata::annotations::Atom>(webc::metadata::annotations::Atom::KEY)
+            .annotation::<webc::metadata::annotations::Atom>(
+                webc::metadata::annotations::Atom::KEY,
+            )
             .map_err(|err| {
                 ConversionError::with_cause(
-                    format!("could not read atom annotation for command '{}'", name),
+                    format!(
+                        "could not read atom annotation for command '{}'",
+                        name
+                    ),
                     err,
                 )
             })?
@@ -199,23 +219,29 @@ pub fn webc_to_package_dir(webc: &Container, target_dir: &Path) -> Result<(), Co
             }
         };
 
-        let cmd = wasmer_config::package::Command::V2(wasmer_config::package::CommandV2 {
-            name: name.clone(),
-            module,
-            runner: spec.runner.clone(),
-            annotations: Some(wasmer_config::package::CommandAnnotations::Raw(
-                annotations.into(),
-            )),
-        });
+        let cmd = wasmer_config::package::Command::V2(
+            wasmer_config::package::CommandV2 {
+                name: name.clone(),
+                module,
+                runner: spec.runner.clone(),
+                annotations: Some(
+                    wasmer_config::package::CommandAnnotations::Raw(
+                        annotations.into(),
+                    ),
+                ),
+            },
+        );
 
         pkg_manifest.commands.push(cmd);
     }
 
     // Write out the manifest.
-    let manifest_toml = toml::to_string(&pkg_manifest)
-        .map_err(|err| ConversionError::with_cause("could not serialize package manifest", err))?;
-    std::fs::write(target_dir.join("wasmer.toml"), manifest_toml)
-        .map_err(|err| ConversionError::with_cause("could not write wasmer.toml", err))?;
+    let manifest_toml = toml::to_string(&pkg_manifest).map_err(|err| {
+        ConversionError::with_cause("could not serialize package manifest", err)
+    })?;
+    std::fs::write(target_dir.join("wasmer.toml"), manifest_toml).map_err(
+        |err| ConversionError::with_cause("could not write wasmer.toml", err),
+    )?;
 
     Ok(())
 }
@@ -278,7 +304,8 @@ main-args = ["/mounted/script.py"]
             )
             .unwrap();
 
-            let pkg = Package::from_manifest(dir_input.join("wasmer.toml")).unwrap();
+            let pkg =
+                Package::from_manifest(dir_input.join("wasmer.toml")).unwrap();
             let raw = pkg.serialize().unwrap();
             from_bytes(raw).unwrap()
         };
@@ -287,7 +314,8 @@ main-args = ["/mounted/script.py"]
         webc_to_package_dir(&webc, &dir_output).unwrap();
 
         assert_eq!(
-            std::fs::read_to_string(dir_output.join("public/index.html")).unwrap(),
+            std::fs::read_to_string(dir_output.join("public/index.html"))
+                .unwrap(),
             "INDEX",
         );
 

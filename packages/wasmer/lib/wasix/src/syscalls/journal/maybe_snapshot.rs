@@ -19,7 +19,8 @@ pub fn maybe_snapshot<M: MemorySize>(
     }
 
     let inner = ctx.data().process.inner.clone();
-    let res = wasi_try_ok_ok!(WasiProcessInner::maybe_checkpoint::<M>(inner, ctx)?);
+    let res =
+        wasi_try_ok_ok!(WasiProcessInner::maybe_checkpoint::<M>(inner, ctx)?);
     match res {
         MaybeCheckpointResult::Unwinding => return Ok(Err(Errno::Success)),
         MaybeCheckpointResult::NotThisTime(c) => {

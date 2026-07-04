@@ -1,6 +1,7 @@
 use comfy_table::Table;
 use wasmer_backend_api::types::{
-    DeployApp, DeployAppVersion, Deployment, DnsDomain, DnsDomainWithRecords, Namespace,
+    DeployApp, DeployAppVersion, Deployment, DnsDomain, DnsDomainWithRecords,
+    Namespace,
 };
 
 use crate::utils::render::CliRender;
@@ -189,7 +190,9 @@ impl CliRender for wasmer_backend_api::types::AppVersionVolume {
     }
 }
 
-fn format_disk_size_opt(value: Option<wasmer_backend_api::types::BigInt>) -> String {
+fn format_disk_size_opt(
+    value: Option<wasmer_backend_api::types::BigInt>,
+) -> String {
     let value = value.and_then(|x| {
         let y: Option<u64> = x.0.try_into().ok();
         y
@@ -231,10 +234,10 @@ impl CliRender for Deployment {
                         "Manual".to_string(),
                         naked.created_at.0.clone(),
                         String::new(),
-                        naked
-                            .app_version
-                            .as_ref()
-                            .map_or_else(|| "n/a".to_string(), |x| x.version.clone()),
+                        naked.app_version.as_ref().map_or_else(
+                            || "n/a".to_string(),
+                            |x| x.version.clone(),
+                        ),
                     ]
                 }
                 Deployment::AutobuildRepository(build) => {

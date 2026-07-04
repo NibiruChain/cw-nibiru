@@ -1,6 +1,6 @@
 use crate::{
-    DirEntry, FileType, FsError, Metadata, OpenOptions, OpenOptionsConfig, ReadDir, Result,
-    VirtualFile,
+    DirEntry, FileType, FsError, Metadata, OpenOptions, OpenOptionsConfig,
+    ReadDir, Result, VirtualFile,
 };
 use bytes::{Buf, Bytes};
 use futures::future::BoxFuture;
@@ -21,7 +21,10 @@ use tokio::runtime::Handle;
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct FileSystem {
-    #[cfg_attr(feature = "enable-serde", serde(skip, default = "default_handle"))]
+    #[cfg_attr(
+        feature = "enable-serde",
+        serde(skip, default = "default_handle")
+    )]
     handle: Handle,
     root: PathBuf,
 }
@@ -42,12 +45,13 @@ pub fn canonicalize(path: &Path) -> Result<PathBuf> {
 // https://github.com/rust-lang/cargo/blob/fede83ccf973457de319ba6fa0e36ead454d2e20/src/cargo/util/paths.rs#L61
 pub fn normalize_path(path: &Path) -> PathBuf {
     let mut components = path.components().peekable();
-    let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
-        components.next();
-        PathBuf::from(c.as_os_str())
-    } else {
-        PathBuf::new()
-    };
+    let mut ret =
+        if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
+            components.next();
+            PathBuf::from(c.as_os_str())
+        } else {
+            PathBuf::new()
+        };
 
     for component in components {
         match component {
@@ -146,13 +150,19 @@ impl crate::FileSystem for FileSystem {
 
         // https://github.com/rust-lang/rust/issues/86442
         // DirectoryNotEmpty is not implemented consistently
-        if path.is_dir() && self.read_dir(&path).map(|s| !s.is_empty()).unwrap_or(false) {
+        if path.is_dir()
+            && self.read_dir(&path).map(|s| !s.is_empty()).unwrap_or(false)
+        {
             return Err(FsError::DirectoryNotEmpty);
         }
         fs::remove_dir(path).map_err(Into::into)
     }
 
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<()>> {
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<()>> {
         Box::pin(async move {
             use filetime::{set_file_mtime, FileTime};
             let norm_from = normalize_path(from);
@@ -340,7 +350,8 @@ impl crate::FileOpener for FileSystem {
                     read,
                     write,
                     append,
-                )) as Box<dyn VirtualFile + Send + Sync + 'static>
+                ))
+                    as Box<dyn VirtualFile + Send + Sync + 'static>
             })
     }
 }
@@ -349,7 +360,10 @@ impl crate::FileOpener for FileSystem {
 #[derive(Debug)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize))]
 pub struct File {
-    #[cfg_attr(feature = "enable-serde", serde(skip, default = "default_handle"))]
+    #[cfg_attr(
+        feature = "enable-serde",
+        serde(skip, default = "default_handle")
+    )]
     handle: Handle,
     #[cfg_attr(feature = "enable-serde", serde(skip_serializing))]
     inner_std: fs::File,
@@ -378,11 +392,17 @@ impl<'de> Deserialize<'de> for File {
         impl<'de> de::Visitor<'de> for FileVisitor {
             type Value = File;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(
+                &self,
+                formatter: &mut std::fmt::Formatter,
+            ) -> std::fmt::Result {
                 formatter.write_str("struct File")
             }
 
-            fn visit_seq<V>(self, mut seq: V) -> std::result::Result<Self::Value, V::Error>
+            fn visit_seq<V>(
+                self,
+                mut seq: V,
+            ) -> std::result::Result<Self::Value, V::Error>
             where
                 V: de::SeqAccess<'de>,
             {
@@ -397,7 +417,9 @@ impl<'de> Deserialize<'de> for File {
                     .write(flags & File::WRITE != 0)
                     .append(flags & File::APPEND != 0)
                     .open(&host_path)
-                    .map_err(|_| de::Error::custom("Could not open file on this system"))?;
+                    .map_err(|_| {
+                        de::Error::custom("Could not open file on this system")
+                    })?;
                 Ok(File {
                     handle: Handle::current(),
                     inner: tokio::fs::File::from_std(inner.try_clone().unwrap()),
@@ -407,7 +429,10 @@ impl<'de> Deserialize<'de> for File {
                 })
             }
 
-            fn visit_map<V>(self, mut map: V) -> std::result::Result<Self::Value, V::Error>
+            fn visit_map<V>(
+                self,
+                mut map: V,
+            ) -> std::result::Result<Self::Value, V::Error>
             where
                 V: de::MapAccess<'de>,
             {
@@ -417,7 +442,9 @@ impl<'de> Deserialize<'de> for File {
                     match key {
                         Field::HostPath => {
                             if host_path.is_some() {
-                                return Err(de::Error::duplicate_field("host_path"));
+                                return Err(de::Error::duplicate_field(
+                                    "host_path",
+                                ));
                             }
                             host_path = Some(map.next_value()?);
                         }
@@ -429,14 +456,18 @@ impl<'de> Deserialize<'de> for File {
                         }
                     }
                 }
-                let host_path = host_path.ok_or_else(|| de::Error::missing_field("host_path"))?;
-                let flags = flags.ok_or_else(|| de::Error::missing_field("flags"))?;
+                let host_path = host_path
+                    .ok_or_else(|| de::Error::missing_field("host_path"))?;
+                let flags =
+                    flags.ok_or_else(|| de::Error::missing_field("flags"))?;
                 let inner = fs::OpenOptions::new()
                     .read(flags & File::READ != 0)
                     .write(flags & File::WRITE != 0)
                     .append(flags & File::APPEND != 0)
                     .open(&host_path)
-                    .map_err(|_| de::Error::custom("Could not open file on this system"))?;
+                    .map_err(|_| {
+                        de::Error::custom("Could not open file on this system")
+                    })?;
                 Ok(File {
                     handle: Handle::current(),
                     inner: tokio::fs::File::from_std(inner.try_clone().unwrap()),
@@ -527,9 +558,15 @@ impl VirtualFile for File {
             .unwrap_or(0)
     }
 
-    fn set_times(&mut self, atime: Option<u64>, mtime: Option<u64>) -> crate::Result<()> {
-        let atime = atime.map(|t| filetime::FileTime::from_unix_time(t as i64, 0));
-        let mtime = mtime.map(|t| filetime::FileTime::from_unix_time(t as i64, 0));
+    fn set_times(
+        &mut self,
+        atime: Option<u64>,
+        mtime: Option<u64>,
+    ) -> crate::Result<()> {
+        let atime =
+            atime.map(|t| filetime::FileTime::from_unix_time(t as i64, 0));
+        let mtime =
+            mtime.map(|t| filetime::FileTime::from_unix_time(t as i64, 0));
 
         filetime::set_file_handle_times(&self.inner_std, atime, mtime)
             .map_err(|_| crate::FsError::IOError)
@@ -551,7 +588,10 @@ impl VirtualFile for File {
         None
     }
 
-    fn poll_read_ready(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        mut self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         let cursor = match self.inner_std.stream_position() {
             Ok(a) => a,
             Err(err) => return Poll::Ready(Err(err)),
@@ -566,7 +606,10 @@ impl VirtualFile for File {
         Poll::Ready(Ok(remaining as usize))
     }
 
-    fn poll_write_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(8192))
     }
 }
@@ -594,13 +637,19 @@ impl AsyncWrite for File {
         inner.poll_write(cx, buf)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let _guard = Handle::try_current().map_err(|_| self.handle.enter());
         let inner = Pin::new(&mut self.inner);
         inner.poll_flush(cx)
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let _guard = Handle::try_current().map_err(|_| self.handle.enter());
         let inner = Pin::new(&mut self.inner);
         inner.poll_shutdown(cx)
@@ -622,13 +671,19 @@ impl AsyncWrite for File {
 }
 
 impl AsyncSeek for File {
-    fn start_seek(mut self: Pin<&mut Self>, position: io::SeekFrom) -> io::Result<()> {
+    fn start_seek(
+        mut self: Pin<&mut Self>,
+        position: io::SeekFrom,
+    ) -> io::Result<()> {
         let _guard = Handle::try_current().map_err(|_| self.handle.enter());
         let inner = Pin::new(&mut self.inner);
         inner.start_seek(position)
     }
 
-    fn poll_complete(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         let _guard = Handle::try_current().map_err(|_| self.handle.enter());
         let inner = Pin::new(&mut self.inner);
         inner.poll_complete(cx)
@@ -639,9 +694,15 @@ impl AsyncSeek for File {
 #[derive(Debug)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Stdout {
-    #[cfg_attr(feature = "enable-serde", serde(skip, default = "default_handle"))]
+    #[cfg_attr(
+        feature = "enable-serde",
+        serde(skip, default = "default_handle")
+    )]
     handle: Handle,
-    #[cfg_attr(feature = "enable-serde", serde(skip, default = "default_stdout"))]
+    #[cfg_attr(
+        feature = "enable-serde",
+        serde(skip, default = "default_stdout")
+    )]
     inner: tokio::io::Stdout,
 }
 #[allow(dead_code)]
@@ -697,11 +758,17 @@ impl VirtualFile for Stdout {
         Some(1)
     }
 
-    fn poll_read_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(0))
     }
 
-    fn poll_write_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(DEFAULT_BUF_SIZE_HINT))
     }
 }
@@ -730,13 +797,19 @@ impl AsyncWrite for Stdout {
         inner.poll_write(cx, buf)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let _guard = Handle::try_current().map_err(|_| self.handle.enter());
         let inner = Pin::new(&mut self.inner);
         inner.poll_flush(cx)
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let _guard = Handle::try_current().map_err(|_| self.handle.enter());
         let inner = Pin::new(&mut self.inner);
         inner.poll_shutdown(cx)
@@ -758,11 +831,17 @@ impl AsyncWrite for Stdout {
 }
 
 impl AsyncSeek for Stdout {
-    fn start_seek(self: Pin<&mut Self>, _position: io::SeekFrom) -> io::Result<()> {
+    fn start_seek(
+        self: Pin<&mut Self>,
+        _position: io::SeekFrom,
+    ) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Other, "can not seek stdout"))
     }
 
-    fn poll_complete(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         Poll::Ready(Err(io::Error::new(
             io::ErrorKind::Other,
             "can not seek stdout",
@@ -774,9 +853,15 @@ impl AsyncSeek for Stdout {
 #[derive(Debug)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Stderr {
-    #[cfg_attr(feature = "enable-serde", serde(skip, default = "default_handle"))]
+    #[cfg_attr(
+        feature = "enable-serde",
+        serde(skip, default = "default_handle")
+    )]
     handle: Handle,
-    #[cfg_attr(feature = "enable-serde", serde(skip, default = "default_stderr"))]
+    #[cfg_attr(
+        feature = "enable-serde",
+        serde(skip, default = "default_stderr")
+    )]
     inner: tokio::io::Stderr,
 }
 #[allow(dead_code)]
@@ -816,13 +901,19 @@ impl AsyncWrite for Stderr {
         inner.poll_write(cx, buf)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let _guard = Handle::try_current().map_err(|_| self.handle.enter());
         let inner = Pin::new(&mut self.inner);
         inner.poll_flush(cx)
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let _guard = Handle::try_current().map_err(|_| self.handle.enter());
         let inner = Pin::new(&mut self.inner);
         inner.poll_shutdown(cx)
@@ -844,11 +935,17 @@ impl AsyncWrite for Stderr {
 }
 
 impl AsyncSeek for Stderr {
-    fn start_seek(self: Pin<&mut Self>, _position: io::SeekFrom) -> io::Result<()> {
+    fn start_seek(
+        self: Pin<&mut Self>,
+        _position: io::SeekFrom,
+    ) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Other, "can not seek stderr"))
     }
 
-    fn poll_complete(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         Poll::Ready(Err(io::Error::new(
             io::ErrorKind::Other,
             "can not seek stderr",
@@ -887,11 +984,17 @@ impl VirtualFile for Stderr {
         Some(2)
     }
 
-    fn poll_read_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(0))
     }
 
-    fn poll_write_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(8192))
     }
 }
@@ -901,9 +1004,15 @@ impl VirtualFile for Stderr {
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Stdin {
     read_buffer: Arc<std::sync::Mutex<Option<Bytes>>>,
-    #[cfg_attr(feature = "enable-serde", serde(skip, default = "default_handle"))]
+    #[cfg_attr(
+        feature = "enable-serde",
+        serde(skip, default = "default_handle")
+    )]
     handle: Handle,
-    #[cfg_attr(feature = "enable-serde", serde(skip, default = "default_stdin"))]
+    #[cfg_attr(
+        feature = "enable-serde",
+        serde(skip, default = "default_stdin")
+    )]
     inner: tokio::io::Stdin,
 }
 #[allow(dead_code)]
@@ -958,14 +1067,20 @@ impl AsyncWrite for Stdin {
         )))
     }
 
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         Poll::Ready(Err(io::Error::new(
             io::ErrorKind::Other,
             "can not flush stdin",
         )))
     }
 
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         Poll::Ready(Err(io::Error::new(
             io::ErrorKind::Other,
             "can not wrote to stdin",
@@ -985,11 +1100,17 @@ impl AsyncWrite for Stdin {
 }
 
 impl AsyncSeek for Stdin {
-    fn start_seek(self: Pin<&mut Self>, _position: io::SeekFrom) -> io::Result<()> {
+    fn start_seek(
+        self: Pin<&mut Self>,
+        _position: io::SeekFrom,
+    ) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Other, "can not seek stdin"))
     }
 
-    fn poll_complete(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         Poll::Ready(Err(io::Error::new(
             io::ErrorKind::Other,
             "can not seek stdin",
@@ -1021,7 +1142,10 @@ impl VirtualFile for Stdin {
     fn get_special_fd(&self) -> Option<u32> {
         Some(0)
     }
-    fn poll_read_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         {
             let read_buffer = self.read_buffer.lock().unwrap();
             if let Some(read_buffer) = read_buffer.as_ref() {
@@ -1050,7 +1174,10 @@ impl VirtualFile for Stdin {
             }
         }
     }
-    fn poll_write_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(0))
     }
 }
@@ -1070,7 +1197,8 @@ mod tests {
         let temp = TempDir::new().unwrap();
         std::fs::write(temp.path().join("foo2.txt"), b"").unwrap();
 
-        let fs = FileSystem::new(Handle::current(), temp.path()).expect("get filesystem");
+        let fs = FileSystem::new(Handle::current(), temp.path())
+            .expect("get filesystem");
         assert!(
             fs.read_dir(Path::new("/")).is_ok(),
             "NativeFS can read root"
@@ -1087,7 +1215,8 @@ mod tests {
     #[tokio::test]
     async fn test_create_dir() {
         let temp: TempDir = TempDir::new().unwrap();
-        let fs = FileSystem::new(Handle::current(), temp.path()).expect("get filesystem");
+        let fs = FileSystem::new(Handle::current(), temp.path())
+            .expect("get filesystem");
 
         assert_eq!(
             fs.create_dir(Path::new("../")),
@@ -1146,7 +1275,8 @@ mod tests {
     #[tokio::test]
     async fn test_remove_dir() {
         let temp: TempDir = TempDir::new().unwrap();
-        let fs = FileSystem::new(Handle::current(), temp.path()).expect("get filesystem");
+        let fs = FileSystem::new(Handle::current(), temp.path())
+            .expect("get filesystem");
 
         assert_eq!(
             fs.remove_dir(Path::new("/foo")),
@@ -1197,14 +1327,17 @@ mod tests {
     fn read_dir_names(fs: &FileSystem, path: impl AsRef<Path>) -> Vec<String> {
         fs.read_dir(path.as_ref())
             .unwrap()
-            .filter_map(|entry| Some(entry.ok()?.file_name().to_str()?.to_string()))
+            .filter_map(|entry| {
+                Some(entry.ok()?.file_name().to_str()?.to_string())
+            })
             .collect::<Vec<_>>()
     }
 
     #[tokio::test]
     async fn test_rename() {
         let temp: TempDir = TempDir::new().unwrap();
-        let fs = FileSystem::new(Handle::current(), temp.path()).expect("get filesystem");
+        let fs = FileSystem::new(Handle::current(), temp.path())
+            .expect("get filesystem");
         std::fs::create_dir_all(temp.path().join("foo").join("qux")).unwrap();
         let foo = Path::new("foo");
         let bar = Path::new("bar");
@@ -1341,7 +1474,8 @@ mod tests {
 
         let temp = TempDir::new().unwrap();
 
-        let fs = FileSystem::new(Handle::current(), temp.path()).expect("get filesystem");
+        let fs = FileSystem::new(Handle::current(), temp.path())
+            .expect("get filesystem");
 
         let root_metadata = fs.metadata(Path::new("/")).unwrap();
 
@@ -1390,7 +1524,8 @@ mod tests {
     #[tokio::test]
     async fn test_remove_file() {
         let temp = TempDir::new().unwrap();
-        let fs = FileSystem::new(Handle::current(), temp.path()).expect("get filesystem");
+        let fs = FileSystem::new(Handle::current(), temp.path())
+            .expect("get filesystem");
 
         assert!(
             fs.new_open_options()
@@ -1401,7 +1536,9 @@ mod tests {
             "creating a new file",
         );
 
-        assert!(read_dir_names(&fs, Path::new("/")).contains(&"foo.txt".to_string()));
+        assert!(
+            read_dir_names(&fs, Path::new("/")).contains(&"foo.txt".to_string())
+        );
 
         assert!(temp.path().join("foo.txt").is_file());
 
@@ -1423,7 +1560,8 @@ mod tests {
     #[tokio::test]
     async fn test_readdir() {
         let temp = TempDir::new().unwrap();
-        let fs = FileSystem::new(Handle::current(), temp.path()).expect("get filesystem");
+        let fs = FileSystem::new(Handle::current(), temp.path())
+            .expect("get filesystem");
 
         assert_eq!(fs.create_dir(Path::new("foo")), Ok(()), "creating `foo`");
         assert_eq!(

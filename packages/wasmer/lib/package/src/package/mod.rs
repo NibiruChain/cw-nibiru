@@ -62,7 +62,8 @@ mod tests {
         let second = temp.path().join("nested").join("dir");
         std::fs::create_dir_all(&second).unwrap();
         std::fs::write(second.join("README.md"), "please").unwrap();
-        let another_dir = temp.path().join("nested").join("dir").join("another-dir");
+        let another_dir =
+            temp.path().join("nested").join("dir").join("another-dir");
         std::fs::create_dir_all(&another_dir).unwrap();
         std::fs::write(another_dir.join("empty.txt"), "").unwrap();
         // The "second/child" entry
@@ -180,7 +181,8 @@ mod tests {
         let first_file_hash: [u8; 32] = sha2::Sha256::digest(b"File").into();
         let readme_hash: [u8; 32] = sha2::Sha256::digest(b"please").into();
         let empty_hash: [u8; 32] = sha2::Sha256::digest(b"").into();
-        let third_file_hash: [u8; 32] = sha2::Sha256::digest(b"Hello, World!").into();
+        let third_file_hash: [u8; 32] =
+            sha2::Sha256::digest(b"Hello, World!").into();
 
         let first_volume = container.get_volume("/first").unwrap();
         assert_eq!(

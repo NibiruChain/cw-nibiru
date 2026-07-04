@@ -107,7 +107,11 @@ impl Selector {
         }
     }
 
-    pub fn replace(&self, token: Token, mut handler: Box<dyn InterestHandler + Send + Sync>) {
+    pub fn replace(
+        &self,
+        token: Token,
+        mut handler: Box<dyn InterestHandler + Send + Sync>,
+    ) {
         let mut guard = self.inner.lock().unwrap();
 
         let last = guard.lookup.remove(&token);
@@ -119,7 +123,8 @@ impl Selector {
                 InterestType::Error,
             ];
             for interest in interests {
-                if last.has_interest(interest) && !handler.has_interest(interest) {
+                if last.has_interest(interest) && !handler.has_interest(interest)
+                {
                     handler.push_interest(interest);
                 }
             }

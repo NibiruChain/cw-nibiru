@@ -1,6 +1,8 @@
 //! Get deployments for an app.
 
-use crate::{commands::AsyncCliCommand, config::WasmerEnv, opts::ItemFormatOpts};
+use crate::{
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ItemFormatOpts,
+};
 
 /// Get the volumes of an app.
 #[derive(clap::Parser, Debug)]
@@ -21,7 +23,8 @@ impl AsyncCliCommand for CmdAppDeploymentGet {
 
     async fn run_async(mut self) -> Result<(), anyhow::Error> {
         let client = self.env.client()?;
-        let item = wasmer_backend_api::query::app_deployment(&client, self.id).await?;
+        let item =
+            wasmer_backend_api::query::app_deployment(&client, self.id).await?;
 
         println!("{}", self.fmt.get().render(&item));
         Ok(())

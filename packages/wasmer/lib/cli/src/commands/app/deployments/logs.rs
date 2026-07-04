@@ -5,7 +5,9 @@ use std::io::Write;
 use anyhow::Context;
 use futures::stream::TryStreamExt;
 
-use crate::{commands::AsyncCliCommand, config::WasmerEnv, opts::ItemFormatOpts};
+use crate::{
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ItemFormatOpts,
+};
 
 /// Get logs for an app deployment.
 #[derive(clap::Parser, Debug)]
@@ -26,7 +28,8 @@ impl AsyncCliCommand for CmdAppDeploymentLogs {
 
     async fn run_async(mut self) -> Result<(), anyhow::Error> {
         let client = self.env.client()?;
-        let item = wasmer_backend_api::query::app_deployment(&client, self.id).await?;
+        let item =
+            wasmer_backend_api::query::app_deployment(&client, self.id).await?;
 
         let url = item
             .log_url

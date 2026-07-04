@@ -1,7 +1,9 @@
 use std::net::SocketAddr;
 use std::task::{Context, Poll};
 
-use crate::{Ipv4Addr, Ipv6Addr, NetworkError, VirtualIoSource, VirtualTcpListener};
+use crate::{
+    Ipv4Addr, Ipv6Addr, NetworkError, VirtualIoSource, VirtualTcpListener,
+};
 use virtual_mio::ArcInterestHandler;
 
 #[derive(Debug)]
@@ -32,7 +34,10 @@ impl VirtualIoSource for CompositeTcpListener {
         }
     }
 
-    fn poll_read_ready(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<usize>> {
+    fn poll_read_ready(
+        &mut self,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result<usize>> {
         for port in self.ports.iter_mut() {
             if let Poll::Ready(ready) = port.poll_read_ready(cx) {
                 return Poll::Ready(ready);
@@ -57,7 +62,8 @@ impl VirtualIoSource for CompositeTcpListener {
 impl VirtualTcpListener for CompositeTcpListener {
     fn try_accept(
         &mut self,
-    ) -> crate::Result<(Box<dyn crate::VirtualTcpSocket + Sync>, SocketAddr)> {
+    ) -> crate::Result<(Box<dyn crate::VirtualTcpSocket + Sync>, SocketAddr)>
+    {
         let mut ret = NetworkError::Unsupported;
         for port in self.ports.iter_mut() {
             match port.try_accept() {

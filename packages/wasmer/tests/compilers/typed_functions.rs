@@ -8,7 +8,18 @@ use wasmer::FunctionEnv;
 use wasmer::Type as ValueType;
 use wasmer::*;
 
-fn long_f(a: u32, b: u32, c: u32, d: u32, e: u32, f: u16, g: u64, h: u64, i: u16, j: u32) -> u64 {
+fn long_f(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    e: u32,
+    f: u16,
+    g: u64,
+    h: u64,
+    i: u16,
+    j: u32,
+) -> u64 {
     j as u64
         + i as u64 * 10
         + h * 100
@@ -106,7 +117,9 @@ fn typed_with_env_host_function_closure_panics(config: crate::Config) {
 }
 
 #[compiler_test(typed_functions)]
-fn non_typed_functions_and_closures_with_no_env_work(config: crate::Config) -> anyhow::Result<()> {
+fn non_typed_functions_and_closures_with_no_env_work(
+    config: crate::Config,
+) -> anyhow::Result<()> {
     let mut store = config.store();
     let wat = r#"(module
         (func $multiply1 (import "env" "multiply1") (param i32 i32) (result i32))
@@ -165,7 +178,9 @@ fn non_typed_functions_and_closures_with_no_env_work(config: crate::Config) -> a
 }
 
 #[compiler_test(typed_functions)]
-fn typed_function_works_for_wasm_function_manyparams(config: crate::Config) -> anyhow::Result<()> {
+fn typed_function_works_for_wasm_function_manyparams(
+    config: crate::Config,
+) -> anyhow::Result<()> {
     let mut store = config.store();
     let wat = r#"(module
         (func $longf (import "env" "longf") (param i32 i32 i32 i32 i32 i32 i64 i64 i32 i32) (result i64))
@@ -192,8 +207,10 @@ fn typed_function_works_for_wasm_function_manyparams(config: crate::Config) -> a
 
     {
         let dyn_f: &Function = instance.exports.get("longf_pure")?;
-        let f: TypedFunction<(u32, u32, u32, u32, u32, u16, u64, u64, u16, u32), i64> =
-            dyn_f.typed(&mut store).unwrap();
+        let f: TypedFunction<
+            (u32, u32, u32, u32, u32, u16, u64, u64, u16, u32),
+            i64,
+        > = dyn_f.typed(&mut store).unwrap();
         let result = f.call(&mut store, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0)?;
         assert_eq!(result, 1234567890);
     }
@@ -232,8 +249,10 @@ fn typed_function_works_for_wasm_function_manyparams_dynamic(
 
     {
         let dyn_f: &Function = instance.exports.get("longf_pure")?;
-        let f: TypedFunction<(u32, u32, u32, u32, u32, u16, u64, u64, u16, u32), i64> =
-            dyn_f.typed(&mut store).unwrap();
+        let f: TypedFunction<
+            (u32, u32, u32, u32, u32, u16, u64, u64, u16, u32),
+            i64,
+        > = dyn_f.typed(&mut store).unwrap();
         let result = f.call(&mut store, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0)?;
         assert_eq!(result, 1234567890);
     }
@@ -242,14 +261,21 @@ fn typed_function_works_for_wasm_function_manyparams_dynamic(
 }
 
 #[compiler_test(typed_functions)]
-fn static_host_function_without_env(config: crate::Config) -> anyhow::Result<()> {
+fn static_host_function_without_env(
+    config: crate::Config,
+) -> anyhow::Result<()> {
     let mut store = config.store();
 
     fn f(a: i32, b: i64, c: f32, d: f64) -> (f64, f32, i64, i32) {
         (d * 4.0, c * 3.0, b * 2, a)
     }
 
-    fn f_ok(a: i32, b: i64, c: f32, d: f64) -> Result<(f64, f32, i64, i32), Infallible> {
+    fn f_ok(
+        a: i32,
+        b: i64,
+        c: f32,
+        d: f64,
+    ) -> Result<(f64, f32, i64, i32), Infallible> {
         Ok((d * 4.0, c * 3.0, b * 2, a))
     }
 
@@ -288,7 +314,8 @@ fn static_host_function_without_env(config: crate::Config) -> anyhow::Result<()>
             (u32, u32, u32, u32, u32, u16, u64, u64, u16, u32),
             (u32, u64, u32),
         > = long_f.typed(&mut store).unwrap();
-        let result = long_f_typed.call(&mut store, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0)?;
+        let result =
+            long_f_typed.call(&mut store, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0)?;
         assert_eq!(result, (654321, 87, 09));
     }
 
@@ -308,7 +335,13 @@ fn static_host_function_without_env(config: crate::Config) -> anyhow::Result<()>
 fn static_host_function_with_env(config: crate::Config) -> anyhow::Result<()> {
     let mut store = config.store();
 
-    fn f(mut env: FunctionEnvMut<Env>, a: i32, b: i64, c: f32, d: f64) -> (f64, f32, i64, i32) {
+    fn f(
+        mut env: FunctionEnvMut<Env>,
+        a: i32,
+        b: i64,
+        c: f32,
+        d: f64,
+    ) -> (f64, f32, i64, i32) {
         let mut guard = env.data().0.lock().unwrap();
         assert_eq!(*guard, 100);
         *guard = 101;
@@ -378,7 +411,9 @@ fn static_host_function_with_env(config: crate::Config) -> anyhow::Result<()> {
 }
 
 #[compiler_test(typed_functions)]
-fn dynamic_host_function_without_env(config: crate::Config) -> anyhow::Result<()> {
+fn dynamic_host_function_without_env(
+    config: crate::Config,
+) -> anyhow::Result<()> {
     let mut store = config.store();
     let f = Function::new(
         &mut store,

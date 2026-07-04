@@ -164,7 +164,11 @@ impl FdMmap {
     /// Make the memory starting at `start` and extending for `len` bytes accessible.
     /// `start` and `len` must be native page-size multiples and describe a range within
     /// `self`'s reserved memory.
-    pub fn make_accessible(&mut self, start: usize, len: usize) -> Result<(), String> {
+    pub fn make_accessible(
+        &mut self,
+        start: usize,
+        len: usize,
+    ) -> Result<(), String> {
         let page_size = region::page::size();
         assert_eq!(start & (page_size - 1), 0);
         assert_eq!(len & (page_size - 1), 0);
@@ -173,8 +177,10 @@ impl FdMmap {
 
         // Commit the accessible size.
         let ptr = self.ptr as *const u8;
-        unsafe { region::protect(ptr.add(start), len, region::Protection::READ_WRITE) }
-            .map_err(|e| e.to_string())
+        unsafe {
+            region::protect(ptr.add(start), len, region::Protection::READ_WRITE)
+        }
+        .map_err(|e| e.to_string())
     }
 
     /// Return the allocated memory as a slice of u8.
@@ -208,7 +214,10 @@ impl FdMmap {
     // }
 
     /// Copies the memory to a new swap file (using copy-on-write if available)
-    pub fn duplicate(&mut self, hint_used: Option<usize>) -> Result<Self, String> {
+    pub fn duplicate(
+        &mut self,
+        hint_used: Option<usize>,
+    ) -> Result<Self, String> {
         // Empty memory is an edge case
 
         use std::os::unix::prelude::FromRawFd;
@@ -288,7 +297,8 @@ impl FdMmap {
 impl Drop for FdMmap {
     fn drop(&mut self) {
         if self.len != 0 {
-            let r = unsafe { libc::munmap(self.ptr as *mut libc::c_void, self.len) };
+            let r =
+                unsafe { libc::munmap(self.ptr as *mut libc::c_void, self.len) };
             assert_eq!(r, 0, "munmap failed: {}", io::Error::last_os_error());
         }
     }

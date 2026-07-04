@@ -31,23 +31,34 @@ pub fn path_rename<M: MemorySize>(
     new_path_len: M::Offset,
 ) -> Result<Errno, WasiError> {
     let env = ctx.data();
-    let (memory, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
-    let source_str = unsafe { get_input_str_ok!(&memory, old_path, old_path_len) };
+    let (memory, mut state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let source_str =
+        unsafe { get_input_str_ok!(&memory, old_path, old_path_len) };
     Span::current().record("old_path", source_str.as_str());
-    let target_str = unsafe { get_input_str_ok!(&memory, new_path, new_path_len) };
+    let target_str =
+        unsafe { get_input_str_ok!(&memory, new_path, new_path_len) };
     Span::current().record("new_path", target_str.as_str());
 
-    let ret = path_rename_internal(&mut ctx, old_fd, &source_str, new_fd, &target_str)?;
+    let ret = path_rename_internal(
+        &mut ctx,
+        old_fd,
+        &source_str,
+        new_fd,
+        &target_str,
+    )?;
     let env = ctx.data();
 
     if ret == Errno::Success {
         #[cfg(feature = "journal")]
         if env.enable_journal {
-            JournalEffector::save_path_rename(&mut ctx, old_fd, source_str, new_fd, target_str)
-                .map_err(|err| {
-                    tracing::error!("failed to save path rename event - {}", err);
-                    WasiError::Exit(ExitCode::from(Errno::Fault))
-                })?;
+            JournalEffector::save_path_rename(
+                &mut ctx, old_fd, source_str, new_fd, target_str,
+            )
+            .map_err(|err| {
+                tracing::error!("failed to save path rename event - {}", err);
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            })?;
         }
     }
     Ok(ret)
@@ -61,7 +72,8 @@ pub fn path_rename_internal(
     target_path: &str,
 ) -> Result<Errno, WasiError> {
     let env = ctx.data();
-    let (memory, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, mut state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
 
     {
         let source_fd = wasi_try_ok!(state.fs.get_fd(source_fd));
@@ -75,25 +87,30 @@ pub fn path_rename_internal(
     }
 
     // this is to be sure the source file is fetched from the filesystem if needed
-    wasi_try_ok!(state
-        .fs
-        .get_inode_at_path(inodes, source_fd, source_path, true));
+    wasi_try_ok!(state.fs.get_inode_at_path(
+        inodes,
+        source_fd,
+        source_path,
+        true
+    ));
     // Create the destination inode if the file exists.
     let _ = state
         .fs
         .get_inode_at_path(inodes, target_fd, target_path, true);
-    let (source_parent_inode, source_entry_name) = wasi_try_ok!(state.fs.get_parent_inode_at_path(
-        inodes,
-        source_fd,
-        Path::new(source_path),
-        true
-    ));
-    let (target_parent_inode, target_entry_name) = wasi_try_ok!(state.fs.get_parent_inode_at_path(
-        inodes,
-        target_fd,
-        Path::new(target_path),
-        true
-    ));
+    let (source_parent_inode, source_entry_name) =
+        wasi_try_ok!(state.fs.get_parent_inode_at_path(
+            inodes,
+            source_fd,
+            Path::new(source_path),
+            true
+        ));
+    let (target_parent_inode, target_entry_name) =
+        wasi_try_ok!(state.fs.get_parent_inode_at_path(
+            inodes,
+            target_fd,
+            Path::new(target_path),
+            true
+        ));
     let mut need_create = true;
     let host_adjusted_target_path = {
         let guard = target_parent_inode.read();
@@ -120,7 +137,9 @@ pub fn path_rename_internal(
         let mut guard = source_parent_inode.write();
         match guard.deref_mut() {
             Kind::Dir { entries, .. } => {
-                wasi_try_ok!(entries.remove(&source_entry_name).ok_or(Errno::Noent))
+                wasi_try_ok!(entries
+                    .remove(&source_entry_name)
+                    .ok_or(Errno::Noent))
             }
             Kind::Root { .. } => return Ok(Errno::Notcapable),
             Kind::Socket { .. }
@@ -144,7 +163,8 @@ pub fn path_rename_internal(
                     let path_clone = path.clone();
                     drop(guard);
                     let state = state;
-                    let host_adjusted_target_path = host_adjusted_target_path.clone();
+                    let host_adjusted_target_path =
+                        host_adjusted_target_path.clone();
                     __asyncify_light(env, None, async move {
                         state
                             .fs_rename(path_clone, &host_adjusted_target_path)
@@ -171,7 +191,8 @@ pub fn path_rename_internal(
                 let cloned_path = path.clone();
                 let res = {
                     let state = state;
-                    let host_adjusted_target_path = host_adjusted_target_path.clone();
+                    let host_adjusted_target_path =
+                        host_adjusted_target_path.clone();
                     __asyncify_light(env, None, async move {
                         state
                             .fs_rename(cloned_path, &host_adjusted_target_path)
@@ -184,7 +205,11 @@ pub fn path_rename_internal(
                 {
                     let source_dir_path = path.clone();
                     drop(guard);
-                    rename_inode_tree(&source_entry, &source_dir_path, &host_adjusted_target_path);
+                    rename_inode_tree(
+                        &source_entry,
+                        &source_dir_path,
+                        &host_adjusted_target_path,
+                    );
                 }
             }
             Kind::Buffer { .. }
@@ -214,14 +239,20 @@ pub fn path_rename_internal(
     let target_inode = state
         .fs
         .get_inode_at_path(inodes, target_fd, target_path, true)
-        .expect("Expected target inode to exist, and it's too late to safely fail");
+        .expect(
+            "Expected target inode to exist, and it's too late to safely fail",
+        );
     *target_inode.name.write().unwrap() = target_entry_name.into();
     target_inode.stat.write().unwrap().st_size = source_size;
 
     Ok(Errno::Success)
 }
 
-fn rename_inode_tree(inode: &InodeGuard, source_dir_path: &Path, target_dir_path: &Path) {
+fn rename_inode_tree(
+    inode: &InodeGuard,
+    source_dir_path: &Path,
+    target_dir_path: &Path,
+) {
     let children;
 
     let mut guard = inode.write();
@@ -247,10 +278,18 @@ fn rename_inode_tree(inode: &InodeGuard, source_dir_path: &Path, target_dir_path
     }
 }
 
-fn adjust_path(path: &Path, source_dir_path: &Path, target_dir_path: &Path) -> PathBuf {
+fn adjust_path(
+    path: &Path,
+    source_dir_path: &Path,
+    target_dir_path: &Path,
+) -> PathBuf {
     let relative_path = path
         .strip_prefix(source_dir_path)
-        .with_context(|| format!("Expected path {path:?} to be a subpath of {source_dir_path:?}"))
+        .with_context(|| {
+            format!(
+                "Expected path {path:?} to be a subpath of {source_dir_path:?}"
+            )
+        })
         .expect("Fatal filesystem error");
     target_dir_path.join(relative_path)
 }

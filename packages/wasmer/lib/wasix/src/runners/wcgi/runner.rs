@@ -5,7 +5,9 @@ use anyhow::{Context, Error};
 use futures::{stream::FuturesUnordered, StreamExt};
 use http::{Request, Response};
 use tower::ServiceBuilder;
-use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer, trace::TraceLayer};
+use tower_http::{
+    catch_panic::CatchPanicLayer, cors::CorsLayer, trace::TraceLayer,
+};
 use wcgi_host::CgiDialect;
 use webc::metadata::{
     annotations::{Wasi, Wcgi},
@@ -54,9 +56,9 @@ impl WcgiRunner {
         default_dialect: CgiDialect,
         runtime: Arc<dyn Runtime + Send + Sync>,
     ) -> Result<Handler, Error> {
-        let cmd = pkg
-            .get_command(command_name)
-            .with_context(|| format!("The package doesn't contain a \"{command_name}\" command"))?;
+        let cmd = pkg.get_command(command_name).with_context(|| {
+            format!("The package doesn't contain a \"{command_name}\" command")
+        })?;
         let metadata = cmd.metadata();
         let wasi = metadata
             .annotation("wasi")?
@@ -64,7 +66,8 @@ impl WcgiRunner {
 
         let module = runtime.load_module_sync(cmd.atom())?;
 
-        let Wcgi { dialect, .. } = metadata.annotation("wcgi")?.unwrap_or_default();
+        let Wcgi { dialect, .. } =
+            metadata.annotation("wcgi")?.unwrap_or_default();
         let dialect = match dialect {
             Some(d) => d.parse().context("Unable to parse the CGI dialect")?,
             None => default_dialect,
@@ -75,7 +78,12 @@ impl WcgiRunner {
         let wasi_common = self.config.wasi.clone();
         let rt = Arc::clone(&runtime);
         let setup_builder = move |builder: &mut WasiEnvBuilder| {
-            wasi_common.prepare_webc_env(builder, Some(Arc::clone(&container_fs)), &wasi, None)?;
+            wasi_common.prepare_webc_env(
+                builder,
+                Some(Arc::clone(&container_fs)),
+                &wasi,
+                None,
+            )?;
             builder.set_runtime(Arc::clone(&rt));
             Ok(())
         };
@@ -105,7 +113,10 @@ impl WcgiRunner {
             Response = http::Response<Body>,
             Error = anyhow::Error,
             Future = std::pin::Pin<
-                Box<dyn futures::Future<Output = Result<Response<Body>, Error>> + Send>,
+                Box<
+                    dyn futures::Future<Output = Result<Response<Body>, Error>>
+                        + Send,
+                >,
             >,
         >,
         S: Clone + Send + Sync + 'static,
@@ -113,15 +124,19 @@ impl WcgiRunner {
         let service = ServiceBuilder::new()
             .layer(
                 TraceLayer::new_for_http()
-                    .make_span_with(|request: &Request<hyper::body::Incoming>| {
-                        tracing::info_span!(
-                            "request",
-                            method = %request.method(),
-                            uri = %request.uri(),
-                            status_code = tracing::field::Empty,
-                        )
-                    })
-                    .on_response(super::super::response_tracing::OnResponseTracer),
+                    .make_span_with(
+                        |request: &Request<hyper::body::Incoming>| {
+                            tracing::info_span!(
+                                "request",
+                                method = %request.method(),
+                                uri = %request.uri(),
+                                status_code = tracing::field::Empty,
+                            )
+                        },
+                    )
+                    .on_response(
+                        super::super::response_tracing::OnResponseTracer,
+                    ),
             )
             .layer(CatchPanicLayer::new())
             .layer(CorsLayer::permissive())
@@ -230,7 +245,11 @@ impl Config {
     }
 
     /// Expose an environment variable to the guest.
-    pub fn env(&mut self, name: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn env(
+        &mut self,
+        name: impl Into<String>,
+        value: impl Into<String>,
+    ) -> &mut Self {
         self.wasi.env.insert(name.into(), value.into());
         self
     }
@@ -271,7 +290,10 @@ impl Config {
 
     /// Set callbacks that will be triggered at various points in the runner's
     /// lifecycle.
-    pub fn callbacks(&mut self, callbacks: impl Callbacks + 'static) -> &mut Self {
+    pub fn callbacks(
+        &mut self,
+        callbacks: impl Callbacks + 'static,
+    ) -> &mut Self {
         self.callbacks = Arc::new(callbacks);
         self
     }
@@ -311,21 +333,34 @@ impl Config {
     }
 
     #[cfg(feature = "journal")]
-    pub fn has_snapshot_trigger(&self, on: crate::journal::SnapshotTrigger) -> bool {
+    pub fn has_snapshot_trigger(
+        &self,
+        on: crate::journal::SnapshotTrigger,
+    ) -> bool {
         self.wasi.snapshot_on.iter().any(|t| *t == on)
     }
 
     #[cfg(feature = "journal")]
-    pub fn with_snapshot_interval(&mut self, period: std::time::Duration) -> &mut Self {
-        if !self.has_snapshot_trigger(crate::journal::SnapshotTrigger::PeriodicInterval) {
-            self.add_snapshot_trigger(crate::journal::SnapshotTrigger::PeriodicInterval);
+    pub fn with_snapshot_interval(
+        &mut self,
+        period: std::time::Duration,
+    ) -> &mut Self {
+        if !self.has_snapshot_trigger(
+            crate::journal::SnapshotTrigger::PeriodicInterval,
+        ) {
+            self.add_snapshot_trigger(
+                crate::journal::SnapshotTrigger::PeriodicInterval,
+            );
         }
         self.wasi.snapshot_interval.replace(period);
         self
     }
 
     #[cfg(feature = "journal")]
-    pub fn add_journal(&mut self, journal: Arc<crate::journal::DynJournal>) -> &mut Self {
+    pub fn add_journal(
+        &mut self,
+        journal: Arc<crate::journal::DynJournal>,
+    ) -> &mut Self {
         self.wasi.journals.push(journal);
         self
     }

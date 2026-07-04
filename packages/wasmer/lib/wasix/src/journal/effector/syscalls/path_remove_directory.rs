@@ -29,7 +29,9 @@ impl JournalEffector {
         // see `VIRTUAL_ROOT_FD` for details as to why this exists
         if fd == VIRTUAL_ROOT_FD {
             ctx.data().state.fs.root_fs.remove_dir(Path::new(path))?;
-        } else if let Err(err) = crate::syscalls::path_remove_directory_internal(ctx, fd, path) {
+        } else if let Err(err) =
+            crate::syscalls::path_remove_directory_internal(ctx, fd, path)
+        {
             bail!(
                 "journal restore error: failed to remove directory - {}",
                 err

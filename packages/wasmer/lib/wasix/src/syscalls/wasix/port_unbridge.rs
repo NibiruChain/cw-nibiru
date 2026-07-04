@@ -4,7 +4,9 @@ use crate::syscalls::*;
 /// ### `port_unbridge()`
 /// Disconnects from a remote network
 #[instrument(level = "trace", skip_all, ret)]
-pub fn port_unbridge(mut ctx: FunctionEnvMut<'_, WasiEnv>) -> Result<Errno, WasiError> {
+pub fn port_unbridge(
+    mut ctx: FunctionEnvMut<'_, WasiEnv>,
+) -> Result<Errno, WasiError> {
     wasi_try_ok!(port_unbridge_internal(&mut ctx)?);
 
     #[cfg(feature = "journal")]

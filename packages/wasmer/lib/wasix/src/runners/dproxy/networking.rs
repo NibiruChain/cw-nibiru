@@ -7,9 +7,9 @@ use std::{
 };
 
 use virtual_net::{
-    host::LocalNetworking, loopback::LoopbackNetworking, IpCidr, IpRoute, NetworkError,
-    StreamSecurity, VirtualIcmpSocket, VirtualNetworking, VirtualRawSocket, VirtualTcpListener,
-    VirtualTcpSocket, VirtualUdpSocket,
+    host::LocalNetworking, loopback::LoopbackNetworking, IpCidr, IpRoute,
+    NetworkError, StreamSecurity, VirtualIcmpSocket, VirtualNetworking,
+    VirtualRawSocket, VirtualTcpListener, VirtualTcpSocket, VirtualUdpSocket,
 };
 
 #[derive(Debug, Default)]
@@ -27,7 +27,8 @@ pub struct LocalWithLoopbackNetworking {
 
 impl LocalWithLoopbackNetworking {
     pub fn new() -> Self {
-        static LOCAL_NETWORKING: LazyLock<Arc<LocalNetworking>> = LazyLock::new(Arc::default);
+        static LOCAL_NETWORKING: LazyLock<Arc<LocalNetworking>> =
+            LazyLock::new(Arc::default);
         Self {
             local_listening: Default::default(),
             inner_networking: LOCAL_NETWORKING.clone(),
@@ -147,7 +148,9 @@ impl VirtualNetworking for LocalWithLoopbackNetworking {
 
     /// Creates a low level socket that can read and write Ethernet packets
     /// directly to the interface
-    async fn bind_raw(&self) -> Result<Box<dyn VirtualRawSocket + Sync>, NetworkError> {
+    async fn bind_raw(
+        &self,
+    ) -> Result<Box<dyn VirtualRawSocket + Sync>, NetworkError> {
         self.inner_networking.bind_raw().await
     }
 

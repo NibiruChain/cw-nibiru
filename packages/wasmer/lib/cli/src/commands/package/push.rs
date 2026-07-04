@@ -78,7 +78,10 @@ impl PackagePush {
             anyhow::bail!("No package namespace specified: use --namespace XXX");
         }
 
-        let user = wasmer_backend_api::query::current_user_with_namespaces(client, None).await?;
+        let user = wasmer_backend_api::query::current_user_with_namespaces(
+            client, None,
+        )
+        .await?;
         let owner = crate::utils::prompts::prompt_for_namespace(
             "Choose a namespace to push the package to",
             None,
@@ -88,7 +91,10 @@ impl PackagePush {
         Ok(owner.clone())
     }
 
-    async fn get_name(&self, manifest: &Manifest) -> anyhow::Result<Option<String>> {
+    async fn get_name(
+        &self,
+        manifest: &Manifest,
+    ) -> anyhow::Result<Option<String>> {
         if let Some(name) = &self.package_name {
             return Ok(Some(name.clone()));
         }
@@ -111,8 +117,16 @@ impl PackagePush {
         }
     }
 
-    async fn should_push(&self, client: &WasmerClient, hash: &PackageHash) -> anyhow::Result<bool> {
-        let res = wasmer_backend_api::query::get_package_release(client, &hash.to_string()).await;
+    async fn should_push(
+        &self,
+        client: &WasmerClient,
+        hash: &PackageHash,
+    ) -> anyhow::Result<bool> {
+        let res = wasmer_backend_api::query::get_package_release(
+            client,
+            &hash.to_string(),
+        )
+        .await;
         tracing::info!("{:?}", res);
         res.map(|p| p.is_none())
     }
@@ -139,7 +153,10 @@ impl PackagePush {
         .await?;
         spinner_ok!(pb, "Package correctly uploaded");
 
-        let pb = make_spinner!(self.quiet, "Waiting for package to become available...");
+        let pb = make_spinner!(
+            self.quiet,
+            "Waiting for package to become available..."
+        );
         match wasmer_backend_api::query::push_package_release(
             client,
             name.as_deref(),
@@ -156,7 +173,9 @@ impl PackagePush {
                     anyhow::bail!("An unidentified error occurred while publishing the package. (response had success: false)")
                 }
             }
-            None => anyhow::bail!("An unidentified error occurred while publishing the package."), // <- This is extremely bad..
+            None => anyhow::bail!(
+                "An unidentified error occurred while publishing the package."
+            ), // <- This is extremely bad..
         };
 
         let msg = format!("Succesfully pushed release to namespace {namespace} on the registry");
@@ -200,12 +219,17 @@ impl PackagePush {
                     .await
                     .map_err(on_error)?;
             } else {
-                tracing::info!("Package should be published, but dry-run is set");
+                tracing::info!(
+                    "Package should be published, but dry-run is set"
+                );
                 spinner_ok!(pb, "Skipping push as dry-run is set");
             }
         } else {
             tracing::info!("Package should not be published");
-            spinner_ok!(pb, "Package was already in the registry, no push needed");
+            spinner_ok!(
+                pb,
+                "Package was already in the registry, no push needed"
+            );
         }
 
         tracing::info!("Proceeding to invalidate query cache..");
@@ -228,7 +252,9 @@ impl AsyncCliCommand for PackagePush {
 
     async fn run_async(self) -> Result<Self::Output, anyhow::Error> {
         tracing::info!("Checking if user is logged in");
-        let client = login_user(&self.env, !self.non_interactive, "push a package").await?;
+        let client =
+            login_user(&self.env, !self.non_interactive, "push a package")
+                .await?;
 
         tracing::info!("Loading manifest");
         let (manifest_path, manifest) = get_manifest(&self.package_path)?;
@@ -248,7 +274,9 @@ impl AsyncCliCommand for PackagePush {
                     format!(
                         "{bin_name} package tag {}{}",
                         hash,
-                        if manifest_path_dir.canonicalize()? == std::env::current_dir()? {
+                        if manifest_path_dir.canonicalize()?
+                            == std::env::current_dir()?
+                        {
                             String::new()
                         } else {
                             format!(" {}", manifest_path_dir.display())
@@ -257,10 +285,16 @@ impl AsyncCliCommand for PackagePush {
                     .bold()
                 )
             } else {
-                eprintln!("{} Succesfully pushed package ({hash})", "✔".green().bold());
+                eprintln!(
+                    "{} Succesfully pushed package ({hash})",
+                    "✔".green().bold()
+                );
             }
         } else {
-            eprintln!("{} Succesfully pushed package ({hash})", "✔".green().bold());
+            eprintln!(
+                "{} Succesfully pushed package ({hash})",
+                "✔".green().bold()
+            );
         }
 
         Ok(())

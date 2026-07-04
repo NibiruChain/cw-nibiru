@@ -1,6 +1,8 @@
 use wasmer_backend_api::types::GetAllDomainsVariables;
 
-use crate::{commands::AsyncCliCommand, config::WasmerEnv, opts::ListFormatOpts};
+use crate::{
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ListFormatOpts,
+};
 
 /// List domains.
 #[derive(clap::Parser, Debug)]

@@ -14,7 +14,8 @@ impl JournalEffector {
         let iovs_arr = iovs.slice(&memory, iovs_len)?;
 
         let iovs_arr = iovs_arr.access().map_err(mem_error_to_wasi)?;
-        let mut remaining: M::Offset = TryFrom::<usize>::try_from(written).unwrap_or_default();
+        let mut remaining: M::Offset =
+            TryFrom::<usize>::try_from(written).unwrap_or_default();
         for iovs in iovs_arr.iter() {
             let sub = iovs.buf_len.min(remaining);
             if sub == M::ZERO {

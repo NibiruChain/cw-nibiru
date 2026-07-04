@@ -26,9 +26,13 @@ pub fn run_test(record: JournalEntry<'_>) {
     // Serialize it
     let mut arena = Arena::new();
     let mut buffer = Vec::new();
-    let mut serializer = Serializer::new(&mut buffer, arena.acquire(), Share::new());
-    let serializer: &mut HighSerializer<&mut Vec<u8>, ArenaHandle, rkyv::rancor::Error> =
-        Strategy::wrap(&mut serializer);
+    let mut serializer =
+        Serializer::new(&mut buffer, arena.acquire(), Share::new());
+    let serializer: &mut HighSerializer<
+        &mut Vec<u8>,
+        ArenaHandle,
+        rkyv::rancor::Error,
+    > = Strategy::wrap(&mut serializer);
 
     record.clone().serialize_archive(serializer).unwrap();
     let buffer = &buffer[..];

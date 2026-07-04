@@ -20,10 +20,15 @@ pub fn fd_dup<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if env.enable_journal {
-        JournalEffector::save_fd_duplicate(&mut ctx, fd, copied_fd).map_err(|err| {
-            tracing::error!("failed to save file descriptor duplicate event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_fd_duplicate(&mut ctx, fd, copied_fd).map_err(
+            |err| {
+                tracing::error!(
+                    "failed to save file descriptor duplicate event - {}",
+                    err
+                );
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            },
+        )?;
     }
 
     Span::current().record("ret_fd", copied_fd);

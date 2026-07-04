@@ -13,8 +13,9 @@ use std::path::Path;
 use tracing::{debug, warn};
 use wasm_bindgen::JsValue;
 use wasmer_types::{
-    CompileError, DeserializeError, ExportsIterator, ExternType, FunctionType, GlobalType,
-    ImportsIterator, MemoryType, ModuleInfo, Mutability, Pages, SerializeError, TableType, Type,
+    CompileError, DeserializeError, ExportsIterator, ExternType, FunctionType,
+    GlobalType, ImportsIterator, MemoryType, ModuleInfo, Mutability, Pages,
+    SerializeError, TableType, Type,
 };
 
 /// WebAssembly in the browser doesn't yet output the descriptor/types
@@ -70,8 +71,10 @@ impl Module {
         binary: &[u8],
     ) -> Result<Self, CompileError> {
         let js_bytes = Uint8Array::view(binary);
-        let module = WebAssembly::Module::new(&js_bytes.into())
-            .map_err(|e| CompileError::Validate(format!("{}", e.as_string().unwrap())))?;
+        let module =
+            WebAssembly::Module::new(&js_bytes.into()).map_err(|e| {
+                CompileError::Validate(format!("{}", e.as_string().unwrap()))
+            })?;
         Ok(Self::from_js_module(module, binary))
     }
 
@@ -85,7 +88,9 @@ impl Module {
         // The module is now validated, so we can safely parse it's types
         #[cfg(feature = "wasm-types-polyfill")]
         let (type_hints, name) = {
-            let info = crate::module_info_polyfill::translate_module(&binary[..]).unwrap();
+            let info =
+                crate::module_info_polyfill::translate_module(&binary[..])
+                    .unwrap();
 
             (
                 Some(ModuleTypeHints {
@@ -115,7 +120,10 @@ impl Module {
         }
     }
 
-    pub fn validate(_engine: &impl AsEngineRef, binary: &[u8]) -> Result<(), CompileError> {
+    pub fn validate(
+        _engine: &impl AsEngineRef,
+        binary: &[u8],
+    ) -> Result<(), CompileError> {
         let js_bytes = unsafe { Uint8Array::view(binary) };
         // Annotation is here to prevent spurious IDE warnings.
         #[allow(unused_unsafe)]
@@ -145,7 +153,8 @@ impl Module {
         let imports_object = js_sys::Object::new();
         let mut import_externs: Vec<Extern> = vec![];
         for import_type in self.imports() {
-            let resolved_import = imports.get_export(import_type.module(), import_type.name());
+            let resolved_import =
+                imports.get_export(import_type.module(), import_type.name());
             // Annotation is here to prevent spurious IDE warnings.
             #[allow(unused_variables)]
             if let wasmer_types::ExternType::Memory(mem_ty) = import_type.ty() {
@@ -164,7 +173,10 @@ impl Module {
             #[allow(unused_unsafe)]
             unsafe {
                 if let Some(import) = resolved_import {
-                    let val = js_sys::Reflect::get(&imports_object, &import_type.module().into())?;
+                    let val = js_sys::Reflect::get(
+                        &imports_object,
+                        &import_type.module().into(),
+                    )?;
                     if !val.is_undefined() {
                         // If the namespace is already set
                         js_sys::Reflect::set(
@@ -277,7 +289,9 @@ impl Module {
         //     .unwrap_or(false)
     }
 
-    pub fn imports<'a>(&'a self) -> ImportsIterator<impl Iterator<Item = ImportType> + 'a> {
+    pub fn imports<'a>(
+        &'a self,
+    ) -> ImportsIterator<impl Iterator<Item = ImportType> + 'a> {
         let imports = WebAssembly::Module::imports(&self.module);
         let iter = imports
             .iter()
@@ -307,21 +321,27 @@ impl Module {
                     } else {
                         match kind.as_str() {
                             "function" => {
-                                let func_type = FunctionType::new(vec![], vec![]);
+                                let func_type =
+                                    FunctionType::new(vec![], vec![]);
                                 ExternType::Function(func_type)
                             }
                             "global" => {
-                                let global_type = GlobalType::new(Type::I32, Mutability::Const);
+                                let global_type = GlobalType::new(
+                                    Type::I32,
+                                    Mutability::Const,
+                                );
                                 ExternType::Global(global_type)
                             }
                             "memory" => {
                                 // The javascript API does not yet expose these properties so without
                                 // the type_hints we don't know what memory to import.
-                                let memory_type = MemoryType::new(Pages(1), None, false);
+                                let memory_type =
+                                    MemoryType::new(Pages(1), None, false);
                                 ExternType::Memory(memory_type)
                             }
                             "table" => {
-                                let table_type = TableType::new(Type::FuncRef, 1, None);
+                                let table_type =
+                                    TableType::new(Type::FuncRef, 1, None);
                                 ExternType::Table(table_type)
                             }
                             _ => unimplemented!(),
@@ -340,11 +360,16 @@ impl Module {
     /// Returns an error if the hints doesn't match the shape of
     /// import or export types of the module.
     #[allow(unused)]
-    pub fn set_type_hints(&mut self, type_hints: ModuleTypeHints) -> Result<(), String> {
+    pub fn set_type_hints(
+        &mut self,
+        type_hints: ModuleTypeHints,
+    ) -> Result<(), String> {
         let exports = WebAssembly::Module::exports(&self.module);
         // Check exports
         if exports.length() as usize != type_hints.exports.len() {
-            return Err("The exports length must match the type hints lenght".to_owned());
+            return Err(
+                "The exports length must match the type hints lenght".to_owned()
+            );
         }
         for (i, val) in exports.iter().enumerate() {
             // Annotation is here to prevent spurious IDE warnings.
@@ -371,7 +396,9 @@ impl Module {
         Ok(())
     }
 
-    pub fn exports<'a>(&'a self) -> ExportsIterator<impl Iterator<Item = ExportType> + 'a> {
+    pub fn exports<'a>(
+        &'a self,
+    ) -> ExportsIterator<impl Iterator<Item = ExportType> + 'a> {
         let exports = WebAssembly::Module::exports(&self.module);
         let iter = exports
             .iter()
@@ -407,15 +434,18 @@ impl Module {
                             ExternType::Function(func_type)
                         }
                         "global" => {
-                            let global_type = GlobalType::new(Type::I32, Mutability::Const);
+                            let global_type =
+                                GlobalType::new(Type::I32, Mutability::Const);
                             ExternType::Global(global_type)
                         }
                         "memory" => {
-                            let memory_type = MemoryType::new(Pages(1), None, false);
+                            let memory_type =
+                                MemoryType::new(Pages(1), None, false);
                             ExternType::Memory(memory_type)
                         }
                         "table" => {
-                            let table_type = TableType::new(Type::FuncRef, 1, None);
+                            let table_type =
+                                TableType::new(Type::FuncRef, 1, None);
                             ExternType::Table(table_type)
                         }
                         _ => unimplemented!(),
@@ -428,11 +458,15 @@ impl Module {
         ExportsIterator::new(iter, exports.length() as usize)
     }
 
-    pub fn custom_sections<'a>(&'a self, name: &'a str) -> impl Iterator<Item = Box<[u8]>> + 'a {
+    pub fn custom_sections<'a>(
+        &'a self,
+        name: &'a str,
+    ) -> impl Iterator<Item = Box<[u8]>> + 'a {
         WebAssembly::Module::custom_sections(&self.module, name)
             .iter()
             .map(move |buf_val| {
-                let typebuf: js_sys::Uint8Array = js_sys::Uint8Array::new(&buf_val);
+                let typebuf: js_sys::Uint8Array =
+                    js_sys::Uint8Array::new(&buf_val);
                 typebuf.to_vec().into_boxed_slice()
             })
             .collect::<Vec<Box<[u8]>>>()
@@ -458,8 +492,15 @@ impl From<WebAssembly::Module> for Module {
 }
 
 impl<T: IntoBytes> From<(WebAssembly::Module, T)> for crate::module::Module {
-    fn from((module, binary): (WebAssembly::Module, T)) -> crate::module::Module {
-        unsafe { crate::module::Module(Module::from_js_module(module, binary.into_bytes())) }
+    fn from(
+        (module, binary): (WebAssembly::Module, T),
+    ) -> crate::module::Module {
+        unsafe {
+            crate::module::Module(Module::from_js_module(
+                module,
+                binary.into_bytes(),
+            ))
+        }
     }
 }
 

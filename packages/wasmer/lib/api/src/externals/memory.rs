@@ -49,12 +49,18 @@ impl Memory {
     /// #
     /// let m = Memory::new(&mut store, MemoryType::new(1, None, false)).unwrap();
     /// ```
-    pub fn new(store: &mut impl AsStoreMut, ty: MemoryType) -> Result<Self, MemoryError> {
+    pub fn new(
+        store: &mut impl AsStoreMut,
+        ty: MemoryType,
+    ) -> Result<Self, MemoryError> {
         Ok(Self(memory_impl::Memory::new(store, ty)?))
     }
 
     /// Create a memory object from an existing memory and attaches it to the store
-    pub fn new_from_existing(new_store: &mut impl AsStoreMut, memory: VMMemory) -> Self {
+    pub fn new_from_existing(
+        new_store: &mut impl AsStoreMut,
+        memory: VMMemory,
+    ) -> Self {
         Self(memory_impl::Memory::new_from_existing(new_store, memory))
     }
 
@@ -77,7 +83,10 @@ impl Memory {
 
     /// Creates a view into the memory that then allows for
     /// read and write
-    pub fn view<'a>(&self, store: &'a (impl AsStoreRef + ?Sized)) -> MemoryView<'a> {
+    pub fn view<'a>(
+        &self,
+        store: &'a (impl AsStoreRef + ?Sized),
+    ) -> MemoryView<'a> {
         MemoryView::new(self, store)
     }
 
@@ -153,12 +162,15 @@ impl Memory {
                 reason: "memory is not a shared memory type".to_string(),
             });
         }
-        self.0
-            .try_copy(&store)
-            .map(|new_memory| Self::new_from_existing(new_store, new_memory.into()))
+        self.0.try_copy(&store).map(|new_memory| {
+            Self::new_from_existing(new_store, new_memory.into())
+        })
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, vm_extern: VMExternMemory) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_extern: VMExternMemory,
+    ) -> Self {
         Self(memory_impl::Memory::from_vm_extern(store, vm_extern))
     }
 
@@ -168,7 +180,10 @@ impl Memory {
     }
 
     /// Attempts to clone this memory (if its clonable)
-    pub fn try_clone(&self, store: &impl AsStoreRef) -> Result<VMMemory, MemoryError> {
+    pub fn try_clone(
+        &self,
+        store: &impl AsStoreRef,
+    ) -> Result<VMMemory, MemoryError> {
         self.0.try_clone(store)
     }
 
@@ -212,7 +227,9 @@ impl Memory {
 impl std::cmp::Eq for Memory {}
 
 impl<'a> Exportable<'a> for Memory {
-    fn get_self_from_extern(_extern: &'a Extern) -> Result<&'a Self, ExportError> {
+    fn get_self_from_extern(
+        _extern: &'a Extern,
+    ) -> Result<&'a Self, ExportError> {
         match _extern {
             Extern::Memory(memory) => Ok(memory),
             _ => Err(ExportError::IncompatibleType),
@@ -255,7 +272,11 @@ pub(crate) trait SharedMemoryOps {
     }
 
     /// See [`SharedMemory::notify`].
-    fn notify(&self, _dst: MemoryLocation, _count: u32) -> Result<u32, AtomicsError> {
+    fn notify(
+        &self,
+        _dst: MemoryLocation,
+        _count: u32,
+    ) -> Result<u32, AtomicsError> {
         Err(AtomicsError::Unimplemented)
     }
 
@@ -295,7 +316,10 @@ impl SharedMemory {
 
     /// Create a new handle from ops.
     #[allow(unused)]
-    pub(crate) fn new(memory: Memory, ops: impl SharedMemoryOps + Send + Sync + 'static) -> Self {
+    pub(crate) fn new(
+        memory: Memory,
+        ops: impl SharedMemoryOps + Send + Sync + 'static,
+    ) -> Self {
         Self {
             memory,
             ops: std::sync::Arc::new(ops),
@@ -303,7 +327,11 @@ impl SharedMemory {
     }
 
     /// Notify up to `count` waiters waiting for the memory location.
-    pub fn notify(&self, location: MemoryLocation, count: u32) -> Result<u32, AtomicsError> {
+    pub fn notify(
+        &self,
+        location: MemoryLocation,
+        count: u32,
+    ) -> Result<u32, AtomicsError> {
         self.ops.notify(location, count)
     }
 
@@ -346,7 +374,11 @@ pub(crate) struct MemoryBuffer<'a>(pub(crate) memory_impl::MemoryBuffer<'a>);
 
 impl<'a> MemoryBuffer<'a> {
     #[allow(unused)]
-    pub(crate) fn read(&self, offset: u64, buf: &mut [u8]) -> Result<(), MemoryAccessError> {
+    pub(crate) fn read(
+        &self,
+        offset: u64,
+        buf: &mut [u8],
+    ) -> Result<(), MemoryAccessError> {
         self.0.read(offset, buf)
     }
 
@@ -360,7 +392,11 @@ impl<'a> MemoryBuffer<'a> {
     }
 
     #[allow(unused)]
-    pub(crate) fn write(&self, offset: u64, data: &[u8]) -> Result<(), MemoryAccessError> {
+    pub(crate) fn write(
+        &self,
+        offset: u64,
+        data: &[u8],
+    ) -> Result<(), MemoryAccessError> {
         self.0.write(offset, data)
     }
 }

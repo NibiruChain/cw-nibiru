@@ -63,7 +63,9 @@ impl CmdAppSecretsDelete {
         }
 
         if self.non_interactive {
-            anyhow::bail!("No secret name given. Provide one as a positional argument.")
+            anyhow::bail!(
+                "No secret name given. Provide one as a positional argument."
+            )
         } else {
             let theme = ColorfulTheme::default();
             Ok(dialoguer::Input::with_theme(&theme)
@@ -78,34 +80,50 @@ impl CmdAppSecretsDelete {
         app_id: &str,
         secret_name: &str,
     ) -> anyhow::Result<()> {
-        let secret = utils::get_secret_by_name(client, app_id, secret_name).await?;
+        let secret =
+            utils::get_secret_by_name(client, app_id, secret_name).await?;
 
         if let Some(secret) = secret {
             if !self.non_interactive && !self.force {
                 let theme = ColorfulTheme::default();
                 let res = dialoguer::Confirm::with_theme(&theme)
-                    .with_prompt(format!("Delete secret '{}'?", secret_name.bold()))
+                    .with_prompt(format!(
+                        "Delete secret '{}'?",
+                        secret_name.bold()
+                    ))
                     .interact()?;
                 if !res {
                     return Ok(());
                 }
             }
 
-            let res = wasmer_backend_api::query::delete_app_secret(client, secret.id.into_inner())
-                .await?;
+            let res = wasmer_backend_api::query::delete_app_secret(
+                client,
+                secret.id.into_inner(),
+            )
+            .await?;
 
             match res {
                 Some(res) if !res.success => {
-                    anyhow::bail!("Error deleting secret '{}'", secret.name.bold())
+                    anyhow::bail!(
+                        "Error deleting secret '{}'",
+                        secret.name.bold()
+                    )
                 }
                 Some(_) => {
                     if !self.quiet {
-                        eprintln!("Correctly deleted secret '{}'", secret.name.bold());
+                        eprintln!(
+                            "Correctly deleted secret '{}'",
+                            secret.name.bold()
+                        );
                     }
                     Ok(())
                 }
                 None => {
-                    anyhow::bail!("Error deleting secret '{}'", secret.name.bold())
+                    anyhow::bail!(
+                        "Error deleting secret '{}'",
+                        secret.name.bold()
+                    )
                 }
             }
         } else {

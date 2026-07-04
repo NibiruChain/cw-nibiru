@@ -15,7 +15,9 @@
 //! for an example of how to extend WASI using the WASI FS API.
 
 #[cfg(all(not(feature = "sys"), not(feature = "js")))]
-compile_error!("At least the `sys` or the `js` feature must be enabled. Please, pick one.");
+compile_error!(
+    "At least the `sys` or the `js` feature must be enabled. Please, pick one."
+);
 
 #[cfg(all(feature = "sys", feature = "js"))]
 compile_error!(
@@ -23,7 +25,9 @@ compile_error!(
 );
 
 #[cfg(all(feature = "sys", target_arch = "wasm32"))]
-compile_error!("The `sys` feature must be enabled only for non-`wasm32` target.");
+compile_error!(
+    "The `sys` feature must be enabled only for non-`wasm32` target."
+);
 
 #[cfg(all(feature = "js", not(target_arch = "wasm32")))]
 compile_error!(
@@ -67,12 +71,14 @@ pub use wasmer;
 pub use wasmer_wasix_types;
 
 use wasmer::{
-    imports, namespace, AsStoreMut, Exports, FunctionEnv, Imports, Memory32, MemoryAccessError,
-    MemorySize, RuntimeError,
+    imports, namespace, AsStoreMut, Exports, FunctionEnv, Imports, Memory32,
+    MemoryAccessError, MemorySize, RuntimeError,
 };
 
 pub use virtual_fs;
-pub use virtual_fs::{DuplexPipe, FsError, Pipe, VirtualFile, WasiBidirectionalSharedPipePair};
+pub use virtual_fs::{
+    DuplexPipe, FsError, Pipe, VirtualFile, WasiBidirectionalSharedPipePair,
+};
 pub use virtual_net;
 pub use virtual_net::{UnsupportedVirtualNetworking, VirtualNetworking};
 
@@ -89,15 +95,17 @@ pub use crate::{
         task::{
             control_plane::WasiControlPlane,
             process::{WasiProcess, WasiProcessId},
-            thread::{WasiThread, WasiThreadError, WasiThreadHandle, WasiThreadId},
+            thread::{
+                WasiThread, WasiThreadError, WasiThreadHandle, WasiThreadId,
+            },
         },
         WasiTtyState,
     },
     rewind::*,
     runtime::{task_manager::VirtualTaskManager, PluggableRuntime, Runtime},
     state::{
-        WasiEnv, WasiEnvBuilder, WasiEnvInit, WasiFunctionEnv, WasiInstanceHandles,
-        WasiStateCreationError, ALL_RIGHTS,
+        WasiEnv, WasiEnvBuilder, WasiEnvInit, WasiFunctionEnv,
+        WasiInstanceHandles, WasiStateCreationError, ALL_RIGHTS,
     },
     syscalls::{journal::wait_for_snapshot, rewind, rewind_ext, types, unwind},
     utils::is_wasix_module,
@@ -219,7 +227,10 @@ impl ExtendedFsError {
 }
 
 impl std::fmt::Display for ExtendedFsError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> Result<(), std::fmt::Error> {
         write!(f, "fs error: {}", self.error)?;
 
         if let Some(msg) = &self.message {
@@ -373,7 +384,10 @@ pub fn generate_import_object_from_env(
     imports
 }
 
-fn wasi_exports_generic(mut store: &mut impl AsStoreMut, env: &FunctionEnv<WasiEnv>) -> Exports {
+fn wasi_exports_generic(
+    mut store: &mut impl AsStoreMut,
+    env: &FunctionEnv<WasiEnv>,
+) -> Exports {
     use syscalls::*;
     let namespace = namespace! {
         "thread-spawn" => Function::new_typed_with_env(&mut store, env, thread_spawn::<Memory32>),
@@ -381,7 +395,10 @@ fn wasi_exports_generic(mut store: &mut impl AsStoreMut, env: &FunctionEnv<WasiE
     namespace
 }
 
-fn wasi_unstable_exports(mut store: &mut impl AsStoreMut, env: &FunctionEnv<WasiEnv>) -> Exports {
+fn wasi_unstable_exports(
+    mut store: &mut impl AsStoreMut,
+    env: &FunctionEnv<WasiEnv>,
+) -> Exports {
     use syscalls::*;
     let namespace = namespace! {
         "args_get" => Function::new_typed_with_env(&mut store, env, args_get::<Memory32>),
@@ -491,7 +508,10 @@ fn wasi_snapshot_preview1_exports(
     namespace
 }
 
-fn wasix_exports_32(mut store: &mut impl AsStoreMut, env: &FunctionEnv<WasiEnv>) -> Exports {
+fn wasix_exports_32(
+    mut store: &mut impl AsStoreMut,
+    env: &FunctionEnv<WasiEnv>,
+) -> Exports {
     use syscalls::*;
     let namespace = namespace! {
         "args_get" => Function::new_typed_with_env(&mut store, env, args_get::<Memory32>),
@@ -613,7 +633,10 @@ fn wasix_exports_32(mut store: &mut impl AsStoreMut, env: &FunctionEnv<WasiEnv>)
     namespace
 }
 
-fn wasix_exports_64(mut store: &mut impl AsStoreMut, env: &FunctionEnv<WasiEnv>) -> Exports {
+fn wasix_exports_64(
+    mut store: &mut impl AsStoreMut,
+    env: &FunctionEnv<WasiEnv>,
+) -> Exports {
     use syscalls::*;
     let namespace = namespace! {
         "args_get" => Function::new_typed_with_env(&mut store, env, args_get::<Memory64>),
@@ -735,11 +758,19 @@ fn wasix_exports_64(mut store: &mut impl AsStoreMut, env: &FunctionEnv<WasiEnv>)
     namespace
 }
 
-pub type InstanceInitializer =
-    Box<dyn FnOnce(&wasmer::Instance, &dyn wasmer::AsStoreRef) -> Result<(), anyhow::Error>>;
+pub type InstanceInitializer = Box<
+    dyn FnOnce(
+        &wasmer::Instance,
+        &dyn wasmer::AsStoreRef,
+    ) -> Result<(), anyhow::Error>,
+>;
 
-type ModuleInitializer =
-    Box<dyn FnOnce(&wasmer::Instance, &dyn wasmer::AsStoreRef) -> Result<(), anyhow::Error>>;
+type ModuleInitializer = Box<
+    dyn FnOnce(
+        &wasmer::Instance,
+        &dyn wasmer::AsStoreRef,
+    ) -> Result<(), anyhow::Error>,
+>;
 
 /// No-op module initializer.
 fn stub_initializer(
@@ -758,7 +789,8 @@ fn import_object_for_all_wasi_versions(
 ) -> (Imports, ModuleInitializer) {
     let exports_wasi_generic = wasi_exports_generic(store, env);
     let exports_wasi_unstable = wasi_unstable_exports(store, env);
-    let exports_wasi_snapshot_preview1 = wasi_snapshot_preview1_exports(store, env);
+    let exports_wasi_snapshot_preview1 =
+        wasi_snapshot_preview1_exports(store, env);
     let exports_wasix_32v1 = wasix_exports_32(store, env);
     let exports_wasix_64v1 = wasix_exports_64(store, env);
 
@@ -792,7 +824,8 @@ fn generate_import_object_snapshot1(
     store: &mut impl AsStoreMut,
     env: &FunctionEnv<WasiEnv>,
 ) -> Imports {
-    let exports_wasi_snapshot_preview1 = wasi_snapshot_preview1_exports(store, env);
+    let exports_wasi_snapshot_preview1 =
+        wasi_snapshot_preview1_exports(store, env);
     imports! {
         "wasi_snapshot_preview1" => exports_wasi_snapshot_preview1
     }
@@ -848,7 +881,9 @@ pub(crate) fn block_in_place<Ret>(thunk: impl FnOnce() -> Ret) -> Ret {
 /// The closure is executed on a separate thread, allowing it to perform blocking operations
 /// without blocking the main thread. The closure is wrapped in a `Future` that resolves to the
 /// result of the closure's execution.
-pub(crate) async fn spawn_blocking<F, R>(f: F) -> Result<R, tokio::task::JoinError>
+pub(crate) async fn spawn_blocking<F, R>(
+    f: F,
+) -> Result<R, tokio::task::JoinError>
 where
     F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,

@@ -80,9 +80,11 @@ where
             // if the value was extended, name that as well with a
             // dynamic range, overwriting the basic full-range
             // fact that we previously put on the uextend.
-            builder.func.dfg.facts[orig_index] = Some(Fact::Def { value: orig_index });
+            builder.func.dfg.facts[orig_index] =
+                Some(Fact::Def { value: orig_index });
             if index != orig_index {
-                builder.func.dfg.facts[index] = Some(Fact::value(pointer_bit_width, orig_index));
+                builder.func.dfg.facts[index] =
+                    Some(Fact::value(pointer_bit_width, orig_index));
             }
 
             // Create a fact on the LHS that is a "trivial symbolic
@@ -100,7 +102,11 @@ where
             {
                 builder.func.dfg.facts[result] = Some(Fact::Compare {
                     kind: compare_kind,
-                    lhs: Expr::offset(&Expr::value(orig_index), lhs_off.unwrap()).unwrap(),
+                    lhs: Expr::offset(
+                        &Expr::value(orig_index),
+                        lhs_off.unwrap(),
+                    )
+                    .unwrap(),
                     rhs: Expr::offset(rhs, rhs_off.unwrap()).unwrap(),
                 });
             }
@@ -112,8 +118,14 @@ where
             {
                 builder.func.dfg.facts[result] = Some(Fact::Compare {
                     kind: compare_kind,
-                    lhs: Expr::offset(&Expr::value(orig_index), lhs_off.unwrap()).unwrap(),
-                    rhs: Expr::constant((k as i64).checked_add(rhs_off.unwrap()).unwrap()),
+                    lhs: Expr::offset(
+                        &Expr::value(orig_index),
+                        lhs_off.unwrap(),
+                    )
+                    .unwrap(),
+                    rhs: Expr::constant(
+                        (k as i64).checked_add(rhs_off.unwrap()).unwrap(),
+                    ),
                 });
             }
         }
@@ -195,7 +207,8 @@ where
         //    multiple fields in the same struct that is in linear memory --
         //    will all emit the same `index > bound` check, which we can GVN.
         HeapStyle::Dynamic { bound_gv }
-            if can_use_virtual_memory && offset_and_size <= heap.offset_guard_size =>
+            if can_use_virtual_memory
+                && offset_and_size <= heap.offset_guard_size =>
         {
             let bound = get_dynamic_heap_bound(builder, env, heap);
             let oob = make_compare(
@@ -229,18 +242,20 @@ where
         HeapStyle::Dynamic { bound_gv } if offset_and_size <= heap.min_size => {
             let bound = get_dynamic_heap_bound(builder, env, heap);
             let adjustment = offset_and_size as i64;
-            let adjustment_value = builder.ins().iconst(env.pointer_type(), adjustment);
+            let adjustment_value =
+                builder.ins().iconst(env.pointer_type(), adjustment);
             if pcc {
                 builder.func.dfg.facts[adjustment_value] =
                     Some(Fact::constant(pointer_bit_width, offset_and_size));
             }
             let adjusted_bound = builder.ins().isub(bound, adjustment_value);
             if pcc {
-                builder.func.dfg.facts[adjusted_bound] = Some(Fact::global_value_offset(
-                    pointer_bit_width,
-                    bound_gv,
-                    -adjustment,
-                ));
+                builder.func.dfg.facts[adjusted_bound] =
+                    Some(Fact::global_value_offset(
+                        pointer_bit_width,
+                        bound_gv,
+                        -adjustment,
+                    ));
             }
             let oob = make_compare(
                 builder,
@@ -284,11 +299,12 @@ where
                 ir::TrapCode::HeapOutOfBounds,
             );
             if pcc {
-                builder.func.dfg.facts[adjusted_index] = Some(Fact::value_offset(
-                    pointer_bit_width,
-                    index,
-                    i64::try_from(offset_and_size).unwrap(),
-                ));
+                builder.func.dfg.facts[adjusted_index] =
+                    Some(Fact::value_offset(
+                        pointer_bit_width,
+                        index,
+                        i64::try_from(offset_and_size).unwrap(),
+                    ));
             }
             let bound = get_dynamic_heap_bound(builder, env, heap);
             let oob = make_compare(
@@ -371,7 +387,8 @@ where
         HeapStyle::Static { bound }
             if can_use_virtual_memory
                 && heap.index_type == ir::types::I32
-                && u64::from(u32::MAX) <= bound + heap.offset_guard_size - offset_and_size =>
+                && u64::from(u32::MAX)
+                    <= bound + heap.offset_guard_size - offset_and_size =>
         {
             assert!(
                 can_use_virtual_memory,
@@ -383,7 +400,10 @@ where
                 env.pointer_type(),
                 index,
                 offset,
-                AddrPcc::static32(heap.memory_type, bound + heap.offset_guard_size),
+                AddrPcc::static32(
+                    heap.memory_type,
+                    bound + heap.offset_guard_size,
+                ),
             ))
         }
 
@@ -507,10 +527,11 @@ fn cast_index_to_pointer_ty(
 
     // Add a range fact on the extended value.
     if pcc {
-        pos.func.dfg.facts[extended_index] = Some(Fact::max_range_for_width_extended(
-            u16::try_from(index_ty.bits()).unwrap(),
-            u16::try_from(pointer_ty.bits()).unwrap(),
-        ));
+        pos.func.dfg.facts[extended_index] =
+            Some(Fact::max_range_for_width_extended(
+                u16::try_from(index_ty.bits()).unwrap(),
+                u16::try_from(pointer_ty.bits()).unwrap(),
+            ));
     }
 
     // Add debug value-label alias so that debuginfo can name the extended
@@ -539,7 +560,10 @@ impl AddrPcc {
     fn static32(memory_type: Option<ir::MemoryType>, size: u64) -> Option<Self> {
         memory_type.map(|ty| Self::Static32(ty, size))
     }
-    fn dynamic(memory_type: Option<ir::MemoryType>, bound: ir::GlobalValue) -> Option<Self> {
+    fn dynamic(
+        memory_type: Option<ir::MemoryType>,
+        bound: ir::GlobalValue,
+    ) -> Option<Self> {
         memory_type.map(|ty| Self::Dynamic(ty, bound))
     }
 }
@@ -580,18 +604,24 @@ fn explicit_check_oob_condition_and_compute_addr(
         match pcc {
             None => {}
             Some(AddrPcc::Static32(ty, size)) => {
-                pos.func.dfg.facts[null] =
-                    Some(Fact::constant(u16::try_from(addr_ty.bits()).unwrap(), 0));
+                pos.func.dfg.facts[null] = Some(Fact::constant(
+                    u16::try_from(addr_ty.bits()).unwrap(),
+                    0,
+                ));
                 pos.func.dfg.facts[addr] = Some(Fact::Mem {
                     ty,
                     min_offset: 0,
-                    max_offset: size.checked_sub(u64::from(access_size)).unwrap(),
+                    max_offset: size
+                        .checked_sub(u64::from(access_size))
+                        .unwrap(),
                     nullable: true,
                 });
             }
             Some(AddrPcc::Dynamic(ty, gv)) => {
-                pos.func.dfg.facts[null] =
-                    Some(Fact::constant(u16::try_from(addr_ty.bits()).unwrap(), 0));
+                pos.func.dfg.facts[null] = Some(Fact::constant(
+                    u16::try_from(addr_ty.bits()).unwrap(),
+                    0,
+                ));
                 pos.func.dfg.facts[addr] = Some(Fact::DynamicMem {
                     ty,
                     min: Expr::constant(0),

@@ -28,7 +28,9 @@ use wasmer_wasix::{
 mod wasi {
     use virtual_fs::{AsyncReadExt, AsyncSeekExt};
     use wasmer_package::utils::from_bytes;
-    use wasmer_wasix::{bin_factory::BinaryPackage, runners::wasi::WasiRunner, WasiError};
+    use wasmer_wasix::{
+        bin_factory::BinaryPackage, runners::wasi::WasiRunner, WasiError,
+    };
 
     use super::*;
 
@@ -55,8 +57,10 @@ mod wasi {
         let container = from_bytes(webc).unwrap();
         let (rt, tasks) = runtime();
         let pkg = BinaryPackage::from_webc(&container, &rt).await.unwrap();
-        let mut stdout = virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
-        let mut stderr = virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
+        let mut stdout =
+            virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
+        let mut stderr =
+            virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
 
         let stdout_2 = stdout.clone();
         let stderr_2 = stderr.clone();
@@ -94,12 +98,15 @@ mod wasi {
     async fn python() {
         setup();
 
-        let webc = download_cached("https://wasmer.io/python/python@0.1.0").await;
+        let webc =
+            download_cached("https://wasmer.io/python/python@0.1.0").await;
         let (rt, tasks) = runtime();
         let container = from_bytes(webc).unwrap();
         let pkg = BinaryPackage::from_webc(&container, &rt).await.unwrap();
-        let mut stdout = virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
-        let mut stderr = virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
+        let mut stdout =
+            virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
+        let mut stderr =
+            virtual_fs::ArcFile::new(Box::<virtual_fs::BufferFile>::default());
 
         let stdout_2 = stdout.clone();
         let stderr_2 = stderr.clone();
@@ -127,7 +134,8 @@ mod wasi {
         eprintln!("{stderr}");
 
         let err = handle.join().unwrap().unwrap_err();
-        let runtime_error = err.chain().find_map(|e| e.downcast_ref::<WasiError>());
+        let runtime_error =
+            err.chain().find_map(|e| e.downcast_ref::<WasiError>());
         let exit_code = match runtime_error {
             Some(WasiError::Exit(code)) => *code,
             Some(other) => panic!("Something else went wrong: {:?}", other),
@@ -141,7 +149,9 @@ mod wasi {
 mod wcgi {
     use std::{future::Future, sync::Arc};
 
-    use futures::{channel::mpsc::Sender, future::AbortHandle, SinkExt, StreamExt};
+    use futures::{
+        channel::mpsc::Sender, future::AbortHandle, SinkExt, StreamExt,
+    };
     use rand::Rng;
     use tokio::runtime::Handle;
     use wasmer_wasix::{
@@ -153,16 +163,25 @@ mod wcgi {
 
     #[tokio::test]
     async fn can_run_staticserver() {
-        let webc = download_cached("https://wasmer.io/Michael-F-Bryan/staticserver@1.0.3").await;
+        let webc = download_cached(
+            "https://wasmer.io/Michael-F-Bryan/staticserver@1.0.3",
+        )
+        .await;
         let container = from_bytes(webc).unwrap();
 
         let entrypoint = container.manifest().entrypoint.as_ref().unwrap();
-        assert!(WcgiRunner::can_run_command(&container.manifest().commands[entrypoint]).unwrap());
+        assert!(WcgiRunner::can_run_command(
+            &container.manifest().commands[entrypoint]
+        )
+        .unwrap());
     }
 
     #[tokio::test]
     async fn staticserver() {
-        let webc = download_cached("https://wasmer.io/Michael-F-Bryan/staticserver@1.0.3").await;
+        let webc = download_cached(
+            "https://wasmer.io/Michael-F-Bryan/staticserver@1.0.3",
+        )
+        .await;
         let (rt, tasks) = runtime();
         let container = from_bytes(webc).unwrap();
         let mut runner = WcgiRunner::new(NoOpWcgiCallbacks);
@@ -205,7 +224,9 @@ mod wcgi {
         }
     }
 
-    fn callbacks(handle: Handle) -> (Callbacks, impl Future<Output = AbortHandle>) {
+    fn callbacks(
+        handle: Handle,
+    ) -> (Callbacks, impl Future<Output = AbortHandle>) {
         let (sender, mut rx) = futures::channel::mpsc::channel(1);
 
         let cb = Callbacks { sender, handle };
@@ -270,7 +291,9 @@ async fn download_cached(url: &str) -> bytes::Bytes {
 }
 
 pub fn get_proxy() -> Result<Option<reqwest::Proxy>, anyhow::Error> {
-    if let Ok(scheme) = std::env::var("http_proxy").or_else(|_| std::env::var("HTTP_PROXY")) {
+    if let Ok(scheme) =
+        std::env::var("http_proxy").or_else(|_| std::env::var("HTTP_PROXY"))
+    {
         let proxy = reqwest::Proxy::all(scheme)?;
         Ok(Some(proxy))
     } else {
@@ -280,7 +303,8 @@ pub fn get_proxy() -> Result<Option<reqwest::Proxy>, anyhow::Error> {
 
 fn client() -> Client {
     let builder = {
-        let mut builder = reqwest::ClientBuilder::new().connect_timeout(Duration::from_secs(30));
+        let mut builder = reqwest::ClientBuilder::new()
+            .connect_timeout(Duration::from_secs(30));
         if let Some(proxy) = get_proxy().unwrap() {
             builder = builder.proxy(proxy);
         }

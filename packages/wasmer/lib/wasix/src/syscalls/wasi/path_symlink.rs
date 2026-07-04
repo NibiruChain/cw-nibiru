@@ -24,10 +24,13 @@ pub fn path_symlink<M: MemorySize>(
     new_path_len: M::Offset,
 ) -> Result<Errno, WasiError> {
     let env = ctx.data();
-    let (memory, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
-    let old_path_str = unsafe { get_input_str_ok!(&memory, old_path, old_path_len) };
+    let (memory, mut state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let old_path_str =
+        unsafe { get_input_str_ok!(&memory, old_path, old_path_len) };
     Span::current().record("old_path", old_path_str.as_str());
-    let new_path_str = unsafe { get_input_str_ok!(&memory, new_path, new_path_len) };
+    let new_path_str =
+        unsafe { get_input_str_ok!(&memory, new_path, new_path_len) };
     Span::current().record("new_path", new_path_str.as_str());
 
     wasi_try_ok!(path_symlink_internal(
@@ -40,12 +43,16 @@ pub fn path_symlink<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if env.enable_journal {
-        JournalEffector::save_path_symlink(&mut ctx, old_path_str, fd, new_path_str).map_err(
-            |err| {
-                tracing::error!("failed to save path symbolic link event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            },
-        )?;
+        JournalEffector::save_path_symlink(
+            &mut ctx,
+            old_path_str,
+            fd,
+            new_path_str,
+        )
+        .map_err(|err| {
+            tracing::error!("failed to save path symbolic link event - {}", err);
+            WasiError::Exit(ExitCode::from(Errno::Fault))
+        })?;
     }
 
     Ok(Errno::Success)
@@ -58,7 +65,8 @@ pub fn path_symlink_internal(
     new_path: &str,
 ) -> Result<(), Errno> {
     let env = ctx.data();
-    let (memory, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, mut state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
 
     let base_fd = state.fs.get_fd(fd)?;
     if !base_fd.rights.contains(Rights::PATH_SYMLINK) {
@@ -67,9 +75,10 @@ pub fn path_symlink_internal(
 
     // get the depth of the parent + 1 (UNDER INVESTIGATION HMMMMMMMM THINK FISH ^ THINK FISH)
     let old_path_path = std::path::Path::new(old_path);
-    let (source_inode, _) = state
-        .fs
-        .get_parent_inode_at_path(inodes, fd, old_path_path, true)?;
+    let (source_inode, _) =
+        state
+            .fs
+            .get_parent_inode_at_path(inodes, fd, old_path_path, true)?;
     let depth = state.fs.path_depth_from_fd(fd, source_inode);
 
     // depth == -1 means folder is not relative. See issue #3233.
@@ -116,10 +125,12 @@ pub fn path_symlink_internal(
         path_to_symlink: std::path::PathBuf::from(new_path),
         relative_path,
     };
-    let new_inode =
-        state
-            .fs
-            .create_inode_with_default_stat(inodes, kind, false, entry_name.clone().into());
+    let new_inode = state.fs.create_inode_with_default_stat(
+        inodes,
+        kind,
+        false,
+        entry_name.clone().into(),
+    );
 
     {
         let mut guard = target_parent_inode.write();

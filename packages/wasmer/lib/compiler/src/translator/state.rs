@@ -6,8 +6,10 @@ use wasmer_types::entity::PrimaryMap;
 use wasmer_types::{SignatureIndex, WasmResult};
 
 /// Map of signatures to a function's parameter and return types.
-pub(crate) type WasmTypes =
-    PrimaryMap<SignatureIndex, (Box<[wasmparser::ValType]>, Box<[wasmparser::ValType]>)>;
+pub(crate) type WasmTypes = PrimaryMap<
+    SignatureIndex,
+    (Box<[wasmparser::ValType]>, Box<[wasmparser::ValType]>),
+>;
 
 /// Contains information decoded from the Wasm module that must be referenced
 /// during each Wasm function's translation.
@@ -38,13 +40,17 @@ impl ModuleTranslationState {
         ty_or_ft: &'a wasmparser::BlockType,
     ) -> WasmResult<(&'a [wasmparser::ValType], SingleOrMultiValue<'a>)> {
         Ok(match ty_or_ft {
-            wasmparser::BlockType::Type(ty) => (&[], SingleOrMultiValue::Single(ty)),
+            wasmparser::BlockType::Type(ty) => {
+                (&[], SingleOrMultiValue::Single(ty))
+            }
             wasmparser::BlockType::FuncType(ty_index) => {
                 let sig_idx = SignatureIndex::from_u32(*ty_index);
                 let (ref params, ref results) = self.wasm_types[sig_idx];
                 (params, SingleOrMultiValue::Multi(results.as_ref()))
             }
-            wasmparser::BlockType::Empty => (&[], SingleOrMultiValue::Multi(&[])),
+            wasmparser::BlockType::Empty => {
+                (&[], SingleOrMultiValue::Multi(&[]))
+            }
         })
     }
 }
@@ -78,11 +84,15 @@ impl<'a> SingleOrMultiValue<'a> {
     /// Iterate ofer the value types.
     pub fn iter(&self) -> SingleOrMultiValueIterator<'_> {
         match self {
-            SingleOrMultiValue::Single(v) => SingleOrMultiValueIterator::Single(v),
-            SingleOrMultiValue::Multi(items) => SingleOrMultiValueIterator::Multi {
-                index: 0,
-                values: items,
-            },
+            SingleOrMultiValue::Single(v) => {
+                SingleOrMultiValueIterator::Single(v)
+            }
+            SingleOrMultiValue::Multi(items) => {
+                SingleOrMultiValueIterator::Multi {
+                    index: 0,
+                    values: items,
+                }
+            }
         }
     }
 }
@@ -123,7 +133,9 @@ impl<'a> Iterator for SingleOrMultiValueIterator<'a> {
 impl<'a> PartialEq<[wasmparser::ValType]> for SingleOrMultiValue<'a> {
     fn eq(&self, other: &[wasmparser::ValType]) -> bool {
         match self {
-            SingleOrMultiValue::Single(ty) => other.len() == 1 && &other[0] == *ty,
+            SingleOrMultiValue::Single(ty) => {
+                other.len() == 1 && &other[0] == *ty
+            }
             SingleOrMultiValue::Multi(tys) => *tys == other,
         }
     }

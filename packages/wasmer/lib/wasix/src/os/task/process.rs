@@ -1,5 +1,8 @@
 #[cfg(feature = "journal")]
-use crate::{journal::JournalEffector, syscalls::do_checkpoint_from_outside, unwind, WasiResult};
+use crate::{
+    journal::JournalEffector, syscalls::do_checkpoint_from_outside, unwind,
+    WasiResult,
+};
 use crate::{journal::SnapshotTrigger, WasiEnv, WasiRuntimeError};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "journal")]
@@ -25,8 +28,8 @@ use wasmer_wasix_types::{
 };
 
 use crate::{
-    os::task::signal::WasiSignalInterval, syscalls::platform_clock_time_get, WasiThread,
-    WasiThreadHandle, WasiThreadId,
+    os::task::signal::WasiSignalInterval, syscalls::platform_clock_time_get,
+    WasiThread, WasiThreadHandle, WasiThreadId,
 };
 
 use super::{
@@ -39,7 +42,9 @@ use super::{
 };
 
 /// Represents the ID of a sub-process
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub struct WasiProcessId(u32);
 
 impl WasiProcessId {
@@ -239,9 +244,11 @@ impl WasiProcessInner {
         let thread_layout = ctx.data().thread.memory_layout().clone();
         unwind::<M, _>(ctx, move |mut ctx, memory_stack, rewind_stack| {
             // Grab all the globals and serialize them
-            let store_data = crate::utils::store::capture_store_snapshot(&mut ctx.as_store_mut())
-                .serialize()
-                .unwrap();
+            let store_data = crate::utils::store::capture_store_snapshot(
+                &mut ctx.as_store_mut(),
+            )
+            .serialize()
+            .unwrap();
             let memory_stack = memory_stack.freeze();
             let rewind_stack = rewind_stack.freeze();
             let store_data = Bytes::from(store_data);
@@ -273,7 +280,9 @@ impl WasiProcessInner {
             // Wait for the checkpoint to finish (or if we are the last thread
             // to freeze then we have to execute the checksum operation)
             loop {
-                if let WasiProcessCheckpoint::Snapshot { trigger } = guard.checkpoint {
+                if let WasiProcessCheckpoint::Snapshot { trigger } =
+                    guard.checkpoint
+                {
                     ctx.data().thread.set_checkpointing(true);
 
                     // Now if we are the last thread we also write the memory
@@ -283,10 +292,14 @@ impl WasiProcessInner {
                         .all(|t| t.is_check_pointing() || t.is_deep_sleeping());
                     if is_last_thread {
                         if let Err(err) =
-                            JournalEffector::save_memory_and_snapshot(&mut ctx, &mut guard, trigger)
+                            JournalEffector::save_memory_and_snapshot(
+                                &mut ctx, &mut guard, trigger,
+                            )
                         {
                             inner.1.notify_all();
-                            return wasmer_types::OnCalledAction::Trap(err.into());
+                            return wasmer_types::OnCalledAction::Trap(
+                                err.into(),
+                            );
                         }
 
                         // Clear the checkpointing flag and notify everyone to wake up
@@ -323,7 +336,9 @@ impl WasiProcessInner {
                             "snapshot resumption failed - could not rewind the stack - errno={}",
                             err
                         );
-                        OnCalledAction::Trap(Box::new(WasiError::Exit(err.into())))
+                        OnCalledAction::Trap(Box::new(WasiError::Exit(
+                            err.into(),
+                        )))
                     }
                 };
             }
@@ -344,7 +359,8 @@ impl WasiProcessInner {
 
         // Wait for the checkpoint to finish (or if we are the last thread
         // to freeze then we have to execute the checksum operation)
-        while let WasiProcessCheckpoint::Snapshot { trigger } = guard.checkpoint {
+        while let WasiProcessCheckpoint::Snapshot { trigger } = guard.checkpoint
+        {
             ctx.data().thread.set_checkpointing(true);
 
             // Now if we are the last thread we also write the memory
@@ -353,11 +369,14 @@ impl WasiProcessInner {
                 .values()
                 .all(|t| t.is_check_pointing() || t.is_deep_sleeping());
             if is_last_thread {
-                if let Err(err) =
-                    JournalEffector::save_memory_and_snapshot(ctx, &mut guard, trigger)
-                {
+                if let Err(err) = JournalEffector::save_memory_and_snapshot(
+                    ctx, &mut guard, trigger,
+                ) {
                     inner.1.notify_all();
-                    tracing::error!("failed to snapshot memory and threads - {}", err);
+                    tracing::error!(
+                        "failed to snapshot memory and threads - {}",
+                        err
+                    );
                     return;
                 }
 
@@ -404,7 +423,11 @@ impl Drop for WasiProcessWait {
 }
 
 impl WasiProcess {
-    pub fn new(pid: WasiProcessId, module_hash: ModuleHash, plane: WasiControlPlaneHandle) -> Self {
+    pub fn new(
+        pid: WasiProcessId,
+        module_hash: ModuleHash,
+        plane: WasiControlPlaneHandle,
+    ) -> Self {
         let max_cpu_backoff_time = plane
             .upgrade()
             .and_then(|p| p.config().enable_exponential_cpu_backoff)
@@ -427,7 +450,10 @@ impl WasiProcess {
                 #[cfg(feature = "journal")]
                 snapshot_memory_hash: Default::default(),
                 disable_journaling_after_checkpoint: false,
-                backoff: WasiProcessCpuBackoff::new(max_cpu_backoff_time, max_cpu_cool_off_time),
+                backoff: WasiProcessCpuBackoff::new(
+                    max_cpu_backoff_time,
+                    max_cpu_cool_off_time,
+                ),
             }),
             Condvar::new(),
         ));
@@ -638,7 +664,10 @@ impl WasiProcess {
         }
         impl Future for Poller {
             type Output = ();
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 let mut guard = self.inner.0.lock().unwrap();
                 if !matches!(guard.checkpoint, WasiProcessCheckpoint::Execute) {
                     return Poll::Ready(());
@@ -678,7 +707,10 @@ impl WasiProcess {
         }
         impl Future for Poller {
             type Output = ();
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 let mut guard = self.inner.0.lock().unwrap();
                 if matches!(guard.checkpoint, WasiProcessCheckpoint::Execute) {
                     return Poll::Ready(());
@@ -695,7 +727,12 @@ impl WasiProcess {
     }
 
     /// Signals one of the threads every interval
-    pub fn signal_interval(&self, signal: Signal, interval: Option<Duration>, repeat: bool) {
+    pub fn signal_interval(
+        &self,
+        signal: Signal,
+        interval: Option<Duration>,
+        repeat: bool,
+    ) {
         let mut inner = self.inner.0.lock().unwrap();
 
         let interval = match interval {
@@ -706,7 +743,8 @@ impl WasiProcess {
             Some(a) => a,
         };
 
-        let now = platform_clock_time_get(Snapshot0Clockid::Monotonic, 1_000_000).unwrap() as u128;
+        let now = platform_clock_time_get(Snapshot0Clockid::Monotonic, 1_000_000)
+            .unwrap() as u128;
         inner.signal_intervals.insert(
             signal,
             WasiSignalInterval {
@@ -736,7 +774,9 @@ impl WasiProcess {
     }
 
     /// Waits for all the children to be finished
-    pub async fn join_children(&mut self) -> Option<Result<ExitCode, Arc<WasiRuntimeError>>> {
+    pub async fn join_children(
+        &mut self,
+    ) -> Option<Result<ExitCode, Arc<WasiRuntimeError>>> {
         let _guard = WasiProcessWait::new(self);
         let children: Vec<_> = {
             let inner = self.inner.0.lock().unwrap();
@@ -747,7 +787,9 @@ impl WasiProcess {
         }
         let mut waits = Vec::new();
         for child in children {
-            if let Some(process) = self.compute.must_upgrade().get_process(child.pid) {
+            if let Some(process) =
+                self.compute.must_upgrade().get_process(child.pid)
+            {
                 let inner = self.inner.clone();
                 waits.push(async move {
                     let join = process.join().await;
@@ -764,7 +806,9 @@ impl WasiProcess {
     }
 
     /// Waits for any of the children to finished
-    pub async fn join_any_child(&mut self) -> Result<Option<(WasiProcessId, ExitCode)>, Errno> {
+    pub async fn join_any_child(
+        &mut self,
+    ) -> Result<Option<(WasiProcessId, ExitCode)>, Errno> {
         let _guard = WasiProcessWait::new(self);
         let children: Vec<_> = {
             let inner = self.inner.0.lock().unwrap();
@@ -776,7 +820,9 @@ impl WasiProcess {
 
         let mut waits = Vec::new();
         for child in children {
-            if let Some(process) = self.compute.must_upgrade().get_process(child.pid) {
+            if let Some(process) =
+                self.compute.must_upgrade().get_process(child.pid)
+            {
                 let inner = self.inner.clone();
                 waits.push(async move {
                     let join = process.join().await;
@@ -786,12 +832,14 @@ impl WasiProcess {
                 })
             }
         }
-        let (child, res) = futures::future::select_all(waits.into_iter().map(Box::pin))
-            .await
-            .0;
+        let (child, res) =
+            futures::future::select_all(waits.into_iter().map(Box::pin))
+                .await
+                .0;
 
-        let code =
-            res.unwrap_or_else(|e| e.as_exit_code().unwrap_or_else(|| Errno::Canceled.into()));
+        let code = res.unwrap_or_else(|e| {
+            e.as_exit_code().unwrap_or_else(|| Errno::Canceled.into())
+        });
 
         Ok(Some((child.pid, code)))
     }

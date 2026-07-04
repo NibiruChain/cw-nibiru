@@ -18,10 +18,15 @@ pub fn port_route_remove<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if ctx.data().enable_journal {
-        JournalEffector::save_port_route_remove(&mut ctx, ip).map_err(|err| {
-            tracing::error!("failed to save port_route_remove event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_port_route_remove(&mut ctx, ip).map_err(
+            |err| {
+                tracing::error!(
+                    "failed to save port_route_remove event - {}",
+                    err
+                );
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            },
+        )?;
     }
 
     Ok(Errno::Success)

@@ -35,7 +35,8 @@ impl IgnorePattern {
                 .map_or(true, |val| val == target_env)
             && self.engine.as_ref().map_or(true, |val| val == engine)
             && self.compiler.as_ref().map_or(true, |val| val == compiler)
-            && (self.pattern_to_ignore == "*" || canonical_path.contains(&*self.pattern_to_ignore))
+            && (self.pattern_to_ignore == "*"
+                || canonical_path.contains(&*self.pattern_to_ignore))
     }
 }
 
@@ -58,11 +59,23 @@ impl Ignores {
     ) -> bool {
         self.patterns.iter().any(|p| {
             // println!(" -> {:?}", p);
-            p.should_ignore(os, arch, target_env, engine, compiler, canonical_path)
+            p.should_ignore(
+                os,
+                arch,
+                target_env,
+                engine,
+                compiler,
+                canonical_path,
+            )
         })
     }
 
-    pub fn should_ignore_host(&self, engine: &str, compiler: &str, canonical_path: &str) -> bool {
+    pub fn should_ignore_host(
+        &self,
+        engine: &str,
+        compiler: &str,
+        canonical_path: &str,
+    ) -> bool {
         self.should_ignore(
             CFG_TARGET_OS,
             CFG_TARGET_ARCH,
@@ -111,7 +124,8 @@ impl Ignores {
                             target_env = Some(alias.to_string());
                         }
                         // Chipset architectures
-                        "aarch64" | "x86" | "x64" | "riscv64" | "loongarch64" => {
+                        "aarch64" | "x86" | "x64" | "riscv64"
+                        | "loongarch64" => {
                             arch = Some(alias.to_string());
                         }
                         // Engines

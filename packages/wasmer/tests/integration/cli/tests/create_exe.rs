@@ -82,8 +82,9 @@ impl WasmerCreateExe {
         if !output.status.success() {
             bail!(
                 "{cmd}\r\n failed with: stdout: {stdout}\n\nstderr: {}",
-                std::str::from_utf8(&output.stderr)
-                    .expect("stderr is not utf8! need to handle arbitrary bytes")
+                std::str::from_utf8(&output.stderr).expect(
+                    "stderr is not utf8! need to handle arbitrary bytes"
+                )
             );
         }
         Ok(output.stdout)
@@ -144,10 +145,12 @@ impl WasmerCreateObj {
         if !output.status.success() {
             bail!(
                 "{cmd}\r\n failed with: stdout: {}\n\nstderr: {}",
-                std::str::from_utf8(&output.stdout)
-                    .expect("stdout is not utf8! need to handle arbitrary bytes"),
-                std::str::from_utf8(&output.stderr)
-                    .expect("stderr is not utf8! need to handle arbitrary bytes")
+                std::str::from_utf8(&output.stdout).expect(
+                    "stdout is not utf8! need to handle arbitrary bytes"
+                ),
+                std::str::from_utf8(&output.stderr).expect(
+                    "stderr is not utf8! need to handle arbitrary bytes"
+                )
             );
         }
         Ok(output.stdout)
@@ -836,7 +839,9 @@ fn test_cross_compile_python_windows() {
     }
 }
 
-fn assert_tarball_is_present_local(target: &str) -> Result<PathBuf, anyhow::Error> {
+fn assert_tarball_is_present_local(
+    target: &str,
+) -> Result<PathBuf, anyhow::Error> {
     let wasmer_dir = std::env::var("WASMER_DIR").expect("no WASMER_DIR set");
     let directory = match target {
         "aarch64-darwin" => "wasmer-darwin-arm64.tar.gz",
@@ -846,7 +851,8 @@ fn assert_tarball_is_present_local(target: &str) -> Result<PathBuf, anyhow::Erro
         "x86_64-windows-gnu" => "wasmer-windows-gnu64.tar.gz",
         _ => return Err(anyhow::anyhow!("unknown target {target}")),
     };
-    let libwasmer_cache_path = Path::new(&wasmer_dir).join("cache").join(directory);
+    let libwasmer_cache_path =
+        Path::new(&wasmer_dir).join("cache").join(directory);
     if !libwasmer_cache_path.exists() {
         return Err(anyhow::anyhow!(
             "targz {} does not exist",

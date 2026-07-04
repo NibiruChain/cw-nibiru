@@ -13,7 +13,10 @@ impl<R: ReadableJournal + ?Sized> ReadableJournal for Box<R> {
 }
 
 impl<W: WritableJournal + ?Sized> WritableJournal for Box<W> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.deref().write(entry)
     }
 

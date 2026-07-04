@@ -274,14 +274,15 @@ unsafe impl wasmer::ValueType for Prestat {
                 }
             };
         }
-        self.pr_type
-            .zero_padding_bytes(&mut bytes[field!(pr_type)..field_end!(pr_type)]);
+        self.pr_type.zero_padding_bytes(
+            &mut bytes[field!(pr_type)..field_end!(pr_type)],
+        );
         zero!(field_end!(pr_type), field!(u));
         match self.pr_type {
             Preopentype::Dir => {
-                self.u
-                    .dir
-                    .zero_padding_bytes(&mut bytes[field!(u.dir)..field_end!(u.dir)]);
+                self.u.dir.zero_padding_bytes(
+                    &mut bytes[field!(u.dir)..field_end!(u.dir)],
+                );
                 zero!(field_end!(u.dir), field_end!(u));
             }
             Preopentype::Unknown => {}

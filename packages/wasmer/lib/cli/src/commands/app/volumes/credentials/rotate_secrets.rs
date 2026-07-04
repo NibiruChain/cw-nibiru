@@ -43,7 +43,10 @@ impl AsyncCliCommand for CmdAppVolumesRotateSecrets {
             env: self.env,
             fmt: self.fmt,
             ident: AppIdentOpts {
-                app: Some(AppIdent::NamespacedName(app.owner.global_name, app.name)),
+                app: Some(AppIdent::NamespacedName(
+                    app.owner.global_name,
+                    app.name,
+                )),
             },
         }
         .run_async()

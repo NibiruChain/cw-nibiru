@@ -124,9 +124,8 @@ impl Ord for WasiVersion {
         }
         match (*self, *other) {
             (Self::Snapshot1, Self::Snapshot0) => std::cmp::Ordering::Greater,
-            (Self::Wasix32v1, Self::Snapshot1) | (Self::Wasix32v1, Self::Snapshot0) => {
-                std::cmp::Ordering::Greater
-            }
+            (Self::Wasix32v1, Self::Snapshot1)
+            | (Self::Wasix32v1, Self::Snapshot0) => std::cmp::Ordering::Greater,
             (Self::Wasix64v1, Self::Wasix32v1)
             | (Self::Wasix64v1, Self::Snapshot1)
             | (Self::Wasix64v1, Self::Snapshot0) => std::cmp::Ordering::Greater,
@@ -163,7 +162,8 @@ const WASIX_HTTP_V1_NAMESPACE: &str = "wasix_http_client_v1";
 /// namespace exists to detect the version. Note that the strict
 /// detection is faster than the non-strict one.
 pub fn get_wasi_version(module: &Module, strict: bool) -> Option<WasiVersion> {
-    let mut imports = module.imports().functions().map(|f| f.module().to_owned());
+    let mut imports =
+        module.imports().functions().map(|f| f.module().to_owned());
 
     if strict {
         let first_module = imports.next()?;
@@ -195,7 +195,10 @@ pub fn get_wasi_version(module: &Module, strict: bool) -> Option<WasiVersion> {
 /// Thus `strict` behaves differently in this function as multiple versions are
 /// always supported. `strict` indicates whether non-WASI imports should trigger a
 /// failure or be ignored.
-pub fn get_wasi_versions(module: &Module, strict: bool) -> Option<BTreeSet<WasiVersion>> {
+pub fn get_wasi_versions(
+    module: &Module,
+    strict: bool,
+) -> Option<BTreeSet<WasiVersion>> {
     let mut out = BTreeSet::new();
     let imports = module.imports().functions().map(|f| f.module().to_owned());
 

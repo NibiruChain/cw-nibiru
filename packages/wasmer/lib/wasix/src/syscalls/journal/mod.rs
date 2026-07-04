@@ -52,8 +52,12 @@ pub struct JournalSyscallPlayer<'a, 'c> {
 }
 
 impl<'a, 'c> JournalSyscallPlayer<'a, 'c> {
-    pub fn new(mut ctx: FunctionEnvMut<'c, WasiEnv>, bootstrapping: bool) -> Self {
-        let cur_module_hash: Box<[u8]> = Box::from(ctx.data().process.module_hash.as_bytes());
+    pub fn new(
+        mut ctx: FunctionEnvMut<'c, WasiEnv>,
+        bootstrapping: bool,
+    ) -> Self {
+        let cur_module_hash: Box<[u8]> =
+            Box::from(ctx.data().process.module_hash.as_bytes());
         let mut ret = JournalSyscallPlayer {
             ctx,
             bootstrapping,

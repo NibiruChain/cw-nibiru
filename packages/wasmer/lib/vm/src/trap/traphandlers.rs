@@ -77,7 +77,8 @@ use libc::ucontext_t;
 
 /// Default stack size is 1MB.
 pub fn set_stack_size(size: usize) {
-    DEFAULT_STACK_SIZE.store(size.clamp(8 * 1024, 100 * 1024 * 1024), Ordering::Relaxed);
+    DEFAULT_STACK_SIZE
+        .store(size.clamp(8 * 1024, 100 * 1024 * 1024), Ordering::Relaxed);
 }
 
 cfg_if::cfg_if! {
@@ -99,7 +100,9 @@ unsafe fn process_illegal_op(addr: usize) -> Option<TrapCode> {
             && read((addr + 2) as *mut u8) == 0xb9
         {
             Some(read((addr + 3) as *mut u8))
-        } else if read(addr as *mut u8) == 0x0f && read((addr + 1) as *mut u8) == 0xb9 {
+        } else if read(addr as *mut u8) == 0x0f
+            && read((addr + 1) as *mut u8) == 0xb9
+        {
             Some(read((addr + 2) as *mut u8))
         } else {
             None
@@ -716,7 +719,8 @@ where
     let stack_size = config
         .wasm_stack_size
         .unwrap_or_else(|| DEFAULT_STACK_SIZE.load(Ordering::Relaxed));
-    on_wasm_stack(stack_size, trap_handler, closure).map_err(UnwindReason::into_trap)
+    on_wasm_stack(stack_size, trap_handler, closure)
+        .map_err(UnwindReason::into_trap)
 }
 
 // We need two separate thread-local variables here:
@@ -1064,7 +1068,9 @@ pub fn lazy_per_thread_init() -> Result<(), Trap> {
         let mut old_stack = mem::zeroed();
         let r = libc::sigaltstack(ptr::null(), &mut old_stack);
         assert_eq!(r, 0, "learning about sigaltstack failed");
-        if old_stack.ss_flags & libc::SS_DISABLE == 0 && old_stack.ss_size >= MIN_STACK_SIZE {
+        if old_stack.ss_flags & libc::SS_DISABLE == 0
+            && old_stack.ss_size >= MIN_STACK_SIZE
+        {
             return Tls::BigEnough;
         }
 

@@ -34,7 +34,9 @@ impl TaskStatus {
         matches!(self, Self::Running)
     }
 
-    pub fn into_finished(self) -> Option<Result<ExitCode, Arc<WasiRuntimeError>>> {
+    pub fn into_finished(
+        self,
+    ) -> Option<Result<ExitCode, Arc<WasiRuntimeError>>> {
         match self {
             Self::Finished(res) => Some(res),
             _ => None,
@@ -98,7 +100,10 @@ impl OwnedTaskStatus {
     }
 
     /// Attaches a signal handler
-    pub fn with_signal_handler(mut self, handler: Arc<DynSignalHandlerAbi>) -> Self {
+    pub fn with_signal_handler(
+        mut self,
+        handler: Arc<DynSignalHandlerAbi>,
+    ) -> Self {
         self.set_signal_handler(handler);
         self
     }
@@ -118,7 +123,10 @@ impl OwnedTaskStatus {
     }
 
     /// Marks the task as finished.
-    pub(crate) fn set_finished(&self, res: Result<ExitCode, Arc<WasiRuntimeError>>) {
+    pub(crate) fn set_finished(
+        &self,
+        res: Result<ExitCode, Arc<WasiRuntimeError>>,
+    ) {
         let inner = match res {
             Ok(code) => Ok(code),
             Err(err) => {
@@ -140,7 +148,9 @@ impl OwnedTaskStatus {
         self.watch_tx.borrow().clone()
     }
 
-    pub async fn await_termination(&self) -> Result<ExitCode, Arc<WasiRuntimeError>> {
+    pub async fn await_termination(
+        &self,
+    ) -> Result<ExitCode, Arc<WasiRuntimeError>> {
         let mut receiver = self.watch_tx.subscribe();
         loop {
             let status = receiver.borrow_and_update().clone();
@@ -197,7 +207,9 @@ impl TaskJoinHandle {
         tokio::spawn(async move {
             // Loop sending ctrl-c presses as signals to the signal handler
             while tokio::signal::ctrl_c().await.is_ok() {
-                if let Err(err) = signal_handler.signal(Signal::Sigint.to_native() as u8) {
+                if let Err(err) =
+                    signal_handler.signal(Signal::Sigint.to_native() as u8)
+                {
                     tracing::error!("failed to process signal - {}", err);
                     std::process::exit(1);
                 }
@@ -206,7 +218,9 @@ impl TaskJoinHandle {
     }
 
     /// Wait until the task finishes.
-    pub async fn wait_finished(&mut self) -> Result<ExitCode, Arc<WasiRuntimeError>> {
+    pub async fn wait_finished(
+        &mut self,
+    ) -> Result<ExitCode, Arc<WasiRuntimeError>> {
         loop {
             let status = self.watch.borrow_and_update().clone();
             match status {

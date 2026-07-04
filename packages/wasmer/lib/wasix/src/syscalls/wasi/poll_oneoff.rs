@@ -73,8 +73,10 @@ pub fn poll_oneoff<M: MemorySize + 'static>(
     let mut env = ctx.data();
     let mut memory = unsafe { env.memory_view(&ctx) };
 
-    let subscription_array = wasi_try_mem_ok!(in_.slice(&memory, nsubscriptions));
-    let mut subscriptions = Vec::with_capacity(subscription_array.len() as usize);
+    let subscription_array =
+        wasi_try_mem_ok!(in_.slice(&memory, nsubscriptions));
+    let mut subscriptions =
+        Vec::with_capacity(subscription_array.len() as usize);
     for n in 0..subscription_array.len() {
         let n = (n + env.poll_seed) % subscription_array.len();
         let sub = subscription_array.index(n);
@@ -86,22 +88,25 @@ pub fn poll_oneoff<M: MemorySize + 'static>(
     wasi_try_mem_ok!(nevents.write(&memory, M::ZERO));
 
     // Function to invoke once the poll is finished
-    let process_events = |ctx: &FunctionEnvMut<'_, WasiEnv>, triggered_events: Vec<Event>| {
-        let mut env = ctx.data();
-        let mut memory = unsafe { env.memory_view(&ctx) };
+    let process_events =
+        |ctx: &FunctionEnvMut<'_, WasiEnv>, triggered_events: Vec<Event>| {
+            let mut env = ctx.data();
+            let mut memory = unsafe { env.memory_view(&ctx) };
 
-        // Process all the events that were triggered
-        let mut events_seen: u32 = 0;
-        let event_array = wasi_try_mem!(out_.slice(&memory, nsubscriptions));
-        for event in triggered_events {
-            wasi_try_mem!(event_array.index(events_seen as u64).write(event));
-            events_seen += 1;
-        }
-        let events_seen: M::Offset = events_seen.into();
-        let out_ptr = nevents.deref(&memory);
-        wasi_try_mem!(out_ptr.write(events_seen));
-        Errno::Success
-    };
+            // Process all the events that were triggered
+            let mut events_seen: u32 = 0;
+            let event_array = wasi_try_mem!(out_.slice(&memory, nsubscriptions));
+            for event in triggered_events {
+                wasi_try_mem!(event_array
+                    .index(events_seen as u64)
+                    .write(event));
+                events_seen += 1;
+            }
+            let events_seen: M::Offset = events_seen.into();
+            let out_ptr = nevents.deref(&memory);
+            wasi_try_mem!(out_ptr.write(events_seen));
+            Errno::Success
+        };
 
     // Poll and receive all the events that triggered
     poll_oneoff_internal::<M, _>(ctx, subscriptions, process_events)
@@ -114,7 +119,11 @@ struct PollBatch {
     joins: Vec<InodeValFilePollGuardJoin>,
 }
 impl PollBatch {
-    fn new(pid: WasiProcessId, tid: WasiThreadId, fds: Vec<InodeValFilePollGuard>) -> Self {
+    fn new(
+        pid: WasiProcessId,
+        tid: WasiThreadId,
+        fds: Vec<InodeValFilePollGuard>,
+    ) -> Self {
         Self {
             pid,
             tid,
@@ -128,7 +137,10 @@ impl PollBatch {
 }
 impl Future for PollBatch {
     type Output = Result<Vec<EventResult>, Errno>;
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Self::Output> {
         let pid = self.pid;
         let tid = self.tid;
         let mut done = false;
@@ -186,9 +198,12 @@ pub(crate) fn poll_fd_guard(
 
             {
                 let guard = inode.read();
-                if let Some(guard) =
-                    crate::fs::InodeValFilePollGuard::new(fd, peb, s, guard.deref())
-                {
+                if let Some(guard) = crate::fs::InodeValFilePollGuard::new(
+                    fd,
+                    peb,
+                    s,
+                    guard.deref(),
+                ) {
                     guard
                 } else {
                     return Err(Errno::Badf);
@@ -237,7 +252,8 @@ where
         .iter()
         .filter(|a| a.2.type_ == Eventtype::Clock)
         .count();
-    let mut clock_subs: Vec<(SubscriptionClock, u64)> = Vec::with_capacity(subs.len());
+    let mut clock_subs: Vec<(SubscriptionClock, u64)> =
+        Vec::with_capacity(subs.len());
     let mut time_to_sleep = Duration::MAX;
 
     // First we extract all the subscriptions into an array so that they
@@ -248,9 +264,11 @@ where
     for (fd, peb, s) in subs.iter_mut() {
         let fd = match s.type_ {
             Eventtype::FdRead => {
-                let file_descriptor = unsafe { s.data.fd_readwrite.file_descriptor };
+                let file_descriptor =
+                    unsafe { s.data.fd_readwrite.file_descriptor };
                 match file_descriptor {
-                    __WASI_STDIN_FILENO | __WASI_STDOUT_FILENO | __WASI_STDERR_FILENO => (),
+                    __WASI_STDIN_FILENO | __WASI_STDOUT_FILENO
+                    | __WASI_STDERR_FILENO => (),
                     fd => {
                         let fd_entry = match state.fs.get_fd(fd) {
                             Ok(a) => a,
@@ -266,9 +284,11 @@ where
                 file_descriptor
             }
             Eventtype::FdWrite => {
-                let file_descriptor = unsafe { s.data.fd_readwrite.file_descriptor };
+                let file_descriptor =
+                    unsafe { s.data.fd_readwrite.file_descriptor };
                 match file_descriptor {
-                    __WASI_STDIN_FILENO | __WASI_STDOUT_FILENO | __WASI_STDERR_FILENO => (),
+                    __WASI_STDIN_FILENO | __WASI_STDOUT_FILENO
+                    | __WASI_STDERR_FILENO => (),
                     fd => {
                         let fd_entry = match state.fs.get_fd(fd) {
                             Ok(a) => a,
@@ -289,10 +309,9 @@ where
                     || clock_info.clock_id == Clockid::Monotonic
                 {
                     // Ignore duplicates
-                    if clock_subs
-                        .iter()
-                        .any(|c| c.0.clock_id == clock_info.clock_id && c.1 == s.userdata)
-                    {
+                    if clock_subs.iter().any(|c| {
+                        c.0.clock_id == clock_info.clock_id && c.1 == s.userdata
+                    }) {
                         continue;
                     }
 
@@ -350,16 +369,19 @@ where
             #[allow(clippy::significant_drop_in_scrutinee)]
             for (fd, peb, s) in subs {
                 if let Some(fd) = fd {
-                    let wasi_file_ref = wasi_try_ok!(poll_fd_guard(&state, peb, fd, s));
+                    let wasi_file_ref =
+                        wasi_try_ok!(poll_fd_guard(&state, peb, fd, s));
                     fd_guards.push(wasi_file_ref);
                 }
             }
 
             if fd_guards.len() > 10 {
                 let small_list: Vec<_> = fd_guards.iter().take(10).collect();
-                tracing::Span::current().record("fd_guards", format!("{:?}...", small_list));
+                tracing::Span::current()
+                    .record("fd_guards", format!("{:?}...", small_list));
             } else {
-                tracing::Span::current().record("fd_guards", format!("{:?}", fd_guards));
+                tracing::Span::current()
+                    .record("fd_guards", format!("{:?}", fd_guards));
             }
 
             fd_guards
@@ -391,7 +413,9 @@ where
         |ctx: &FunctionEnvMut<'a, WasiEnv>| {
             // The timeout has triggered so lets add that event
             if clock_subs.is_empty() {
-                tracing::warn!("triggered_timeout (without any clock subscriptions)",);
+                tracing::warn!(
+                    "triggered_timeout (without any clock subscriptions)",
+                );
             }
             let mut evts = Vec::new();
             for (clock_info, userdata) in clock_subs {
@@ -455,15 +479,23 @@ where
                 Ok(evts) => {
                     // If its a timeout then return an event for it
                     if evts.len() == 1 {
-                        Span::current().record("seen", format!("{:?}", evts.first().unwrap()));
+                        Span::current().record(
+                            "seen",
+                            format!("{:?}", evts.first().unwrap()),
+                        );
                     } else {
-                        Span::current().record("seen", format!("trigger_cnt=({})", evts.len()));
+                        Span::current().record(
+                            "seen",
+                            format!("trigger_cnt=({})", evts.len()),
+                        );
                     }
 
                     // Process the events
                     process_events(ctx, evts)
                 }
-                Err(Errno::Timedout) => process_events(ctx, process_timeout(ctx)),
+                Err(Errno::Timedout) => {
+                    process_events(ctx, process_timeout(ctx))
+                }
                 // If nonblocking the Errno::Again needs to be turned into an empty list
                 Err(Errno::Again) => process_events(ctx, Default::default()),
                 // Otherwise process the error
@@ -476,8 +508,12 @@ where
     };
 
     // If we are rewound then its time to process them
-    if let Some(events) = unsafe { handle_rewind::<M, Result<Vec<EventResult>, Errno>>(&mut ctx) } {
-        let events = events.map(|events| events.into_iter().map(EventResult::into_event).collect());
+    if let Some(events) =
+        unsafe { handle_rewind::<M, Result<Vec<EventResult>, Errno>>(&mut ctx) }
+    {
+        let events = events.map(|events| {
+            events.into_iter().map(EventResult::into_event).collect()
+        });
         process_events(&ctx, events);
         return Ok(Errno::Success);
     }
@@ -488,7 +524,9 @@ where
         Box::pin(trigger),
     )?;
     if let AsyncifyAction::Finish(mut ctx, events) = res {
-        let events = events.map(|events| events.into_iter().map(EventResult::into_event).collect());
+        let events = events.map(|events| {
+            events.into_iter().map(EventResult::into_event).collect()
+        });
         process_events(&ctx, events);
     }
     Ok(Errno::Success)

@@ -122,7 +122,10 @@ fn endpoint_from_domain_name(domain_name: &str) -> String {
 }
 
 async fn test_if_registry_present(registry: &str) -> anyhow::Result<()> {
-    let client = WasmerClient::new(url::Url::parse(registry)?, &DEFAULT_WASMER_CLI_USER_AGENT)?;
+    let client = WasmerClient::new(
+        url::Url::parse(registry)?,
+        &DEFAULT_WASMER_CLI_USER_AGENT,
+    )?;
 
     wasmer_backend_api::query::current_user(&client)
         .await
@@ -177,11 +180,17 @@ impl MultiRegistry {
     }
 
     /// Returns the login token for the registry
-    pub fn get_login_token_for_registry(&self, registry: &str) -> Option<String> {
+    pub fn get_login_token_for_registry(
+        &self,
+        registry: &str,
+    ) -> Option<String> {
         let registry_formatted = format_graphql(registry);
         self.tokens
             .iter()
-            .filter(|login| login.registry == registry || login.registry == registry_formatted)
+            .filter(|login| {
+                login.registry == registry
+                    || login.registry == registry_formatted
+            })
             .last()
             .map(|login| login.token.clone())
     }
@@ -194,8 +203,9 @@ impl MultiRegistry {
         update_current_registry: UpdateRegistry,
     ) {
         let registry_formatted = format_graphql(registry);
-        self.tokens
-            .retain(|login| !(login.registry == registry || login.registry == registry_formatted));
+        self.tokens.retain(|login| {
+            !(login.registry == registry || login.registry == registry_formatted)
+        });
         self.tokens.push(RegistryLogin {
             registry: format_graphql(registry),
             token: token.to_string(),
@@ -219,7 +229,10 @@ impl WasmerConfig {
     pub fn from_file(wasmer_dir: &Path) -> Result<Self, String> {
         let path = Self::get_file_location(wasmer_dir);
         match std::fs::read_to_string(path) {
-            Ok(config_toml) => Ok(toml::from_str(&config_toml).unwrap_or_else(|_| Self::default())),
+            Ok(config_toml) => {
+                Ok(toml::from_str(&config_toml)
+                    .unwrap_or_else(|_| Self::default()))
+            }
             Err(_e) => Ok(Self::default()),
         }
     }
@@ -227,18 +240,22 @@ impl WasmerConfig {
     /// Creates and returns the `WASMER_DIR` directory (or $HOME/.wasmer as a fallback)
     pub fn get_wasmer_dir() -> Result<PathBuf, String> {
         Ok(
-            if let Some(folder_str) = std::env::var("WASMER_DIR").ok().filter(|s| !s.is_empty()) {
+            if let Some(folder_str) =
+                std::env::var("WASMER_DIR").ok().filter(|s| !s.is_empty())
+            {
                 let folder = PathBuf::from(folder_str);
-                std::fs::create_dir_all(folder.clone())
-                    .map_err(|e| format!("cannot create config directory: {e}"))?;
+                std::fs::create_dir_all(folder.clone()).map_err(|e| {
+                    format!("cannot create config directory: {e}")
+                })?;
                 folder
             } else {
-                let home_dir =
-                    dirs::home_dir().ok_or_else(|| "cannot find home directory".to_string())?;
+                let home_dir = dirs::home_dir()
+                    .ok_or_else(|| "cannot find home directory".to_string())?;
                 let mut folder = home_dir;
                 folder.push(".wasmer");
-                std::fs::create_dir_all(folder.clone())
-                    .map_err(|e| format!("cannot create config directory: {e}"))?;
+                std::fs::create_dir_all(folder.clone()).map_err(|e| {
+                    format!("cannot create config directory: {e}")
+                })?;
                 folder
             },
         )
@@ -247,8 +264,9 @@ impl WasmerConfig {
     #[allow(unused)]
     /// Load the config based on environment variables and default config file locations.
     pub fn from_env() -> Result<Self, anyhow::Error> {
-        let dir = Self::get_wasmer_dir()
-            .map_err(|err| anyhow::anyhow!("Could not determine wasmer dir: {err}"))?;
+        let dir = Self::get_wasmer_dir().map_err(|err| {
+            anyhow::anyhow!("Could not determine wasmer dir: {err}")
+        })?;
         let file_path = Self::get_file_location(&dir);
         Self::from_file(&file_path).map_err(|err| {
             anyhow::anyhow!(
@@ -297,19 +315,25 @@ mod tests {
             "https://registry.wasmer.wtf/graphql".to_string()
         );
         assert_eq!(
-            registries.get_login_token_for_registry(&registries.get_current_registry()),
+            registries.get_login_token_for_registry(
+                &registries.get_current_registry()
+            ),
             None
         );
         registries
             .set_current_registry("https://registry.wasmer.io")
             .await;
         assert_eq!(
-            registries.get_login_token_for_registry(&registries.get_current_registry()),
+            registries.get_login_token_for_registry(
+                &registries.get_current_registry()
+            ),
             Some("token1".to_string())
         );
         registries.remove_registry("https://registry.wasmer.io");
         assert_eq!(
-            registries.get_login_token_for_registry(&registries.get_current_registry()),
+            registries.get_login_token_for_registry(
+                &registries.get_current_registry()
+            ),
             None
         );
     }

@@ -12,9 +12,11 @@ pub fn getcwd<M: MemorySize>(
     path_len: WasmPtr<M::Offset, M>,
 ) -> Errno {
     let env = ctx.data();
-    let (memory, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, mut state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
 
-    let (_, cur_dir) = wasi_try!(state.fs.get_current_dir(inodes, crate::VIRTUAL_ROOT_FD,));
+    let (_, cur_dir) =
+        wasi_try!(state.fs.get_current_dir(inodes, crate::VIRTUAL_ROOT_FD,));
     Span::current().record("path", cur_dir.as_str());
 
     let max_path_len = wasi_try_mem!(path_len.read(&memory));
@@ -27,7 +29,9 @@ pub fn getcwd<M: MemorySize>(
     Span::current().record("max_path_len", max_path_len64);
 
     let cur_dir = cur_dir.as_bytes();
-    wasi_try_mem!(path_len.write(&memory, wasi_try!(to_offset::<M>(cur_dir.len()))));
+    wasi_try_mem!(
+        path_len.write(&memory, wasi_try!(to_offset::<M>(cur_dir.len())))
+    );
     if cur_dir.len() as u64 > max_path_len64 {
         return Errno::Range;
     }

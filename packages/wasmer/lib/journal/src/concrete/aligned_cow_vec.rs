@@ -198,7 +198,11 @@ where
     type Resolver = VecResolver;
 
     #[inline]
-    fn resolve(&self, resolver: Self::Resolver, out: rkyv::Place<Self::Archived>) {
+    fn resolve(
+        &self,
+        resolver: Self::Resolver,
+        out: rkyv::Place<Self::Archived>,
+    ) {
         ArchivedVec::resolve_from_len(self.len(), resolver, out);
     }
 }
@@ -211,6 +215,9 @@ where
     #[inline]
     fn serialize(&self, serializer: &mut S) -> Result<Self::Resolver, S::Error> {
         serializer.align(Self::ALIGNMENT)?;
-        ArchivedVec::<Archived<u8>>::serialize_from_slice(self.as_slice(), serializer)
+        ArchivedVec::<Archived<u8>>::serialize_from_slice(
+            self.as_slice(),
+            serializer,
+        )
     }
 }

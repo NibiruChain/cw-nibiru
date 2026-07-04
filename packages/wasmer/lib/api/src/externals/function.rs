@@ -9,9 +9,12 @@ use crate::sys::externals::function as function_impl;
 
 use crate::exports::{ExportError, Exportable};
 use crate::store::{AsStoreMut, AsStoreRef};
-use crate::vm::{VMExtern, VMExternFunction, VMFuncRef, VMFunctionCallback, VMTrampoline};
+use crate::vm::{
+    VMExtern, VMExternFunction, VMFuncRef, VMFunctionCallback, VMTrampoline,
+};
 use crate::{
-    Extern, FunctionEnv, FunctionEnvMut, FunctionType, RuntimeError, TypedFunction, Value,
+    Extern, FunctionEnv, FunctionEnvMut, FunctionType, RuntimeError,
+    TypedFunction, Value,
 };
 use wasmer_types::RawValue;
 
@@ -97,12 +100,16 @@ impl Function {
     pub fn new<FT, F>(store: &mut impl AsStoreMut, ty: FT, func: F) -> Self
     where
         FT: Into<FunctionType>,
-        F: Fn(&[Value]) -> Result<Vec<Value>, RuntimeError> + 'static + Send + Sync,
+        F: Fn(&[Value]) -> Result<Vec<Value>, RuntimeError>
+            + 'static
+            + Send
+            + Sync,
     {
         let env = FunctionEnv::new(&mut store.as_store_mut(), ());
-        let wrapped_func = move |_env: FunctionEnvMut<()>,
-                                 args: &[Value]|
-              -> Result<Vec<Value>, RuntimeError> { func(args) };
+        let wrapped_func =
+            move |_env: FunctionEnvMut<()>,
+                  args: &[Value]|
+                  -> Result<Vec<Value>, RuntimeError> { func(args) };
         Self::new_with_env(store, &env, ty, wrapped_func)
     }
 
@@ -319,7 +326,10 @@ impl Function {
         self.0.vm_funcref(store)
     }
 
-    pub(crate) unsafe fn from_vm_funcref(store: &mut impl AsStoreMut, funcref: VMFuncRef) -> Self {
+    pub(crate) unsafe fn from_vm_funcref(
+        store: &mut impl AsStoreMut,
+        funcref: VMFuncRef,
+    ) -> Self {
         Self(function_impl::Function::from_vm_funcref(store, funcref))
     }
 
@@ -445,7 +455,10 @@ impl Function {
         Ok(TypedFunction::new(store, self.clone()))
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, vm_extern: VMExternFunction) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_extern: VMExternFunction,
+    ) -> Self {
         Self(function_impl::Function::from_vm_extern(store, vm_extern))
     }
 
@@ -462,7 +475,9 @@ impl Function {
 impl std::cmp::Eq for Function {}
 
 impl<'a> Exportable<'a> for Function {
-    fn get_self_from_extern(_extern: &'a Extern) -> Result<&'a Self, ExportError> {
+    fn get_self_from_extern(
+        _extern: &'a Extern,
+    ) -> Result<&'a Self, ExportError> {
         match _extern {
             Extern::Function(func) => Ok(func),
             _ => Err(ExportError::IncompatibleType),

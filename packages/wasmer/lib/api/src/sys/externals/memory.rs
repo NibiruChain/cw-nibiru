@@ -8,7 +8,8 @@ use std::{
 use tracing::warn;
 use wasmer_types::Pages;
 use wasmer_vm::{
-    LinearMemory, MemoryError, StoreHandle, ThreadConditionsHandle, VMExtern, VMMemory,
+    LinearMemory, MemoryError, StoreHandle, ThreadConditionsHandle, VMExtern,
+    VMMemory,
 };
 
 use crate::{
@@ -25,7 +26,10 @@ pub struct Memory {
 }
 
 impl Memory {
-    pub fn new(store: &mut impl AsStoreMut, ty: MemoryType) -> Result<Self, MemoryError> {
+    pub fn new(
+        store: &mut impl AsStoreMut,
+        ty: MemoryType,
+    ) -> Result<Self, MemoryError> {
         let mut store = store.as_store_mut();
         let tunables = store.engine().tunables();
         let style = tunables.memory_style(&ty);
@@ -36,7 +40,10 @@ impl Memory {
         })
     }
 
-    pub fn new_from_existing(new_store: &mut impl AsStoreMut, memory: VMMemory) -> Self {
+    pub fn new_from_existing(
+        new_store: &mut impl AsStoreMut,
+        memory: VMMemory,
+    ) -> Self {
         let handle = StoreHandle::new(new_store.objects_mut(), memory);
         Self::from_vm_extern(new_store, handle.internal_handle())
     }
@@ -71,10 +78,16 @@ impl Memory {
         Ok(())
     }
 
-    pub(crate) fn from_vm_extern(store: &impl AsStoreRef, vm_extern: VMExternMemory) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &impl AsStoreRef,
+        vm_extern: VMExternMemory,
+    ) -> Self {
         Self {
             handle: unsafe {
-                StoreHandle::from_internal(store.as_store_ref().objects().id(), vm_extern)
+                StoreHandle::from_internal(
+                    store.as_store_ref().objects().id(),
+                    vm_extern,
+                )
             },
         }
     }
@@ -86,7 +99,10 @@ impl Memory {
 
     /// Cloning memory will create another reference to the same memory that
     /// can be put into a new store
-    pub fn try_clone(&self, store: &impl AsStoreRef) -> Result<VMMemory, MemoryError> {
+    pub fn try_clone(
+        &self,
+        store: &impl AsStoreRef,
+    ) -> Result<VMMemory, MemoryError> {
         let mem = self.handle.get(store.as_store_ref().objects());
         let cloned = mem.try_clone()?;
         Ok(cloned.into())
@@ -102,7 +118,10 @@ impl Memory {
         mem.copy()
     }
 
-    pub fn as_shared(&self, store: &impl AsStoreRef) -> Option<crate::SharedMemory> {
+    pub fn as_shared(
+        &self,
+        store: &impl AsStoreRef,
+    ) -> Option<crate::SharedMemory> {
         let mem = self.handle.get(store.as_store_ref().objects());
         let conds = mem.thread_conditions()?.downgrade();
 
@@ -147,23 +166,33 @@ impl crate::externals::memory::SharedMemoryOps for ThreadConditionsHandle {
                 timeout,
             )
             .map_err(|e| match e {
-                wasmer_vm::WaiterError::Unimplemented => crate::AtomicsError::Unimplemented,
-                wasmer_vm::WaiterError::TooManyWaiters => crate::AtomicsError::TooManyWaiters,
-                wasmer_vm::WaiterError::AtomicsDisabled => crate::AtomicsError::AtomicsDisabled,
+                wasmer_vm::WaiterError::Unimplemented => {
+                    crate::AtomicsError::Unimplemented
+                }
+                wasmer_vm::WaiterError::TooManyWaiters => {
+                    crate::AtomicsError::TooManyWaiters
+                }
+                wasmer_vm::WaiterError::AtomicsDisabled => {
+                    crate::AtomicsError::AtomicsDisabled
+                }
                 _ => crate::AtomicsError::Unimplemented,
             })
     }
 
     fn disable_atomics(&self) -> Result<(), MemoryError> {
         self.upgrade()
-            .ok_or_else(|| MemoryError::Generic("memory was dropped".to_string()))?
+            .ok_or_else(|| {
+                MemoryError::Generic("memory was dropped".to_string())
+            })?
             .disable_atomics();
         Ok(())
     }
 
     fn wake_all_atomic_waiters(&self) -> Result<(), MemoryError> {
         self.upgrade()
-            .ok_or_else(|| MemoryError::Generic("memory was dropped".to_string()))?
+            .ok_or_else(|| {
+                MemoryError::Generic("memory was dropped".to_string())
+            })?
             .wake_all_atomic_waiters();
         Ok(())
     }
@@ -186,7 +215,11 @@ pub(crate) struct MemoryBuffer<'a> {
 }
 
 impl<'a> MemoryBuffer<'a> {
-    pub(crate) fn read(&self, offset: u64, buf: &mut [u8]) -> Result<(), MemoryAccessError> {
+    pub(crate) fn read(
+        &self,
+        offset: u64,
+        buf: &mut [u8],
+    ) -> Result<(), MemoryAccessError> {
         let end = offset
             .checked_add(buf.len() as u64)
             .ok_or(MemoryAccessError::Overflow)?;
@@ -200,7 +233,11 @@ impl<'a> MemoryBuffer<'a> {
             return Err(MemoryAccessError::HeapOutOfBounds);
         }
         unsafe {
-            volatile_memcpy_read(self.base.add(offset as usize), buf.as_mut_ptr(), buf.len());
+            volatile_memcpy_read(
+                self.base.add(offset as usize),
+                buf.as_mut_ptr(),
+                buf.len(),
+            );
         }
         Ok(())
     }
@@ -224,13 +261,21 @@ impl<'a> MemoryBuffer<'a> {
         }
         let buf_ptr = buf.as_mut_ptr() as *mut u8;
         unsafe {
-            volatile_memcpy_read(self.base.add(offset as usize), buf_ptr, buf.len());
+            volatile_memcpy_read(
+                self.base.add(offset as usize),
+                buf_ptr,
+                buf.len(),
+            );
         }
 
         Ok(unsafe { slice::from_raw_parts_mut(buf_ptr, buf.len()) })
     }
 
-    pub(crate) fn write(&self, offset: u64, data: &[u8]) -> Result<(), MemoryAccessError> {
+    pub(crate) fn write(
+        &self,
+        offset: u64,
+        data: &[u8],
+    ) -> Result<(), MemoryAccessError> {
         let end = offset
             .checked_add(data.len() as u64)
             .ok_or(MemoryAccessError::Overflow)?;
@@ -244,7 +289,11 @@ impl<'a> MemoryBuffer<'a> {
             return Err(MemoryAccessError::HeapOutOfBounds);
         }
         unsafe {
-            volatile_memcpy_write(data.as_ptr(), self.base.add(offset as usize), data.len());
+            volatile_memcpy_write(
+                data.as_ptr(),
+                self.base.add(offset as usize),
+                data.len(),
+            );
         }
         Ok(())
     }
@@ -258,9 +307,17 @@ impl<'a> MemoryBuffer<'a> {
 // with a fixed length: they should compile down to a single load/store
 // instruction for small (8/16/32/64-bit) copies.
 #[inline]
-unsafe fn volatile_memcpy_read(mut src: *const u8, mut dst: *mut u8, mut len: usize) {
+unsafe fn volatile_memcpy_read(
+    mut src: *const u8,
+    mut dst: *mut u8,
+    mut len: usize,
+) {
     #[inline]
-    unsafe fn copy_one<T>(src: &mut *const u8, dst: &mut *mut u8, len: &mut usize) {
+    unsafe fn copy_one<T>(
+        src: &mut *const u8,
+        dst: &mut *mut u8,
+        len: &mut usize,
+    ) {
         #[repr(packed)]
         struct Unaligned<T>(T);
         let val = (*src as *const Unaligned<T>).read_volatile();
@@ -284,9 +341,17 @@ unsafe fn volatile_memcpy_read(mut src: *const u8, mut dst: *mut u8, mut len: us
     }
 }
 #[inline]
-unsafe fn volatile_memcpy_write(mut src: *const u8, mut dst: *mut u8, mut len: usize) {
+unsafe fn volatile_memcpy_write(
+    mut src: *const u8,
+    mut dst: *mut u8,
+    mut len: usize,
+) {
     #[inline]
-    unsafe fn copy_one<T>(src: &mut *const u8, dst: &mut *mut u8, len: &mut usize) {
+    unsafe fn copy_one<T>(
+        src: &mut *const u8,
+        dst: &mut *mut u8,
+        len: &mut usize,
+    ) {
         #[repr(packed)]
         struct Unaligned<T>(T);
         let val = (*src as *const Unaligned<T>).read();

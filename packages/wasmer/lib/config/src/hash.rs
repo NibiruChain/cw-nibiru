@@ -50,7 +50,9 @@ impl schemars::JsonSchema for Sha256Hash {
         "Sha256Hash".to_string()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(
+        gen: &mut schemars::gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
         String::json_schema(gen)
     }
 }
@@ -79,7 +81,8 @@ mod tests {
 
     #[test]
     fn hash_sha256_parse_roundtrip() {
-        let input = "c355cd53795b9b481f7eb2b5f4f6c8cf73631bdc343723a579d671e32db70b3c";
+        let input =
+            "c355cd53795b9b481f7eb2b5f4f6c8cf73631bdc343723a579d671e32db70b3c";
         let h1 = input
             .parse::<Sha256Hash>()
             .expect("string should parse to hash");
@@ -87,8 +90,9 @@ mod tests {
         assert_eq!(
             h1.0,
             [
-                195, 85, 205, 83, 121, 91, 155, 72, 31, 126, 178, 181, 244, 246, 200, 207, 115, 99,
-                27, 220, 52, 55, 35, 165, 121, 214, 113, 227, 45, 183, 11, 60
+                195, 85, 205, 83, 121, 91, 155, 72, 31, 126, 178, 181, 244, 246,
+                200, 207, 115, 99, 27, 220, 52, 55, 35, 165, 121, 214, 113, 227,
+                45, 183, 11, 60
             ],
         );
 
@@ -98,14 +102,16 @@ mod tests {
     #[test]
     fn hash_sha256_parse_fails() {
         let res1 =
-            "c355cd53795b9b481f7eb2b5f4f6c8cf73631bdc343723a579d671e32db70b3".parse::<Sha256Hash>();
+            "c355cd53795b9b481f7eb2b5f4f6c8cf73631bdc343723a579d671e32db70b3"
+                .parse::<Sha256Hash>();
         assert!(res1.is_err());
 
         let res2 = "".parse::<Sha256Hash>();
         assert!(res2.is_err());
 
-        let res3 = "öööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööö"
-            .parse::<Sha256Hash>();
+        let res3 =
+            "öööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööö"
+                .parse::<Sha256Hash>();
         assert!(res3.is_err());
     }
 }

@@ -63,7 +63,9 @@ pub fn stack_restore<M: MemorySize>(
                 "snapshot stack restore failed - the snapshot can not be found and hence restored (hash={})",
                 snapshot.hash()
             );
-            OnCalledAction::Trap(Box::new(WasiError::Exit(Errno::Unknown.into())))
+            OnCalledAction::Trap(Box::new(WasiError::Exit(
+                Errno::Unknown.into(),
+            )))
         }
     });
 

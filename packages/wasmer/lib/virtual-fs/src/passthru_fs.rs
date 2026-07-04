@@ -34,7 +34,11 @@ impl FileSystem for PassthruFileSystem {
         self.fs.remove_dir(path)
     }
 
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<()>> {
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<()>> {
         Box::pin(async { self.fs.rename(from, to).await })
     }
 

@@ -37,8 +37,11 @@ macro_rules! make_spinner {
 macro_rules! spinner_ok {
     ($pb:expr, $msg: expr) => {
         $pb.set_style(
-            indicatif::ProgressStyle::with_template(&format!("{} {{msg}}", "✔".green().bold()))
-                .unwrap(),
+            indicatif::ProgressStyle::with_template(&format!(
+                "{} {{msg}}",
+                "✔".green().bold()
+            ))
+            .unwrap(),
         );
         $pb.finish_with_message(format!("{}", $msg.bold()));
     };
@@ -47,8 +50,11 @@ macro_rules! spinner_ok {
 macro_rules! spinner_err {
     ($pb:expr, $msg: expr) => {
         $pb.set_style(
-            indicatif::ProgressStyle::with_template(&format!("{} {{msg}}", "✘".red().bold()))
-                .unwrap(),
+            indicatif::ProgressStyle::with_template(&format!(
+                "{} {{msg}}",
+                "✘".red().bold()
+            ))
+            .unwrap(),
         );
         $pb.finish_with_message(format!("{}", $msg.bold()));
     };

@@ -142,46 +142,54 @@ impl RemoteNetworkingClient {
         RX: AsyncRead + Send + 'static,
     {
         let tx = FramedWrite::new(tx, LengthDelimitedCodec::new());
-        let tx: Pin<Box<dyn Sink<MessageRequest, Error = std::io::Error> + Send + 'static>> =
-            match format {
-                FrameSerializationFormat::Bincode => {
-                    Box::pin(SymmetricallyFramed::new(tx, SymmetricalBincode::default()))
-                }
-                #[cfg(feature = "json")]
-                FrameSerializationFormat::Json => {
-                    Box::pin(SymmetricallyFramed::new(tx, SymmetricalJson::default()))
-                }
-                #[cfg(feature = "messagepack")]
-                FrameSerializationFormat::MessagePack => Box::pin(SymmetricallyFramed::new(
-                    tx,
-                    SymmetricalMessagePack::default(),
-                )),
-                #[cfg(feature = "cbor")]
-                FrameSerializationFormat::Cbor => {
-                    Box::pin(SymmetricallyFramed::new(tx, SymmetricalCbor::default()))
-                }
-            };
+        let tx: Pin<
+            Box<
+                dyn Sink<MessageRequest, Error = std::io::Error>
+                    + Send
+                    + 'static,
+            >,
+        > = match format {
+            FrameSerializationFormat::Bincode => Box::pin(
+                SymmetricallyFramed::new(tx, SymmetricalBincode::default()),
+            ),
+            #[cfg(feature = "json")]
+            FrameSerializationFormat::Json => Box::pin(
+                SymmetricallyFramed::new(tx, SymmetricalJson::default()),
+            ),
+            #[cfg(feature = "messagepack")]
+            FrameSerializationFormat::MessagePack => Box::pin(
+                SymmetricallyFramed::new(tx, SymmetricalMessagePack::default()),
+            ),
+            #[cfg(feature = "cbor")]
+            FrameSerializationFormat::Cbor => Box::pin(
+                SymmetricallyFramed::new(tx, SymmetricalCbor::default()),
+            ),
+        };
 
         let rx = FramedRead::new(rx, LengthDelimitedCodec::new());
-        let rx: Pin<Box<dyn Stream<Item = std::io::Result<MessageResponse>> + Send + 'static>> =
-            match format {
-                FrameSerializationFormat::Bincode => {
-                    Box::pin(SymmetricallyFramed::new(rx, SymmetricalBincode::default()))
-                }
-                #[cfg(feature = "json")]
-                FrameSerializationFormat::Json => {
-                    Box::pin(SymmetricallyFramed::new(rx, SymmetricalJson::default()))
-                }
-                #[cfg(feature = "messagepack")]
-                FrameSerializationFormat::MessagePack => Box::pin(SymmetricallyFramed::new(
-                    rx,
-                    SymmetricalMessagePack::default(),
-                )),
-                #[cfg(feature = "cbor")]
-                FrameSerializationFormat::Cbor => {
-                    Box::pin(SymmetricallyFramed::new(rx, SymmetricalCbor::default()))
-                }
-            };
+        let rx: Pin<
+            Box<
+                dyn Stream<Item = std::io::Result<MessageResponse>>
+                    + Send
+                    + 'static,
+            >,
+        > = match format {
+            FrameSerializationFormat::Bincode => Box::pin(
+                SymmetricallyFramed::new(rx, SymmetricalBincode::default()),
+            ),
+            #[cfg(feature = "json")]
+            FrameSerializationFormat::Json => Box::pin(
+                SymmetricallyFramed::new(rx, SymmetricalJson::default()),
+            ),
+            #[cfg(feature = "messagepack")]
+            FrameSerializationFormat::MessagePack => Box::pin(
+                SymmetricallyFramed::new(rx, SymmetricalMessagePack::default()),
+            ),
+            #[cfg(feature = "cbor")]
+            FrameSerializationFormat::Cbor => Box::pin(
+                SymmetricallyFramed::new(rx, SymmetricalCbor::default()),
+            ),
+        };
 
         let (tx_work, rx_work) = mpsc::unbounded_channel();
         let tx_wakers = RemoteTxWakers::default();
@@ -201,11 +209,15 @@ impl RemoteNetworkingClient {
     #[cfg(feature = "hyper")]
     pub fn new_from_hyper_ws_io(
         tx: futures_util::stream::SplitSink<
-            hyper_tungstenite::WebSocketStream<TokioIo<hyper::upgrade::Upgraded>>,
+            hyper_tungstenite::WebSocketStream<
+                TokioIo<hyper::upgrade::Upgraded>,
+            >,
             hyper_tungstenite::tungstenite::Message,
         >,
         rx: futures_util::stream::SplitStream<
-            hyper_tungstenite::WebSocketStream<TokioIo<hyper::upgrade::Upgraded>>,
+            hyper_tungstenite::WebSocketStream<
+                TokioIo<hyper::upgrade::Upgraded>,
+            >,
         >,
         format: FrameSerializationFormat,
     ) -> (Self, RemoteNetworkingClientDriver) {
@@ -292,7 +304,10 @@ pin_project_lite::pin_project! {
 impl Future for RemoteNetworkingClientDriver {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Self::Output> {
         // This guard will be held while the pipeline is not currently
         // stalled by some back pressure. It is only acquired when there
         // is background tasks being processed
@@ -302,7 +317,9 @@ impl Future for RemoteNetworkingClientDriver {
         // and all the background tasks
         loop {
             // Background tasks are sent to this driver in certain circumstances
-            while let Poll::Ready(Some(work)) = Pin::new(&mut self.more_work).poll_recv(cx) {
+            while let Poll::Ready(Some(work)) =
+                Pin::new(&mut self.more_work).poll_recv(cx)
+            {
                 self.tasks.push_back(work);
             }
 
@@ -314,7 +331,8 @@ impl Future for RemoteNetworkingClientDriver {
                     not_stalled_guard.take();
                 }
                 Poll::Pending if not_stalled_guard.is_none() => {
-                    if let Ok(guard) = self.common.stall.clone().try_lock_owned() {
+                    if let Ok(guard) = self.common.stall.clone().try_lock_owned()
+                    {
                         not_stalled_guard.replace(guard);
                     } else {
                         return Poll::Pending;
@@ -345,7 +363,11 @@ impl Future for RemoteNetworkingClientDriver {
                             self.tasks.push_back(Box::pin(async move {
                                 tx.send(data).await.ok();
 
-                                if let Some(h) = common.handlers.lock().unwrap().get_mut(&socket_id)
+                                if let Some(h) = common
+                                    .handlers
+                                    .lock()
+                                    .unwrap()
+                                    .get_mut(&socket_id)
                                 {
                                     h.push_interest(InterestType::Readable)
                                 }
@@ -357,7 +379,11 @@ impl Future for RemoteNetworkingClientDriver {
                             addr,
                         } => {
                             let tx = {
-                                let guard = self.common.recv_with_addr_tx.lock().unwrap();
+                                let guard = self
+                                    .common
+                                    .recv_with_addr_tx
+                                    .lock()
+                                    .unwrap();
                                 match guard.get(&socket_id) {
                                     Some(tx) => tx.clone(),
                                     None => continue,
@@ -367,7 +393,11 @@ impl Future for RemoteNetworkingClientDriver {
                             self.tasks.push_back(Box::pin(async move {
                                 tx.send(DataWithAddr { data, addr }).await.ok();
 
-                                if let Some(h) = common.handlers.lock().unwrap().get_mut(&socket_id)
+                                if let Some(h) = common
+                                    .handlers
+                                    .lock()
+                                    .unwrap()
+                                    .get_mut(&socket_id)
                                 {
                                     h.push_interest(InterestType::Readable)
                                 }
@@ -386,8 +416,12 @@ impl Future for RemoteNetworkingClientDriver {
                             self.tasks.push_back(Box::pin(async move {
                                 tx.send(amount).await.ok();
                             }));
-                            if let Some(h) =
-                                self.common.handlers.lock().unwrap().get_mut(&socket_id)
+                            if let Some(h) = self
+                                .common
+                                .handlers
+                                .lock()
+                                .unwrap()
+                                .get_mut(&socket_id)
                             {
                                 h.push_interest(InterestType::Writable)
                             }
@@ -398,15 +432,23 @@ impl Future for RemoteNetworkingClientDriver {
                             NetworkError::ConnectionAborted
                             | NetworkError::ConnectionReset
                             | NetworkError::BrokenPipe => {
-                                if let Some(h) =
-                                    self.common.handlers.lock().unwrap().get_mut(&socket_id)
+                                if let Some(h) = self
+                                    .common
+                                    .handlers
+                                    .lock()
+                                    .unwrap()
+                                    .get_mut(&socket_id)
                                 {
                                     h.push_interest(InterestType::Closed)
                                 }
                             }
                             _ => {
-                                if let Some(h) =
-                                    self.common.handlers.lock().unwrap().get_mut(&socket_id)
+                                if let Some(h) = self
+                                    .common
+                                    .handlers
+                                    .lock()
+                                    .unwrap()
+                                    .get_mut(&socket_id)
                                 {
                                     h.push_interest(InterestType::Writable)
                                 }
@@ -419,7 +461,12 @@ impl Future for RemoteNetworkingClientDriver {
                         } => {
                             let common = self.common.clone();
                             self.tasks.push_back(Box::pin(async move {
-                                let tx = common.accept_tx.lock().unwrap().get(&socket_id).cloned();
+                                let tx = common
+                                    .accept_tx
+                                    .lock()
+                                    .unwrap()
+                                    .get(&socket_id)
+                                    .cloned();
                                 if let Some(tx) = tx {
                                     tx.send(SocketWithAddr {
                                         socket: child_id,
@@ -429,21 +476,30 @@ impl Future for RemoteNetworkingClientDriver {
                                     .ok();
                                 }
 
-                                if let Some(h) = common.handlers.lock().unwrap().get_mut(&socket_id)
+                                if let Some(h) = common
+                                    .handlers
+                                    .lock()
+                                    .unwrap()
+                                    .get_mut(&socket_id)
                                 {
                                     h.push_interest(InterestType::Readable)
                                 }
                             }));
                         }
                         MessageResponse::Closed { socket_id } => {
-                            if let Some(h) =
-                                self.common.handlers.lock().unwrap().get_mut(&socket_id)
+                            if let Some(h) = self
+                                .common
+                                .handlers
+                                .lock()
+                                .unwrap()
+                                .get_mut(&socket_id)
                             {
                                 h.push_interest(InterestType::Closed)
                             }
                         }
                         MessageResponse::ResponseToRequest { req_id, res } => {
-                            let mut requests = self.common.requests.lock().unwrap();
+                            let mut requests =
+                                self.common.requests.lock().unwrap();
                             if let Some(request) = requests.remove(&req_id) {
                                 request.try_send(res).ok();
                             }
@@ -496,9 +552,9 @@ fn tx_waker_clone(s: &TxWaker) -> RawWaker {
 
 const VTABLE: RawWakerVTable = unsafe {
     RawWakerVTable::new(
-        |s| tx_waker_clone(&*(s as *const TxWaker)),  // clone
-        |s| tx_waker_wake(&*(s as *const TxWaker)),   // wake
-        |s| (*(s as *const TxWaker)).wake_now(),      // wake by ref (don't decrease refcount)
+        |s| tx_waker_clone(&*(s as *const TxWaker)), // clone
+        |s| tx_waker_wake(&*(s as *const TxWaker)),  // wake
+        |s| (*(s as *const TxWaker)).wake_now(), // wake by ref (don't decrease refcount)
         |s| drop(Arc::from_raw(s as *const TxWaker)), // decrease refcount
     )
 };
@@ -543,7 +599,8 @@ struct RemoteCommon {
     accept_tx: Mutex<SocketMap<mpsc::Sender<SocketWithAddr>>>,
     sent_tx: Mutex<SocketMap<mpsc::Sender<u64>>>,
     #[debug(ignore)]
-    handlers: Mutex<SocketMap<Box<dyn virtual_mio::InterestHandler + Send + Sync>>>,
+    handlers:
+        Mutex<SocketMap<Box<dyn virtual_mio::InterestHandler + Send + Sync>>>,
 
     // The stall guard will prevent reads while its held and there are background tasks running
     // (the idea behind this is to create back pressure so that the task list infinitely grow)
@@ -609,7 +666,9 @@ impl VirtualNetworking for RemoteNetworkingClient {
             ResponseType::Err(err) => Err(err),
             ResponseType::None => Ok(()),
             res => {
-                tracing::debug!("invalid response to unbridge request - {res:?}");
+                tracing::debug!(
+                    "invalid response to unbridge request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -620,7 +679,9 @@ impl VirtualNetworking for RemoteNetworkingClient {
             ResponseType::Err(err) => Err(err),
             ResponseType::IpAddressList(ips) => Ok(ips),
             res => {
-                tracing::debug!("invalid response to DHCP acquire request - {res:?}");
+                tracing::debug!(
+                    "invalid response to DHCP acquire request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -697,7 +758,9 @@ impl VirtualNetworking for RemoteNetworkingClient {
             ResponseType::Err(err) => Err(err),
             ResponseType::RouteList(routes) => Ok(routes),
             res => {
-                tracing::debug!("invalid response to route list request - {res:?}");
+                tracing::debug!(
+                    "invalid response to route list request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -712,9 +775,13 @@ impl VirtualNetworking for RemoteNetworkingClient {
         match self.common.io_iface(RequestType::BindRaw(socket_id)).await {
             ResponseType::Err(err) => Err(err),
             ResponseType::None => Ok(Box::new(self.new_socket(socket_id))),
-            ResponseType::Socket(socket_id) => Ok(Box::new(self.new_socket(socket_id))),
+            ResponseType::Socket(socket_id) => {
+                Ok(Box::new(self.new_socket(socket_id)))
+            }
             res => {
-                tracing::debug!("invalid response to bind RAw request - {res:?}");
+                tracing::debug!(
+                    "invalid response to bind RAw request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -751,7 +818,9 @@ impl VirtualNetworking for RemoteNetworkingClient {
                 Ok(Box::new(socket))
             }
             res => {
-                tracing::debug!("invalid response to listen TCP request - {res:?}");
+                tracing::debug!(
+                    "invalid response to listen TCP request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -780,15 +849,22 @@ impl VirtualNetworking for RemoteNetworkingClient {
         {
             ResponseType::Err(err) => Err(err),
             ResponseType::None => Ok(Box::new(self.new_socket(socket_id))),
-            ResponseType::Socket(socket_id) => Ok(Box::new(self.new_socket(socket_id))),
+            ResponseType::Socket(socket_id) => {
+                Ok(Box::new(self.new_socket(socket_id)))
+            }
             res => {
-                tracing::debug!("invalid response to bind UDP request - {res:?}");
+                tracing::debug!(
+                    "invalid response to bind UDP request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
     }
 
-    async fn bind_icmp(&self, addr: IpAddr) -> Result<Box<dyn VirtualIcmpSocket + Sync>> {
+    async fn bind_icmp(
+        &self,
+        addr: IpAddr,
+    ) -> Result<Box<dyn VirtualIcmpSocket + Sync>> {
         let socket_id: SocketId = self
             .common
             .socket_seed
@@ -801,9 +877,13 @@ impl VirtualNetworking for RemoteNetworkingClient {
         {
             ResponseType::Err(err) => Err(err),
             ResponseType::None => Ok(Box::new(self.new_socket(socket_id))),
-            ResponseType::Socket(socket_id) => Ok(Box::new(self.new_socket(socket_id))),
+            ResponseType::Socket(socket_id) => {
+                Ok(Box::new(self.new_socket(socket_id)))
+            }
             res => {
-                tracing::debug!("invalid response to bind ICMP request - {res:?}");
+                tracing::debug!(
+                    "invalid response to bind ICMP request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -830,9 +910,13 @@ impl VirtualNetworking for RemoteNetworkingClient {
         {
             ResponseType::Err(err) => Err(err),
             ResponseType::None => Ok(Box::new(self.new_socket(socket_id))),
-            ResponseType::Socket(socket_id) => Ok(Box::new(self.new_socket(socket_id))),
+            ResponseType::Socket(socket_id) => {
+                Ok(Box::new(self.new_socket(socket_id)))
+            }
             res => {
-                tracing::debug!("invalid response to connect TCP request - {res:?}");
+                tracing::debug!(
+                    "invalid response to connect TCP request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -966,7 +1050,9 @@ impl VirtualIoSource for RemoteSocket {
             return Poll::Ready(Ok(total));
         }
         match self.rx_recv_with_addr.poll_recv(cx) {
-            Poll::Ready(Some(data)) => self.buffer_recv_with_addr.push_back(data),
+            Poll::Ready(Some(data)) => {
+                self.buffer_recv_with_addr.push_back(data)
+            }
             Poll::Ready(None) => return Poll::Ready(Ok(0)),
             Poll::Pending => {}
         }
@@ -1018,7 +1104,9 @@ impl VirtualSocket for RemoteSocket {
             ResponseType::Err(err) => Err(err),
             ResponseType::SocketAddr(addr) => Ok(addr),
             res => {
-                tracing::debug!("invalid response to address local request - {res:?}");
+                tracing::debug!(
+                    "invalid response to address local request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1049,7 +1137,9 @@ impl VirtualSocket for RemoteSocket {
 }
 
 impl VirtualTcpListener for RemoteSocket {
-    fn try_accept(&mut self) -> Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)> {
+    fn try_accept(
+        &mut self,
+    ) -> Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)> {
         // We may already have accepted a connection in the `poll_read_ready` method
         self.touch_begin_accept()?;
         let accepted = if let Some(child) = self.buffer_accept.pop_front() {
@@ -1134,7 +1224,9 @@ impl VirtualTcpListener for RemoteSocket {
             ResponseType::Err(err) => Err(err),
             ResponseType::SocketAddr(addr) => Ok(addr),
             res => {
-                tracing::debug!("invalid response to addr local request - {res:?}");
+                tracing::debug!(
+                    "invalid response to addr local request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1147,7 +1239,9 @@ impl VirtualTcpListener for RemoteSocket {
     fn ttl(&self) -> Result<u8> {
         match InlineWaker::block_on(self.io_socket(RequestType::GetTtl)) {
             ResponseType::Err(err) => Err(err),
-            ResponseType::Ttl(val) => Ok(val.try_into().map_err(|_| NetworkError::InvalidData)?),
+            ResponseType::Ttl(val) => {
+                Ok(val.try_into().map_err(|_| NetworkError::InvalidData)?)
+            }
             res => {
                 tracing::debug!("invalid response to get TTL request - {res:?}");
                 Err(NetworkError::IOError)
@@ -1195,7 +1289,10 @@ impl VirtualRawSocket for RemoteSocket {
         }
     }
 
-    fn try_recv(&mut self, buf: &mut [std::mem::MaybeUninit<u8>]) -> Result<usize> {
+    fn try_recv(
+        &mut self,
+        buf: &mut [std::mem::MaybeUninit<u8>],
+    ) -> Result<usize> {
         loop {
             if !self.rx_buffer.is_empty() {
                 let amt = self.rx_buffer.len().min(buf.len());
@@ -1206,8 +1303,12 @@ impl VirtualRawSocket for RemoteSocket {
             }
             match self.rx_recv.try_recv() {
                 Ok(data) => self.rx_buffer.extend_from_slice(&data),
-                Err(TryRecvError::Disconnected) => return Err(NetworkError::ConnectionAborted),
-                Err(TryRecvError::Empty) => return Err(NetworkError::WouldBlock),
+                Err(TryRecvError::Disconnected) => {
+                    return Err(NetworkError::ConnectionAborted)
+                }
+                Err(TryRecvError::Empty) => {
+                    return Err(NetworkError::WouldBlock)
+                }
             }
         }
     }
@@ -1217,11 +1318,14 @@ impl VirtualRawSocket for RemoteSocket {
     }
 
     fn promiscuous(&self) -> Result<bool> {
-        match InlineWaker::block_on(self.io_socket(RequestType::GetPromiscuous)) {
+        match InlineWaker::block_on(self.io_socket(RequestType::GetPromiscuous))
+        {
             ResponseType::Err(err) => Err(err),
             ResponseType::Flag(val) => Ok(val),
             res => {
-                tracing::debug!("invalid response to get promiscuous request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get promiscuous request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1261,7 +1365,9 @@ impl VirtualConnectionlessSocket for RemoteSocket {
                 buf[..amt].copy_from_slice(&received.data[..amt]);
                 Ok((amt, received.addr))
             }
-            Err(TryRecvError::Disconnected) => Err(NetworkError::ConnectionAborted),
+            Err(TryRecvError::Disconnected) => {
+                Err(NetworkError::ConnectionAborted)
+            }
             Err(TryRecvError::Empty) => Err(NetworkError::WouldBlock),
         }
     }
@@ -1277,7 +1383,9 @@ impl VirtualUdpSocket for RemoteSocket {
             ResponseType::Err(err) => Err(err),
             ResponseType::Flag(val) => Ok(val),
             res => {
-                tracing::debug!("invalid response to get broadcast request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get broadcast request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1288,7 +1396,9 @@ impl VirtualUdpSocket for RemoteSocket {
     }
 
     fn multicast_loop_v4(&self) -> Result<bool> {
-        match InlineWaker::block_on(self.io_socket(RequestType::GetMulticastLoopV4)) {
+        match InlineWaker::block_on(
+            self.io_socket(RequestType::GetMulticastLoopV4),
+        ) {
             ResponseType::Err(err) => Err(err),
             ResponseType::Flag(val) => Ok(val),
             res => {
@@ -1303,7 +1413,9 @@ impl VirtualUdpSocket for RemoteSocket {
     }
 
     fn multicast_loop_v6(&self) -> Result<bool> {
-        match InlineWaker::block_on(self.io_socket(RequestType::GetMulticastLoopV6)) {
+        match InlineWaker::block_on(
+            self.io_socket(RequestType::GetMulticastLoopV6),
+        ) {
             ResponseType::Err(err) => Err(err),
             ResponseType::Flag(val) => Ok(val),
             res => {
@@ -1318,11 +1430,15 @@ impl VirtualUdpSocket for RemoteSocket {
     }
 
     fn multicast_ttl_v4(&self) -> Result<u32> {
-        match InlineWaker::block_on(self.io_socket(RequestType::GetMulticastTtlV4)) {
+        match InlineWaker::block_on(
+            self.io_socket(RequestType::GetMulticastTtlV4),
+        ) {
             ResponseType::Err(err) => Err(err),
             ResponseType::Ttl(ttl) => Ok(ttl),
             res => {
-                tracing::debug!("invalid response to get multicast TTL v4 request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get multicast TTL v4 request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1333,7 +1449,10 @@ impl VirtualUdpSocket for RemoteSocket {
         multiaddr: std::net::Ipv4Addr,
         iface: std::net::Ipv4Addr,
     ) -> Result<()> {
-        self.io_socket_fire_and_forget(RequestType::JoinMulticastV4 { multiaddr, iface })
+        self.io_socket_fire_and_forget(RequestType::JoinMulticastV4 {
+            multiaddr,
+            iface,
+        })
     }
 
     fn leave_multicast_v4(
@@ -1341,15 +1460,32 @@ impl VirtualUdpSocket for RemoteSocket {
         multiaddr: std::net::Ipv4Addr,
         iface: std::net::Ipv4Addr,
     ) -> Result<()> {
-        self.io_socket_fire_and_forget(RequestType::LeaveMulticastV4 { multiaddr, iface })
+        self.io_socket_fire_and_forget(RequestType::LeaveMulticastV4 {
+            multiaddr,
+            iface,
+        })
     }
 
-    fn join_multicast_v6(&mut self, multiaddr: std::net::Ipv6Addr, iface: u32) -> Result<()> {
-        self.io_socket_fire_and_forget(RequestType::JoinMulticastV6 { multiaddr, iface })
+    fn join_multicast_v6(
+        &mut self,
+        multiaddr: std::net::Ipv6Addr,
+        iface: u32,
+    ) -> Result<()> {
+        self.io_socket_fire_and_forget(RequestType::JoinMulticastV6 {
+            multiaddr,
+            iface,
+        })
     }
 
-    fn leave_multicast_v6(&mut self, multiaddr: std::net::Ipv6Addr, iface: u32) -> Result<()> {
-        self.io_socket_fire_and_forget(RequestType::LeaveMulticastV6 { multiaddr, iface })
+    fn leave_multicast_v6(
+        &mut self,
+        multiaddr: std::net::Ipv6Addr,
+        iface: u32,
+    ) -> Result<()> {
+        self.io_socket_fire_and_forget(RequestType::LeaveMulticastV6 {
+            multiaddr,
+            iface,
+        })
     }
 
     fn addr_peer(&self) -> Result<Option<SocketAddr>> {
@@ -1358,7 +1494,9 @@ impl VirtualUdpSocket for RemoteSocket {
             ResponseType::None => Ok(None),
             ResponseType::SocketAddr(addr) => Ok(Some(addr)),
             res => {
-                tracing::debug!("invalid response to addr peer request - {res:?}");
+                tracing::debug!(
+                    "invalid response to addr peer request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1378,7 +1516,9 @@ impl VirtualConnectedSocket for RemoteSocket {
             ResponseType::None => Ok(None),
             ResponseType::Duration(val) => Ok(Some(val)),
             res => {
-                tracing::debug!("invalid response to get linger request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get linger request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1421,7 +1561,10 @@ impl VirtualConnectedSocket for RemoteSocket {
         self.io_socket_fire_and_forget(RequestType::Close)
     }
 
-    fn try_recv(&mut self, buf: &mut [std::mem::MaybeUninit<u8>]) -> Result<usize> {
+    fn try_recv(
+        &mut self,
+        buf: &mut [std::mem::MaybeUninit<u8>],
+    ) -> Result<usize> {
         loop {
             if !self.rx_buffer.is_empty() {
                 let amt = self.rx_buffer.len().min(buf.len());
@@ -1432,8 +1575,12 @@ impl VirtualConnectedSocket for RemoteSocket {
             }
             match self.rx_recv.try_recv() {
                 Ok(data) => self.rx_buffer.extend_from_slice(&data),
-                Err(TryRecvError::Disconnected) => return Err(NetworkError::ConnectionAborted),
-                Err(TryRecvError::Empty) => return Err(NetworkError::WouldBlock),
+                Err(TryRecvError::Disconnected) => {
+                    return Err(NetworkError::ConnectionAborted)
+                }
+                Err(TryRecvError::Empty) => {
+                    return Err(NetworkError::WouldBlock)
+                }
             }
         }
     }
@@ -1445,11 +1592,16 @@ impl VirtualTcpSocket for RemoteSocket {
     }
 
     fn recv_buf_size(&self) -> Result<usize> {
-        match InlineWaker::block_on(self.io_socket(RequestType::GetRecvBufSize)) {
+        match InlineWaker::block_on(self.io_socket(RequestType::GetRecvBufSize))
+        {
             ResponseType::Err(err) => Err(err),
-            ResponseType::Amount(amt) => Ok(amt.try_into().map_err(|_| NetworkError::IOError)?),
+            ResponseType::Amount(amt) => {
+                Ok(amt.try_into().map_err(|_| NetworkError::IOError)?)
+            }
             res => {
-                tracing::debug!("invalid response to get recv buf size request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get recv buf size request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1460,11 +1612,16 @@ impl VirtualTcpSocket for RemoteSocket {
     }
 
     fn send_buf_size(&self) -> Result<usize> {
-        match InlineWaker::block_on(self.io_socket(RequestType::GetSendBufSize)) {
+        match InlineWaker::block_on(self.io_socket(RequestType::GetSendBufSize))
+        {
             ResponseType::Err(err) => Err(err),
-            ResponseType::Amount(val) => Ok(val.try_into().map_err(|_| NetworkError::IOError)?),
+            ResponseType::Amount(val) => {
+                Ok(val.try_into().map_err(|_| NetworkError::IOError)?)
+            }
             res => {
-                tracing::debug!("invalid response to get send buf size request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get send buf size request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1479,7 +1636,9 @@ impl VirtualTcpSocket for RemoteSocket {
             ResponseType::Err(err) => Err(err),
             ResponseType::Flag(val) => Ok(val),
             res => {
-                tracing::debug!("invalid response to get nodelay request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get nodelay request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1494,7 +1653,9 @@ impl VirtualTcpSocket for RemoteSocket {
             ResponseType::Err(err) => Err(err),
             ResponseType::Flag(val) => Ok(val),
             res => {
-                tracing::debug!("invalid response to get nodelay request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get nodelay request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1509,7 +1670,9 @@ impl VirtualTcpSocket for RemoteSocket {
             ResponseType::Err(err) => Err(err),
             ResponseType::Flag(val) => Ok(val),
             res => {
-                tracing::debug!("invalid response to get nodelay request - {res:?}");
+                tracing::debug!(
+                    "invalid response to get nodelay request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }
@@ -1520,7 +1683,9 @@ impl VirtualTcpSocket for RemoteSocket {
             ResponseType::Err(err) => Err(err),
             ResponseType::SocketAddr(addr) => Ok(addr),
             res => {
-                tracing::debug!("invalid response to addr peer request - {res:?}");
+                tracing::debug!(
+                    "invalid response to addr peer request - {res:?}"
+                );
                 Err(NetworkError::IOError)
             }
         }

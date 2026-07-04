@@ -14,13 +14,13 @@ pub use self::{
     filesystem_source::FileSystemSource,
     in_memory_source::InMemorySource,
     inputs::{
-        Command, Dependency, DistributionInfo, FileSystemMapping, PackageInfo, PackageSummary,
-        WebcHash,
+        Command, Dependency, DistributionInfo, FileSystemMapping, PackageInfo,
+        PackageSummary, WebcHash,
     },
     multi_source::{MultiSource, MultiSourceStrategy},
     outputs::{
-        DependencyGraph, Edge, ItemLocation, Node, Resolution, ResolvedFileSystemMapping,
-        ResolvedPackage,
+        DependencyGraph, Edge, ItemLocation, Node, Resolution,
+        ResolvedFileSystemMapping, ResolvedPackage,
     },
     resolve::{resolve, ResolveError},
     source::{QueryError, Source},

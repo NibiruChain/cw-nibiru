@@ -121,7 +121,10 @@ impl<'g> Drop for TokioRuntimeGuard<'g> {
 
 impl VirtualTaskManager for TokioTaskManager {
     /// See [`VirtualTaskManager::sleep_now`].
-    fn sleep_now(&self, time: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + Sync>> {
+    fn sleep_now(
+        &self,
+        time: Duration,
+    ) -> Pin<Box<dyn Future<Output = ()> + Send + Sync>> {
         let handle = self.runtime_handle();
         Box::pin(async move {
             SleepNow::default()

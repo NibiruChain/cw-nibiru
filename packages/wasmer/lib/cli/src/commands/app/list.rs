@@ -5,7 +5,9 @@ use std::pin::Pin;
 use futures::{Stream, StreamExt};
 use wasmer_backend_api::types::{DeployApp, DeployAppsSortBy};
 
-use crate::{commands::AsyncCliCommand, config::WasmerEnv, opts::ListFormatOpts};
+use crate::{
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ListFormatOpts,
+};
 
 /// List apps belonging to a namespace
 #[derive(clap::Parser, Debug)]
@@ -63,11 +65,21 @@ impl AsyncCliCommand for CmdAppList {
         };
 
         let apps_stream: Pin<
-            Box<dyn Stream<Item = Result<Vec<DeployApp>, anyhow::Error>> + Send + Sync>,
+            Box<
+                dyn Stream<Item = Result<Vec<DeployApp>, anyhow::Error>>
+                    + Send
+                    + Sync,
+            >,
         > = if let Some(ns) = self.namespace.clone() {
-            Box::pin(wasmer_backend_api::query::namespace_apps(&client, ns, sort).await)
+            Box::pin(
+                wasmer_backend_api::query::namespace_apps(&client, ns, sort)
+                    .await,
+            )
         } else if self.all {
-            Box::pin(wasmer_backend_api::query::user_accessible_apps(&client, sort).await?)
+            Box::pin(
+                wasmer_backend_api::query::user_accessible_apps(&client, sort)
+                    .await?,
+            )
         } else {
             Box::pin(wasmer_backend_api::query::user_apps(&client, sort).await)
         };

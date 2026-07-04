@@ -1,5 +1,11 @@
 #[derive(
-    schemars::JsonSchema, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Debug,
+    schemars::JsonSchema,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialEq,
+    Eq,
+    Clone,
+    Debug,
 )]
 pub enum HealthCheckV1 {
     #[serde(rename = "http")]
@@ -8,7 +14,13 @@ pub enum HealthCheckV1 {
 
 /// Health check configuration for http endpoints.
 #[derive(
-    schemars::JsonSchema, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Debug,
+    schemars::JsonSchema,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialEq,
+    Eq,
+    Clone,
+    Debug,
 )]
 pub struct HealthCheckHttpV1 {
     #[serde(flatten)]

@@ -17,7 +17,8 @@ use wasmer_package::utils::from_disk;
 use crate::{
     http::{HttpClient, HttpRequest},
     runtime::resolver::{
-        DistributionInfo, PackageInfo, PackageSummary, QueryError, Source, WebcHash,
+        DistributionInfo, PackageInfo, PackageSummary, QueryError, Source,
+        WebcHash,
     },
 };
 
@@ -45,7 +46,10 @@ pub struct WebSource {
 impl WebSource {
     pub const DEFAULT_RETRY_PERIOD: Duration = Duration::from_secs(5 * 60);
 
-    pub fn new(cache_dir: impl Into<PathBuf>, client: Arc<dyn HttpClient + Send + Sync>) -> Self {
+    pub fn new(
+        cache_dir: impl Into<PathBuf>,
+        client: Arc<dyn HttpClient + Send + Sync>,
+    ) -> Self {
         WebSource {
             cache_dir: cache_dir.into(),
             client,
@@ -64,7 +68,10 @@ impl WebSource {
 
     /// Download a package and cache it locally.
     #[tracing::instrument(level = "debug", skip_all, fields(%url))]
-    async fn get_locally_cached_file(&self, url: &Url) -> Result<PathBuf, Error> {
+    async fn get_locally_cached_file(
+        &self,
+        url: &Url,
+    ) -> Result<PathBuf, Error> {
         // This function is a bit tricky because we go to great lengths to avoid
         // unnecessary downloads.
 
@@ -74,13 +81,14 @@ impl WebSource {
         let cache_info = CacheInfo::for_url(&cache_key, &self.cache_dir);
 
         // Next we check if we definitely got a cache hit
-        let state = match classify_cache_using_mtime(cache_info, self.retry_period) {
-            Ok(path) => {
-                tracing::debug!(path=%path.display(), "Cache hit!");
-                return Ok(path);
-            }
-            Err(s) => s,
-        };
+        let state =
+            match classify_cache_using_mtime(cache_info, self.retry_period) {
+                Ok(path) => {
+                    tracing::debug!(path=%path.display(), "Cache hit!");
+                    return Ok(path);
+                }
+                Err(s) => s,
+            };
 
         // Let's check if the ETag is still valid
         if let CacheState::PossiblyDirty { etag, path } = &state {
@@ -139,7 +147,10 @@ impl WebSource {
 
         if let Some(etag) = etag {
             if let Err(e) = self
-                .atomically_save_file(path.with_extension("etag"), etag.as_bytes())
+                .atomically_save_file(
+                    path.with_extension("etag"),
+                    etag.as_bytes(),
+                )
                 .await
             {
                 tracing::warn!(
@@ -155,14 +166,19 @@ impl WebSource {
         Ok(path)
     }
 
-    async fn atomically_save_file(&self, path: impl AsRef<Path>, data: &[u8]) -> Result<(), Error> {
+    async fn atomically_save_file(
+        &self,
+        path: impl AsRef<Path>,
+        data: &[u8],
+    ) -> Result<(), Error> {
         // FIXME: This will all block the main thread
 
         let path = path.as_ref();
 
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("Unable to create \"{}\"", parent.display()))?;
+            std::fs::create_dir_all(parent).with_context(|| {
+                format!("Unable to create \"{}\"", parent.display())
+            })?;
         }
 
         let mut temp = NamedTempFile::new_in(&self.cache_dir)?;
@@ -199,7 +215,10 @@ impl WebSource {
         Ok(etag.to_string())
     }
 
-    async fn fetch(&self, url: &Url) -> Result<(Vec<u8>, Option<String>), Error> {
+    async fn fetch(
+        &self,
+        url: &Url,
+    ) -> Result<(Vec<u8>, Option<String>), Error> {
         let request = HttpRequest {
             url: url.clone(),
             method: Method::GET,
@@ -225,25 +244,39 @@ impl WebSource {
         Ok((body, etag))
     }
 
-    async fn load_url(&self, url: &Url) -> Result<Vec<PackageSummary>, anyhow::Error> {
+    async fn load_url(
+        &self,
+        url: &Url,
+    ) -> Result<Vec<PackageSummary>, anyhow::Error> {
         let local_path = self
             .get_locally_cached_file(url)
             .await
             .context("Unable to get the locally cached file")?;
 
-        let webc_sha256 = crate::block_in_place(|| WebcHash::for_file(&local_path))
-            .with_context(|| format!("Unable to hash \"{}\"", local_path.display()))?;
+        let webc_sha256 =
+            crate::block_in_place(|| WebcHash::for_file(&local_path))
+                .with_context(|| {
+                    format!("Unable to hash \"{}\"", local_path.display())
+                })?;
 
         // Note: We want to use Container::from_disk() rather than the bytes
         // our HTTP client gave us because then we can use memory-mapped files
         let container = crate::block_in_place(|| from_disk(&local_path))
-            .with_context(|| format!("Unable to load \"{}\"", local_path.display()))?;
+            .with_context(|| {
+                format!("Unable to load \"{}\"", local_path.display())
+            })?;
 
         let id = PackageInfo::package_id_from_manifest(container.manifest())?
-            .unwrap_or_else(|| PackageId::Hash(PackageHash::from_sha256_bytes(webc_sha256.0)));
+            .unwrap_or_else(|| {
+                PackageId::Hash(PackageHash::from_sha256_bytes(webc_sha256.0))
+            });
 
-        let pkg = PackageInfo::from_manifest(id, container.manifest(), container.version())
-            .context("Unable to determine the package's metadata")?;
+        let pkg = PackageInfo::from_manifest(
+            id,
+            container.manifest(),
+            container.version(),
+        )
+        .context("Unable to determine the package's metadata")?;
 
         let dist = DistributionInfo {
             webc: url.clone(),
@@ -257,7 +290,10 @@ impl WebSource {
 #[async_trait::async_trait]
 impl Source for WebSource {
     #[tracing::instrument(level = "debug", skip_all, fields(%package))]
-    async fn query(&self, package: &PackageSource) -> Result<Vec<PackageSummary>, QueryError> {
+    async fn query(
+        &self,
+        package: &PackageSource,
+    ) -> Result<Vec<PackageSummary>, QueryError> {
         let url = match package {
             PackageSource::Url(url) => url,
             _ => {
@@ -373,9 +409,8 @@ enum CacheState {
 impl CacheState {
     fn take_path(self) -> Option<PathBuf> {
         match self {
-            CacheState::PossiblyDirty { path, .. } | CacheState::UnableToVerify { path } => {
-                Some(path)
-            }
+            CacheState::PossiblyDirty { path, .. }
+            | CacheState::UnableToVerify { path } => Some(path),
             _ => None,
         }
     }
@@ -393,10 +428,12 @@ mod tests {
 
     use super::*;
 
-    const PYTHON: &[u8] = include_bytes!("../../../../c-api/examples/assets/python-0.1.0.wasmer");
+    const PYTHON: &[u8] =
+        include_bytes!("../../../../c-api/examples/assets/python-0.1.0.wasmer");
     const COREUTILS: &[u8] = include_bytes!("../../../../../tests/integration/cli/tests/webc/coreutils-1.0.16-e27dbb4f-2ef2-4b44-b46a-ddd86497c6d7.webc");
     const DUMMY_URL: &str = "http://my-registry.io/some/package";
-    const DUMMY_URL_HASH: &str = "4D7481F44E1D971A8C60D3C7BD505E2727602CF9369ED623920E029C2BA2351D";
+    const DUMMY_URL_HASH: &str =
+        "4D7481F44E1D971A8C60D3C7BD505E2727602CF9369ED623920E029C2BA2351D";
 
     #[derive(Debug)]
     pub(crate) struct DummyClient {
@@ -405,7 +442,9 @@ mod tests {
     }
 
     impl DummyClient {
-        pub fn with_responses(responses: impl IntoIterator<Item = HttpResponse>) -> Self {
+        pub fn with_responses(
+            responses: impl IntoIterator<Item = HttpResponse>,
+        ) -> Self {
             DummyClient {
                 requests: Mutex::new(Vec::new()),
                 responses: Mutex::new(responses.into_iter().collect()),
@@ -450,7 +489,11 @@ mod tests {
             self.with_header("ETag", value)
         }
 
-        pub fn with_header(mut self, name: impl IntoHeaderName, value: &str) -> Self {
+        pub fn with_header(
+            mut self,
+            name: impl IntoHeaderName,
+            value: &str,
+        ) -> Self {
             self.0.headers.insert(name, value.parse().unwrap());
             self
         }
@@ -524,13 +567,15 @@ mod tests {
 
     async fn fall_back_to_stale_cache_if_request_fails_internal() {
         let temp = TempDir::new().unwrap();
-        let client = Arc::new(DummyClient::with_responses([ResponseBuilder::new()
-            .with_status(StatusCode::INTERNAL_SERVER_ERROR)
-            .build()]));
+        let client =
+            Arc::new(DummyClient::with_responses([ResponseBuilder::new()
+                .with_status(StatusCode::INTERNAL_SERVER_ERROR)
+                .build()]));
         // Add something to the cache
         let python_path = temp.path().join(DUMMY_URL_HASH);
         std::fs::write(&python_path, PYTHON).unwrap();
-        let source = WebSource::new(temp.path(), client.clone()).with_retry_period(Duration::ZERO);
+        let source = WebSource::new(temp.path(), client.clone())
+            .with_retry_period(Duration::ZERO);
         let spec = PackageSource::Url(DUMMY_URL.parse().unwrap());
 
         let summaries = source.query(&spec).await.unwrap();
@@ -568,8 +613,8 @@ mod tests {
         std::fs::write(&path, PYTHON).unwrap();
         std::fs::write(path.with_extension("etag"), "python").unwrap();
         // but create a source that will always want to re-check the etags
-        let source =
-            WebSource::new(temp.path(), client.clone()).with_retry_period(Duration::new(0, 0));
+        let source = WebSource::new(temp.path(), client.clone())
+            .with_retry_period(Duration::new(0, 0));
         let spec = PackageSource::Url(DUMMY_URL.parse().unwrap());
 
         let summaries = source.query(&spec).await.unwrap();

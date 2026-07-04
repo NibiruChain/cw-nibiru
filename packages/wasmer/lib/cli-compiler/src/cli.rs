@@ -56,17 +56,22 @@ pub fn wasmer_main() {
     let command = args.get(1);
     let options = {
         match command.unwrap_or(&"".to_string()).as_ref() {
-            "compile" | "config" | "help" | "inspect" | "validate" => WasmerCLIOptions::parse(),
+            "compile" | "config" | "help" | "inspect" | "validate" => {
+                WasmerCLIOptions::parse()
+            }
             _ => {
-                WasmerCLIOptions::try_parse_from(args.iter()).unwrap_or_else(|e| {
-                    match e.kind() {
-                        // This fixes a issue that:
-                        // 1. Shows the version twice when doing `wasmer -V`
-                        // 2. Shows the run help (instead of normal help) when doing `wasmer --help`
-                        ErrorKind::DisplayVersion | ErrorKind::DisplayHelp => e.exit(),
-                        _ => WasmerCLIOptions::Compile(Compile::parse()),
-                    }
-                })
+                WasmerCLIOptions::try_parse_from(args.iter()).unwrap_or_else(
+                    |e| {
+                        match e.kind() {
+                            // This fixes a issue that:
+                            // 1. Shows the version twice when doing `wasmer -V`
+                            // 2. Shows the run help (instead of normal help) when doing `wasmer --help`
+                            ErrorKind::DisplayVersion
+                            | ErrorKind::DisplayHelp => e.exit(),
+                            _ => WasmerCLIOptions::Compile(Compile::parse()),
+                        }
+                    },
+                )
             }
         }
     };

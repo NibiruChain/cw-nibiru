@@ -13,7 +13,10 @@ impl<R: ReadableJournal> ReadableJournal for Arc<R> {
 }
 
 impl<W: WritableJournal> WritableJournal for Arc<W> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.deref().write(entry)
     }
 
@@ -41,7 +44,10 @@ impl ReadableJournal for Arc<DynJournal> {
 }
 
 impl WritableJournal for Arc<DynJournal> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.deref().write(entry)
     }
 

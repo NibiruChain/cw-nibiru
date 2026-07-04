@@ -17,8 +17,9 @@ use tokio::sync::{mpsc, RwLock};
 #[allow(unused_imports, dead_code)]
 use tracing::{debug, error, info, trace, warn};
 use virtual_fs::{
-    ArcBoxFile, ArcFile, AsyncWriteExt, CombineFile, DeviceFile, DuplexPipe, FileSystem, Pipe,
-    PipeRx, PipeTx, RootFileSystemBuilder, StaticFile, VirtualFile,
+    ArcBoxFile, ArcFile, AsyncWriteExt, CombineFile, DeviceFile, DuplexPipe,
+    FileSystem, Pipe, PipeRx, PipeTx, RootFileSystemBuilder, StaticFile,
+    VirtualFile,
 };
 #[cfg(feature = "sys")]
 use wasmer::Engine;
@@ -56,7 +57,10 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new(webc_boot_package: &str, runtime: Arc<dyn Runtime + Send + Sync + 'static>) -> Self {
+    pub fn new(
+        webc_boot_package: &str,
+        runtime: Arc<dyn Runtime + Send + Sync + 'static>,
+    ) -> Self {
         Self {
             boot_cmd: webc_boot_package.to_string(),
             uses: LinkedHashSet::new(),
@@ -122,22 +126,34 @@ impl Console {
         self
     }
 
-    pub fn with_stdin(mut self, stdin: Box<dyn VirtualFile + Send + Sync + 'static>) -> Self {
+    pub fn with_stdin(
+        mut self,
+        stdin: Box<dyn VirtualFile + Send + Sync + 'static>,
+    ) -> Self {
         self.stdin = ArcBoxFile::new(stdin);
         self
     }
 
-    pub fn with_stdout(mut self, stdout: Box<dyn VirtualFile + Send + Sync + 'static>) -> Self {
+    pub fn with_stdout(
+        mut self,
+        stdout: Box<dyn VirtualFile + Send + Sync + 'static>,
+    ) -> Self {
         self.stdout = ArcBoxFile::new(stdout);
         self
     }
 
-    pub fn with_stderr(mut self, stderr: Box<dyn VirtualFile + Send + Sync + 'static>) -> Self {
+    pub fn with_stderr(
+        mut self,
+        stderr: Box<dyn VirtualFile + Send + Sync + 'static>,
+    ) -> Self {
         self.stderr = ArcBoxFile::new(stderr);
         self
     }
 
-    pub fn with_ro_files(mut self, ro_files: HashMap<String, Cow<'static, [u8]>>) -> Self {
+    pub fn with_ro_files(
+        mut self,
+        ro_files: HashMap<String, Cow<'static, [u8]>>,
+    ) -> Self {
         self.ro_files = ro_files;
         self
     }
@@ -177,10 +193,9 @@ impl Console {
             }
         };
 
-        let resolved_package = InlineWaker::block_on(BinaryPackage::from_registry(
-            &webc_ident,
-            self.runtime.as_ref(),
-        ));
+        let resolved_package = InlineWaker::block_on(
+            BinaryPackage::from_registry(&webc_ident, self.runtime.as_ref()),
+        );
 
         let pkg = match resolved_package {
             Ok(pkg) => pkg,
@@ -272,14 +287,22 @@ impl Console {
                 .write(true)
                 .open(&path)
                 .map_err(|err| SpawnError::Other(err.into()))?;
-            InlineWaker::block_on(file.copy_reference(Box::new(StaticFile::new(data))))
-                .map_err(|err| SpawnError::Other(err.into()))?;
+            InlineWaker::block_on(
+                file.copy_reference(Box::new(StaticFile::new(data))),
+            )
+            .map_err(|err| SpawnError::Other(err.into()))?;
         }
 
         // Build the config
         // Run the binary
         let store = self.runtime.new_store();
-        let process = InlineWaker::block_on(spawn_exec(pkg, prog, store, env, &self.runtime))?;
+        let process = InlineWaker::block_on(spawn_exec(
+            pkg,
+            prog,
+            store,
+            env,
+            &self.runtime,
+        ))?;
 
         // Return the process
         Ok((process, wasi_process))
@@ -313,7 +336,10 @@ mod tests {
     use std::{io::Read, sync::Arc};
 
     use crate::{
-        runtime::{package_loader::BuiltinPackageLoader, task_manager::tokio::TokioTaskManager},
+        runtime::{
+            package_loader::BuiltinPackageLoader,
+            task_manager::tokio::TokioTaskManager,
+        },
         PluggableRuntime,
     };
 
@@ -337,11 +363,14 @@ mod tests {
         let mut rt = PluggableRuntime::new(Arc::new(tm));
         let client = rt.http_client().unwrap().clone();
         rt.set_engine(Some(wasmer::Engine::default()))
-            .set_package_loader(BuiltinPackageLoader::new().with_shared_http_client(client));
+            .set_package_loader(
+                BuiltinPackageLoader::new().with_shared_http_client(client),
+            );
 
-        let env: HashMap<String, String> = [("MYENV1".to_string(), "VAL1".to_string())]
-            .into_iter()
-            .collect();
+        let env: HashMap<String, String> =
+            [("MYENV1".to_string(), "VAL1".to_string())]
+                .into_iter()
+                .collect();
 
         // Pass some arguments.
         let cmd = "sharrattj/dash -s stdin";
@@ -392,7 +421,9 @@ mod tests {
         let mut rt = PluggableRuntime::new(Arc::new(tm));
         let client = rt.http_client().unwrap().clone();
         rt.set_engine(Some(wasmer::Engine::default()))
-            .set_package_loader(BuiltinPackageLoader::new().with_shared_http_client(client));
+            .set_package_loader(
+                BuiltinPackageLoader::new().with_shared_http_client(client),
+            );
 
         let cmd = "wasmer-tests/python-env-dump --help";
 

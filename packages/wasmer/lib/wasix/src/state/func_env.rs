@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use tracing::trace;
 use wasmer::{
-    AsStoreMut, AsStoreRef, ExportError, FunctionEnv, Imports, Instance, Memory, Module, Store,
+    AsStoreMut, AsStoreRef, ExportError, FunctionEnv, Imports, Instance, Memory,
+    Module, Store,
 };
 use wasmer_wasix_types::wasi::ExitCode;
 
@@ -14,8 +15,11 @@ use crate::{
     import_object_for_all_wasi_versions,
     runtime::SpawnMemoryType,
     state::WasiInstanceHandles,
-    utils::{get_wasi_version, get_wasi_versions, store::restore_store_snapshot},
-    RewindStateOption, StoreSnapshot, WasiEnv, WasiError, WasiRuntimeError, WasiThreadError,
+    utils::{
+        get_wasi_version, get_wasi_versions, store::restore_store_snapshot,
+    },
+    RewindStateOption, StoreSnapshot, WasiEnv, WasiError, WasiRuntimeError,
+    WasiThreadError,
 };
 
 /// The default stack size for WASIX - the number itself is the default that compilers
@@ -60,10 +64,11 @@ impl WasiFunctionEnv {
             import_object.define("env", "memory", memory);
         }
 
-        let instance = Instance::new(&mut store, &module, &import_object).map_err(|err| {
-            tracing::warn!("failed to create instance - {}", err);
-            WasiThreadError::InstanceCreateFailed(Box::new(err))
-        })?;
+        let instance = Instance::new(&mut store, &module, &import_object)
+            .map_err(|err| {
+                tracing::warn!("failed to create instance - {}", err);
+                WasiThreadError::InstanceCreateFailed(Box::new(err))
+            })?;
 
         init(&instance, &store).map_err(|err| {
             tracing::warn!("failed to init instance - {}", err);
@@ -91,7 +96,8 @@ impl WasiFunctionEnv {
         store: &mut impl AsStoreMut,
         module: &Module,
     ) -> Result<Imports, WasiError> {
-        let wasi_version = get_wasi_version(module, false).ok_or(WasiError::UnknownWasiVersion)?;
+        let wasi_version = get_wasi_version(module, false)
+            .ok_or(WasiError::UnknownWasiVersion)?;
         Ok(crate::generate_import_object_from_env(
             store,
             &self.env,
@@ -105,7 +111,10 @@ impl WasiFunctionEnv {
     }
 
     /// Gets a mutable- reference to the host state in this context.
-    pub fn data_mut<'a>(&'a self, store: &'a mut impl AsStoreMut) -> &'a mut WasiEnv {
+    pub fn data_mut<'a>(
+        &'a self,
+        store: &'a mut impl AsStoreMut,
+    ) -> &'a mut WasiEnv {
         self.env.as_mut(store)
     }
 
@@ -252,7 +261,10 @@ impl WasiFunctionEnv {
                     .for_each(|t| t.set_memory_layout(layout.clone()))
             }
         }
-        tracing::trace!("initializing with layout {:?}", self.data(store).layout);
+        tracing::trace!(
+            "initializing with layout {:?}",
+            self.data(store).layout
+        );
 
         Ok(())
     }
@@ -264,13 +276,14 @@ impl WasiFunctionEnv {
         store: &mut impl AsStoreMut,
         module: &Module,
     ) -> Result<Imports, WasiError> {
-        let wasi_versions =
-            get_wasi_versions(module, false).ok_or(WasiError::UnknownWasiVersion)?;
+        let wasi_versions = get_wasi_versions(module, false)
+            .ok_or(WasiError::UnknownWasiVersion)?;
 
         let mut resolver = Imports::new();
         for version in wasi_versions.iter() {
-            let new_import_object =
-                crate::generate_import_object_from_env(store, &self.env, *version);
+            let new_import_object = crate::generate_import_object_from_env(
+                store, &self.env, *version,
+            );
             for ((n, m), e) in new_import_object.into_iter() {
                 resolver.define(&n, &m, e);
             }
@@ -284,7 +297,11 @@ impl WasiFunctionEnv {
     /// This function should only be called from within a syscall
     /// as it can potentially execute local thread variable cleanup
     /// code
-    pub fn on_exit(&self, store: &mut impl AsStoreMut, process_exit_code: Option<ExitCode>) {
+    pub fn on_exit(
+        &self,
+        store: &mut impl AsStoreMut,
+        process_exit_code: Option<ExitCode>,
+    ) {
         trace!(
             "wasi[{}:{}]::on_exit",
             self.data(store).pid(),
@@ -329,12 +346,16 @@ impl WasiFunctionEnv {
                     let rewind = match restore_snapshot(ctx, journal, true) {
                         Ok(r) => r,
                         Err(err) => {
-                            tracing::trace!("replaying journal=false (err={:?})", err);
+                            tracing::trace!(
+                                "replaying journal=false (err={:?})",
+                                err
+                            );
                             self.data_mut(&mut store).replaying_journal = false;
                             return Err(err);
                         }
                     };
-                    rewind_state = rewind.map(|rewind| (rewind, RewindResultType::RewindRestart));
+                    rewind_state = rewind
+                        .map(|rewind| (rewind, RewindResultType::RewindRestart));
                 }
 
                 tracing::trace!("replaying journal=false");
@@ -350,7 +371,8 @@ impl WasiFunctionEnv {
                 // The first event we save is an event that records the module hash.
                 // Note: This is used to detect if an incorrect journal is used on the wrong
                 // process or if a process has been recompiled
-                let wasm_hash = Box::from(self.data(&store).process.module_hash.as_bytes());
+                let wasm_hash =
+                    Box::from(self.data(&store).process.module_hash.as_bytes());
                 let mut ctx = self.env.clone().into_mut(&mut store);
                 crate::journal::JournalEffector::save_event(
                     &mut ctx,
@@ -370,10 +392,12 @@ impl WasiFunctionEnv {
                     crate::journal::JournalEntry::ClearEtherealV1,
                 )
                 .map_err(|err| {
-                    WasiRuntimeError::Runtime(wasmer::RuntimeError::new(format!(
-                        "journal failed to save clear ethereal event - {}",
-                        err
-                    )))
+                    WasiRuntimeError::Runtime(wasmer::RuntimeError::new(
+                        format!(
+                            "journal failed to save clear ethereal event - {}",
+                            err
+                        ),
+                    ))
                 })?;
             }
         }

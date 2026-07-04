@@ -5,20 +5,31 @@
 #![allow(missing_docs)]
 
 //! This module define the required structures for compilation symbols.
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use wasmer_types::{
     entity::{EntityRef, PrimaryMap},
-    DeserializeError, FunctionIndex, LocalFunctionIndex, OwnedDataInitializer, SerializeError,
-    SignatureIndex,
+    DeserializeError, FunctionIndex, LocalFunctionIndex, OwnedDataInitializer,
+    SerializeError, SignatureIndex,
 };
 
 use super::{module::CompileModuleInfo, section::SectionIndex};
 
 /// The kinds of wasmer_types objects that might be found in a native object file.
 #[derive(
-    RkyvSerialize, RkyvDeserialize, Archive, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Archive,
+    Clone,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    Debug,
 )]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[rkyv(derive(Debug), compare(PartialEq, PartialOrd))]
@@ -76,7 +87,9 @@ pub struct ModuleMetadataSymbolRegistry {
 
 impl ModuleMetadata {
     /// Get mutable ref to compile info and a copy of the registry
-    pub fn split(&mut self) -> (&mut CompileModuleInfo, ModuleMetadataSymbolRegistry) {
+    pub fn split(
+        &mut self,
+    ) -> (&mut CompileModuleInfo, ModuleMetadataSymbolRegistry) {
         let compile_info = &mut self.compile_info;
         let symbol_registry = ModuleMetadataSymbolRegistry {
             prefix: self.prefix.clone(),
@@ -110,7 +123,9 @@ impl ModuleMetadata {
     /// Right now we are not doing any extra work for validation, but
     /// `rkyv` has an option to do bytecheck on the serialized data before
     /// serializing (via `rkyv::check_archived_value`).
-    pub unsafe fn deserialize_unchecked(metadata_slice: &[u8]) -> Result<Self, DeserializeError> {
+    pub unsafe fn deserialize_unchecked(
+        metadata_slice: &[u8],
+    ) -> Result<Self, DeserializeError> {
         let archived = Self::archive_from_slice(metadata_slice)?;
         Self::deserialize_from_archive(archived)
     }
@@ -162,7 +177,9 @@ impl SymbolRegistry for ModuleMetadataSymbolRegistry {
             Symbol::LocalFunction(index) => {
                 format!("wasmer_function_{}_{}", self.prefix, index.index())
             }
-            Symbol::Section(index) => format!("wasmer_section_{}_{}", self.prefix, index.index()),
+            Symbol::Section(index) => {
+                format!("wasmer_section_{}_{}", self.prefix, index.index())
+            }
             Symbol::FunctionCallTrampoline(index) => {
                 format!(
                     "wasmer_trampoline_function_call_{}_{}",
@@ -183,32 +200,33 @@ impl SymbolRegistry for ModuleMetadataSymbolRegistry {
     fn name_to_symbol(&self, name: &str) -> Option<Symbol> {
         if name == self.symbol_to_name(Symbol::Metadata) {
             Some(Symbol::Metadata)
-        } else if let Some(index) = name.strip_prefix(&format!("wasmer_function_{}_", self.prefix))
+        } else if let Some(index) =
+            name.strip_prefix(&format!("wasmer_function_{}_", self.prefix))
         {
-            index
-                .parse::<u32>()
-                .ok()
-                .map(|index| Symbol::LocalFunction(LocalFunctionIndex::from_u32(index)))
-        } else if let Some(index) = name.strip_prefix(&format!("wasmer_section_{}_", self.prefix)) {
+            index.parse::<u32>().ok().map(|index| {
+                Symbol::LocalFunction(LocalFunctionIndex::from_u32(index))
+            })
+        } else if let Some(index) =
+            name.strip_prefix(&format!("wasmer_section_{}_", self.prefix))
+        {
             index
                 .parse::<u32>()
                 .ok()
                 .map(|index| Symbol::Section(SectionIndex::from_u32(index)))
-        } else if let Some(index) =
-            name.strip_prefix(&format!("wasmer_trampoline_function_call_{}_", self.prefix))
-        {
-            index
-                .parse::<u32>()
-                .ok()
-                .map(|index| Symbol::FunctionCallTrampoline(SignatureIndex::from_u32(index)))
+        } else if let Some(index) = name.strip_prefix(&format!(
+            "wasmer_trampoline_function_call_{}_",
+            self.prefix
+        )) {
+            index.parse::<u32>().ok().map(|index| {
+                Symbol::FunctionCallTrampoline(SignatureIndex::from_u32(index))
+            })
         } else if let Some(index) = name.strip_prefix(&format!(
             "wasmer_trampoline_dynamic_function_{}_",
             self.prefix
         )) {
-            index
-                .parse::<u32>()
-                .ok()
-                .map(|index| Symbol::DynamicFunctionTrampoline(FunctionIndex::from_u32(index)))
+            index.parse::<u32>().ok().map(|index| {
+                Symbol::DynamicFunctionTrampoline(FunctionIndex::from_u32(index))
+            })
         } else {
             None
         }

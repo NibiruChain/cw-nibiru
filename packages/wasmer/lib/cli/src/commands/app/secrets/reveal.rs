@@ -52,7 +52,9 @@ impl CmdAppSecretsReveal {
         }
 
         if self.non_interactive {
-            anyhow::bail!("No secret name given. Provide one as a positional argument.")
+            anyhow::bail!(
+                "No secret name given. Provide one as a positional argument."
+            )
         } else {
             let theme = ColorfulTheme::default();
             Ok(dialoguer::Input::with_theme(&theme)
@@ -80,7 +82,8 @@ impl AsyncCliCommand for CmdAppSecretsReveal {
         if !self.all {
             let name = self.get_secret_name()?;
 
-            let value = utils::get_secret_value_by_name(&client, &app_id, &name).await?;
+            let value =
+                utils::get_secret_value_by_name(&client, &app_id, &name).await?;
 
             let secret = utils::Secret { name, value };
 
@@ -98,7 +101,8 @@ impl AsyncCliCommand for CmdAppSecretsReveal {
                 print!("{}", secret.value);
             }
         } else {
-            let secrets: Vec<utils::Secret> = utils::reveal_secrets(&client, &app_id).await?;
+            let secrets: Vec<utils::Secret> =
+                utils::reveal_secrets(&client, &app_id).await?;
 
             if let Some(fmt) = &self.fmt {
                 println!("{}", fmt.format.render(secrets.as_slice()));

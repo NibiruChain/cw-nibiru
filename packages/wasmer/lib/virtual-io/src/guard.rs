@@ -32,7 +32,10 @@ impl InterestGuard {
         })
     }
 
-    pub fn unregister(&mut self, source: &mut dyn mio::event::Source) -> io::Result<()> {
+    pub fn unregister(
+        &mut self,
+        source: &mut dyn mio::event::Source,
+    ) -> io::Result<()> {
         if let Some(selector) = self.selector.upgrade() {
             selector.remove(self.token, Some(source))?;
         }

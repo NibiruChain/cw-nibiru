@@ -18,7 +18,9 @@ fn get_default_jobs() -> usize {
         .into()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ValueEnum, derive_more::Display)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, ValueEnum, derive_more::Display,
+)]
 pub enum Backend {
     Llvm,
     Singlepass,

@@ -39,10 +39,14 @@ pub fn sock_set_opt_time<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if ctx.data().enable_journal {
-        JournalEffector::save_sock_set_opt_time(&mut ctx, sock, ty, time).map_err(|err| {
-            tracing::error!("failed to save sock_set_opt_time event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_sock_set_opt_time(&mut ctx, sock, ty, time)
+            .map_err(|err| {
+                tracing::error!(
+                    "failed to save sock_set_opt_time event - {}",
+                    err
+                );
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            })?;
     }
 
     Ok(Errno::Success)
@@ -54,9 +58,12 @@ pub(crate) fn sock_set_opt_time_internal(
     ty: TimeType,
     time: Option<Duration>,
 ) -> Result<Result<(), Errno>, WasiError> {
-    wasi_try_ok_ok!(__sock_actor_mut(ctx, sock, Rights::empty(), |socket, _| {
-        socket.set_opt_time(ty, time)
-    }));
+    wasi_try_ok_ok!(__sock_actor_mut(
+        ctx,
+        sock,
+        Rights::empty(),
+        |socket, _| { socket.set_opt_time(ty, time) }
+    ));
 
     Ok(Ok(()))
 }

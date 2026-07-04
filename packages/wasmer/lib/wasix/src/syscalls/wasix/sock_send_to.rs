@@ -102,8 +102,11 @@ pub(crate) fn sock_send_to_internal<M: MemorySize>(
 
                 match si_data {
                     FdWriteSource::Iovs { iovs, iovs_len } => {
-                        let iovs_arr = iovs.slice(&memory, iovs_len).map_err(mem_error_to_wasi)?;
-                        let iovs_arr = iovs_arr.access().map_err(mem_error_to_wasi)?;
+                        let iovs_arr = iovs
+                            .slice(&memory, iovs_len)
+                            .map_err(mem_error_to_wasi)?;
+                        let iovs_arr =
+                            iovs_arr.access().map_err(mem_error_to_wasi)?;
 
                         let mut sent = 0usize;
                         for iovs in iovs_arr.iter() {

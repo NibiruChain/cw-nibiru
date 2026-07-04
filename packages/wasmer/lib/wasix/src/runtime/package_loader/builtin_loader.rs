@@ -66,7 +66,10 @@ impl BuiltinPackageLoader {
     /// Set the validation mode to apply after downloading an image.
     ///
     /// See [`HashIntegrityValidationMode`] for details.
-    pub fn with_hash_validation_mode(mut self, mode: HashIntegrityValidationMode) -> Self {
+    pub fn with_hash_validation_mode(
+        mut self,
+        mode: HashIntegrityValidationMode,
+    ) -> Self {
         self.hash_validation = mode;
         self
     }
@@ -97,10 +100,14 @@ impl BuiltinPackageLoader {
                     tracing::warn!(?error, "hash mismatch in cached image file");
                 }
                 CacheValidationMode::PruneOnMismatch => {
-                    tracing::warn!(?error, "deleting cached image file due to hash mismatch");
+                    tracing::warn!(
+                        ?error,
+                        "deleting cached image file due to hash mismatch"
+                    );
                     match std::fs::remove_file(&path) {
                         Ok(()) => {}
-                        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                        Err(error)
+                            if error.kind() == std::io::ErrorKind::NotFound => {}
                         Err(fs_err) => {
                             tracing::error!(
                                 path=%error.source,
@@ -118,11 +125,17 @@ impl BuiltinPackageLoader {
         Ok(errors)
     }
 
-    pub fn with_http_client(self, client: impl HttpClient + Send + Sync + 'static) -> Self {
+    pub fn with_http_client(
+        self,
+        client: impl HttpClient + Send + Sync + 'static,
+    ) -> Self {
         self.with_shared_http_client(Arc::new(client))
     }
 
-    pub fn with_shared_http_client(self, client: Arc<dyn HttpClient + Send + Sync>) -> Self {
+    pub fn with_shared_http_client(
+        self,
+        client: Arc<dyn HttpClient + Send + Sync>,
+    ) -> Self {
         BuiltinPackageLoader { client, ..self }
     }
 
@@ -145,7 +158,11 @@ impl BuiltinPackageLoader {
     /// Note that this uses [`Url::authority()`] when looking up tokens, so it
     /// will match both plain hostnames (e.g. `registry.wasmer.io`) and hosts
     /// with a port number (e.g. `localhost:8000`).
-    pub fn with_token(mut self, hostname: impl Into<String>, token: impl Into<String>) -> Self {
+    pub fn with_token(
+        mut self,
+        hostname: impl Into<String>,
+        token: impl Into<String>,
+    ) -> Self {
         self.tokens.insert(hostname.into(), token.into());
         self
     }
@@ -156,7 +173,10 @@ impl BuiltinPackageLoader {
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(pkg.hash=%hash))]
-    async fn get_cached(&self, hash: &WebcHash) -> Result<Option<Container>, Error> {
+    async fn get_cached(
+        &self,
+        hash: &WebcHash,
+    ) -> Result<Option<Container>, Error> {
         if let Some(cached) = self.in_memory.lookup(hash) {
             return Ok(Some(cached));
         }
@@ -164,7 +184,9 @@ impl BuiltinPackageLoader {
         if let Some(cache) = self.cache.as_ref() {
             if let Some(cached) = cache.lookup(hash).await? {
                 // Note: We want to propagate it to the in-memory cache, too
-                tracing::debug!("Copying from the filesystem cache to the in-memory cache");
+                tracing::debug!(
+                    "Copying from the filesystem cache to the in-memory cache"
+                );
                 self.in_memory.save(&cached, *hash);
                 return Ok(Some(cached));
             }
@@ -181,9 +203,11 @@ impl BuiltinPackageLoader {
     ) -> Result<(), anyhow::Error> {
         let info = info.clone();
         let image = image.clone();
-        crate::spawn_blocking(move || Self::validate_hash_sync(&image, mode, &info))
-            .await
-            .context("tokio runtime failed")?
+        crate::spawn_blocking(move || {
+            Self::validate_hash_sync(&image, mode, &info)
+        })
+        .await
+        .context("tokio runtime failed")?
     }
 
     /// Validate image contents with the specified validation mode.
@@ -223,18 +247,22 @@ impl BuiltinPackageLoader {
     #[tracing::instrument(level = "debug", skip_all, fields(%dist.webc, %dist.webc_sha256))]
     async fn download(&self, dist: &DistributionInfo) -> Result<Bytes, Error> {
         if dist.webc.scheme() == "file" {
-            match crate::runtime::resolver::utils::file_path_from_url(&dist.webc) {
+            match crate::runtime::resolver::utils::file_path_from_url(&dist.webc)
+            {
                 Ok(path) => {
                     let bytes = crate::spawn_blocking({
                         let path = path.clone();
                         move || std::fs::read(path)
                     })
                     .await?
-                    .with_context(|| format!("Unable to read \"{}\"", path.display()))?;
+                    .with_context(|| {
+                        format!("Unable to read \"{}\"", path.display())
+                    })?;
 
                     let bytes = bytes::Bytes::from(bytes);
 
-                    Self::validate_hash(&bytes, self.hash_validation, dist).await?;
+                    Self::validate_hash(&bytes, self.hash_validation, dist)
+                        .await?;
 
                     return Ok(bytes);
                 }
@@ -331,16 +359,17 @@ impl PackageLoader for BuiltinPackageLoader {
         ),
     )]
     async fn load(&self, summary: &PackageSummary) -> Result<Container, Error> {
-        if let Some(container) = self.get_cached(&summary.dist.webc_sha256).await? {
+        if let Some(container) =
+            self.get_cached(&summary.dist.webc_sha256).await?
+        {
             tracing::debug!("Cache hit!");
             return Ok(container);
         }
 
         // looks like we had a cache miss and need to download it manually
-        let bytes = self
-            .download(&summary.dist)
-            .await
-            .with_context(|| format!("Unable to download \"{}\"", summary.dist.webc))?;
+        let bytes = self.download(&summary.dist).await.with_context(|| {
+            format!("Unable to download \"{}\"", summary.dist.webc)
+        })?;
 
         // We want to cache the container we downloaded, but we want to do it
         // in a smart way to keep memory usage down.
@@ -371,7 +400,8 @@ impl PackageLoader for BuiltinPackageLoader {
 
         // The sad path - looks like we don't have a filesystem cache so we'll
         // need to keep the whole thing in memory.
-        let container = crate::spawn_blocking(move || from_bytes(bytes)).await??;
+        let container =
+            crate::spawn_blocking(move || from_bytes(bytes)).await??;
         // We still want to cache it in memory, of course
         self.in_memory.save(&container, summary.dist.webc_sha256);
         Ok(container)
@@ -428,7 +458,9 @@ impl FileSystemCache {
 
     /// Validate that the cached image file names correspond to their actual
     /// file content hashes.
-    fn validate_hashes(&self) -> Result<Vec<(PathBuf, ImageHashMismatchError)>, anyhow::Error> {
+    fn validate_hashes(
+        &self,
+    ) -> Result<Vec<(PathBuf, ImageHashMismatchError)>, anyhow::Error> {
         let mut items = Vec::<(PathBuf, ImageHashMismatchError)>::new();
 
         let iter = match std::fs::read_dir(&self.cache_dir) {
@@ -494,11 +526,17 @@ impl FileSystemCache {
         .await?;
         match container {
             Ok(c) => Ok(Some(c)),
-            Err(WasmerPackageError::ContainerError(ContainerError::Open { error, .. }))
-            | Err(WasmerPackageError::ContainerError(ContainerError::Read { error, .. }))
-            | Err(WasmerPackageError::ContainerError(ContainerError::Detect(DetectError::Io(
+            Err(WasmerPackageError::ContainerError(ContainerError::Open {
                 error,
-            )))) if error.kind() == ErrorKind::NotFound => Ok(None),
+                ..
+            }))
+            | Err(WasmerPackageError::ContainerError(ContainerError::Read {
+                error,
+                ..
+            }))
+            | Err(WasmerPackageError::ContainerError(ContainerError::Detect(
+                DetectError::Io(error),
+            ))) if error.kind() == ErrorKind::NotFound => Ok(None),
             Err(e) => {
                 let msg = format!("Unable to read \"{}\"", path.display());
                 Err(Error::new(e).context(msg))
@@ -506,15 +544,20 @@ impl FileSystemCache {
         }
     }
 
-    async fn save(&self, webc: Bytes, dist: &DistributionInfo) -> Result<(), Error> {
+    async fn save(
+        &self,
+        webc: Bytes,
+        dist: &DistributionInfo,
+    ) -> Result<(), Error> {
         let path = self.path(&dist.webc_sha256);
         let dist = dist.clone();
 
         crate::spawn_blocking(move || {
             let parent = path.parent().expect("Always within cache_dir");
 
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("Unable to create \"{}\"", parent.display()))?;
+            std::fs::create_dir_all(parent).with_context(|| {
+                format!("Unable to create \"{}\"", parent.display())
+            })?;
 
             let mut temp = NamedTempFile::new_in(parent)?;
             temp.write_all(&webc)?;
@@ -600,7 +643,8 @@ mod tests {
 
     use super::*;
 
-    const PYTHON: &[u8] = include_bytes!("../../../../c-api/examples/assets/python-0.1.0.wasmer");
+    const PYTHON: &[u8] =
+        include_bytes!("../../../../c-api/examples/assets/python-0.1.0.wasmer");
 
     #[derive(Debug)]
     pub(crate) struct DummyClient {
@@ -609,7 +653,9 @@ mod tests {
     }
 
     impl DummyClient {
-        pub fn with_responses(responses: impl IntoIterator<Item = HttpResponse>) -> Self {
+        pub fn with_responses(
+            responses: impl IntoIterator<Item = HttpResponse>,
+        ) -> Self {
             DummyClient {
                 requests: Mutex::new(Vec::new()),
                 responses: Mutex::new(responses.into_iter().collect()),
@@ -641,7 +687,10 @@ mod tests {
             .with_shared_http_client(client.clone());
         let summary = PackageSummary {
             pkg: PackageInfo {
-                id: PackageId::new_named("python/python", "0.1.0".parse().unwrap()),
+                id: PackageId::new_named(
+                    "python/python",
+                    "0.1.0".parse().unwrap(),
+                ),
                 dependencies: Vec::new(),
                 commands: Vec::new(),
                 entrypoint: Some("asdf".to_string()),
@@ -705,9 +754,10 @@ mod test {
 
         let contents = "fail";
         let correct_hash = WebcHash::sha256(contents);
-        let used_hash =
-            WebcHash::parse_hex("0000a28ea38a000f3a3328cb7fabe330638d3258affe1a869e3f92986222d997")
-                .unwrap();
+        let used_hash = WebcHash::parse_hex(
+            "0000a28ea38a000f3a3328cb7fabe330638d3258affe1a869e3f92986222d997",
+        )
+        .unwrap();
         let filename = format!("{}{}", used_hash, FileSystemCache::FILE_SUFFIX);
         let file_path = path.join(filename);
         std::fs::write(&file_path, contents).unwrap();

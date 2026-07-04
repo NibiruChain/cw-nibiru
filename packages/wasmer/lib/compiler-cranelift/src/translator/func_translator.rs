@@ -17,7 +17,9 @@ use cranelift_codegen::ir::{self, Block, InstBuilder, ValueLabel};
 use cranelift_codegen::timing;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use wasmer_compiler::{wasm_unsupported, wasmparser};
-use wasmer_compiler::{wptype_to_type, FunctionBinaryReader, ModuleTranslationState};
+use wasmer_compiler::{
+    wptype_to_type, FunctionBinaryReader, ModuleTranslationState,
+};
 use wasmer_types::{LocalFunctionIndex, WasmResult};
 
 /// WebAssembly to Cranelift IR function translator.
@@ -66,7 +68,12 @@ impl FuncTranslator {
         local_function_index: LocalFunctionIndex,
     ) -> WasmResult<()> {
         environ.push_params_on_stack(local_function_index);
-        self.translate_from_reader(module_translation_state, reader, func, environ)
+        self.translate_from_reader(
+            module_translation_state,
+            reader,
+            func,
+            environ,
+        )
     }
 
     /// Translate a binary WebAssembly function from a `FunctionBinaryReader`.
@@ -99,7 +106,8 @@ impl FuncTranslator {
         // `environ`. The callback functions may need to insert things in the entry block.
         builder.ensure_inserted_block();
 
-        let num_params = declare_wasm_parameters(&mut builder, entry_block, environ);
+        let num_params =
+            declare_wasm_parameters(&mut builder, entry_block, environ);
 
         // Set up the translation state with a single pushed control block representing the whole
         // function and its return values.
@@ -192,14 +200,18 @@ fn declare_locals<FE: FuncEnvironment + ?Sized>(
         F32 => builder.ins().f32const(ir::immediates::Ieee32::with_bits(0)),
         F64 => builder.ins().f64const(ir::immediates::Ieee64::with_bits(0)),
         V128 => {
-            let constant_handle = builder.func.dfg.constants.insert([0; 16].to_vec().into());
+            let constant_handle =
+                builder.func.dfg.constants.insert([0; 16].to_vec().into());
             builder.ins().vconst(ir::types::I8X16, constant_handle)
         }
         Ref(ty) => {
             if ty.is_func_ref() || ty.is_extern_ref() {
                 builder.ins().null(environ.reference_type())
             } else {
-                return Err(wasm_unsupported!("unsupported reference type: {:?}", ty));
+                return Err(wasm_unsupported!(
+                    "unsupported reference type: {:?}",
+                    ty
+                ));
             }
         }
     };
@@ -236,7 +248,13 @@ fn parse_function_body<FE: FuncEnvironment + ?Sized>(
         builder.set_srcloc(cur_srcloc(reader));
         let op = reader.read_operator()?;
         environ.before_translate_operator(&op, builder, state)?;
-        translate_operator(module_translation_state, &op, builder, state, environ)?;
+        translate_operator(
+            module_translation_state,
+            &op,
+            builder,
+            state,
+            environ,
+        )?;
         environ.after_translate_operator(&op, builder, state)?;
     }
 

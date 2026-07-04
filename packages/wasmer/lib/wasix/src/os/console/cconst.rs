@@ -70,9 +70,12 @@ impl ConsoleConst {
     pub const COL_LIGHT_GRAY: &'static str = "\x1B[0;37m";
     pub const COL_WHITE: &'static str = "\x1B[1;37m";
 
-    pub const WELCOME_LARGE: &'static str = include_str!("txt/welcome_large.txt");
-    pub const WELCOME_MEDIUM: &'static str = include_str!("txt/welcome_medium.txt");
-    pub const WELCOME_SMALL: &'static str = include_str!("txt/welcome_small.txt");
+    pub const WELCOME_LARGE: &'static str =
+        include_str!("txt/welcome_large.txt");
+    pub const WELCOME_MEDIUM: &'static str =
+        include_str!("txt/welcome_medium.txt");
+    pub const WELCOME_SMALL: &'static str =
+        include_str!("txt/welcome_small.txt");
 
     pub const ABOUT: &'static str = include_str!("txt/about.md");
     pub const ABOUT_WASMER: &'static str = include_str!("txt/about_wasmer.md");

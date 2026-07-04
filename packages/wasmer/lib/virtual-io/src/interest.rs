@@ -5,7 +5,18 @@ use std::{
     task::{Context, RawWaker, RawWakerVTable, Waker},
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+)]
 pub enum InterestType {
     Readable,
     Writable,

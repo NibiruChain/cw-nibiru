@@ -10,7 +10,9 @@ use wasmer_compiler::types::{
     address_map::{FunctionAddressMap, InstructionAddressMap},
     function::{CompiledFunctionFrameInfo, CustomSections, FunctionBody},
     relocation::{Relocation, RelocationKind, RelocationTarget},
-    section::{CustomSection, CustomSectionProtection, SectionBody, SectionIndex},
+    section::{
+        CustomSection, CustomSectionProtection, SectionBody, SectionIndex,
+    },
 };
 
 use wasmer_vm::libcalls::LibCall;
@@ -56,7 +58,8 @@ where
     libcalls.insert("wasmer_vm_f64_nearest".to_string(), LibCall::NearestF64);
     libcalls.insert("wasmer_vm_f32_trunc".to_string(), LibCall::TruncF32);
     libcalls.insert("wasmer_vm_f64_trunc".to_string(), LibCall::TruncF64);
-    libcalls.insert("wasmer_vm_memory32_size".to_string(), LibCall::Memory32Size);
+    libcalls
+        .insert("wasmer_vm_memory32_size".to_string(), LibCall::Memory32Size);
     libcalls.insert(
         "wasmer_vm_imported_memory32_size".to_string(),
         LibCall::ImportedMemory32Size,
@@ -86,17 +89,20 @@ where
     );
     libcalls.insert("wasmer_vm_func_ref".to_string(), LibCall::FuncRef);
     libcalls.insert("wasmer_vm_elem_drop".to_string(), LibCall::ElemDrop);
-    libcalls.insert("wasmer_vm_memory32_copy".to_string(), LibCall::Memory32Copy);
+    libcalls
+        .insert("wasmer_vm_memory32_copy".to_string(), LibCall::Memory32Copy);
     libcalls.insert(
         "wasmer_vm_imported_memory32_copy".to_string(),
         LibCall::ImportedMemory32Copy,
     );
-    libcalls.insert("wasmer_vm_memory32_fill".to_string(), LibCall::Memory32Fill);
+    libcalls
+        .insert("wasmer_vm_memory32_fill".to_string(), LibCall::Memory32Fill);
     libcalls.insert(
         "wasmer_vm_imported_memory32_fill".to_string(),
         LibCall::ImportedMemory32Fill,
     );
-    libcalls.insert("wasmer_vm_memory32_init".to_string(), LibCall::Memory32Init);
+    libcalls
+        .insert("wasmer_vm_memory32_init".to_string(), LibCall::Memory32Init);
     libcalls.insert("wasmer_vm_data_drop".to_string(), LibCall::DataDrop);
     libcalls.insert("wasmer_vm_raise_trap".to_string(), LibCall::RaiseTrap);
     libcalls.insert(
@@ -128,11 +134,16 @@ where
 
     let mut visited: HashSet<object::read::SectionIndex> = HashSet::new();
     let mut worklist: Vec<object::read::SectionIndex> = Vec::new();
-    let mut section_targets: HashMap<object::read::SectionIndex, RelocationTarget> = HashMap::new();
+    let mut section_targets: HashMap<
+        object::read::SectionIndex,
+        RelocationTarget,
+    > = HashMap::new();
 
     let root_section_index = elf
         .section_by_name(root_section)
-        .ok_or_else(|| CompileError::Codegen(format!("no section named {}", root_section)))?
+        .ok_or_else(|| {
+            CompileError::Codegen(format!("no section named {}", root_section))
+        })?
         .index();
 
     let mut section_to_custom_section = HashMap::new();
@@ -140,19 +151,21 @@ where
     section_targets.insert(root_section_index, root_section_reloc_target);
 
     let mut next_custom_section: u32 = 0;
-    let mut elf_section_to_target = |elf_section_index: object::read::SectionIndex| {
-        *section_targets.entry(elf_section_index).or_insert_with(|| {
-            let next = SectionIndex::from_u32(next_custom_section);
-            section_to_custom_section.insert(elf_section_index, next);
-            let target = RelocationTarget::CustomSection(next);
-            next_custom_section += 1;
-            target
-        })
-    };
+    let mut elf_section_to_target =
+        |elf_section_index: object::read::SectionIndex| {
+            *section_targets.entry(elf_section_index).or_insert_with(|| {
+                let next = SectionIndex::from_u32(next_custom_section);
+                section_to_custom_section.insert(elf_section_index, next);
+                let target = RelocationTarget::CustomSection(next);
+                next_custom_section += 1;
+                target
+            })
+        };
 
     // From elf section index to list of Relocations. Although we use a Vec,
     // the order of relocations is not important.
-    let mut relocations: HashMap<object::read::SectionIndex, Vec<Relocation>> = HashMap::new();
+    let mut relocations: HashMap<object::read::SectionIndex, Vec<Relocation>> =
+        HashMap::new();
 
     // Each iteration of this loop pulls a section and the relocations
     // relocations that apply to it. We begin with the ".root_section"
@@ -173,7 +186,9 @@ where
     // Also add any .eh_frame sections.
     let mut eh_frame_section_indices = vec![];
     for section in elf.sections() {
-        if section.kind() == object::SectionKind::Elf(object::elf::SHT_X86_64_UNWIND) {
+        if section.kind()
+            == object::SectionKind::Elf(object::elf::SHT_X86_64_UNWIND)
+        {
             let index = section.index();
             worklist.push(index);
             visited.insert(index);
@@ -190,33 +205,45 @@ where
             .relocations()
         {
             let kind = match (elf.architecture(), reloc.kind(), reloc.size()) {
-                (_, object::RelocationKind::Absolute, 64) => RelocationKind::Abs8,
+                (_, object::RelocationKind::Absolute, 64) => {
+                    RelocationKind::Abs8
+                }
                 (
                     object::Architecture::X86_64,
                     object::RelocationKind::Elf(object::elf::R_X86_64_PC64),
                     0,
                 ) => RelocationKind::X86PCRel8,
-                (object::Architecture::Aarch64, object::RelocationKind::PltRelative, 26) => {
-                    RelocationKind::Arm64Call
-                }
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_MOVW_UABS_G0_NC),
+                    object::RelocationKind::PltRelative,
+                    26,
+                ) => RelocationKind::Arm64Call,
+                (
+                    object::Architecture::Aarch64,
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_MOVW_UABS_G0_NC,
+                    ),
                     0,
                 ) => RelocationKind::Arm64Movw0,
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_MOVW_UABS_G1_NC),
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_MOVW_UABS_G1_NC,
+                    ),
                     0,
                 ) => RelocationKind::Arm64Movw1,
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_MOVW_UABS_G2_NC),
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_MOVW_UABS_G2_NC,
+                    ),
                     0,
                 ) => RelocationKind::Arm64Movw2,
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_MOVW_UABS_G3),
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_MOVW_UABS_G3,
+                    ),
                     0,
                 ) => RelocationKind::Arm64Movw3,
                 (
@@ -231,7 +258,9 @@ where
                 ) => RelocationKind::RiscvPCRelHi20,
                 (
                     object::Architecture::Riscv64,
-                    object::RelocationKind::Elf(object::elf::R_RISCV_PCREL_LO12_I),
+                    object::RelocationKind::Elf(
+                        object::elf::R_RISCV_PCREL_LO12_I,
+                    ),
                     0,
                 ) => RelocationKind::RiscvPCRelLo12I,
                 (
@@ -274,37 +303,51 @@ where
                 ) => RelocationKind::LArchPCAlaLo12,
                 (
                     object::Architecture::LoongArch64,
-                    object::RelocationKind::Elf(object::elf::R_LARCH_PCALA64_HI12),
+                    object::RelocationKind::Elf(
+                        object::elf::R_LARCH_PCALA64_HI12,
+                    ),
                     0,
                 ) => RelocationKind::LArchPCAla64Hi12,
                 (
                     object::Architecture::LoongArch64,
-                    object::RelocationKind::Elf(object::elf::R_LARCH_PCALA64_LO20),
+                    object::RelocationKind::Elf(
+                        object::elf::R_LARCH_PCALA64_LO20,
+                    ),
                     0,
                 ) => RelocationKind::LArchPCAla64Lo20,
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_ADR_PREL_LO21),
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_ADR_PREL_LO21,
+                    ),
                     0,
                 ) => RelocationKind::Aarch64AdrPrelLo21,
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_ADR_PREL_PG_HI21),
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_ADR_PREL_PG_HI21,
+                    ),
                     0,
                 ) => RelocationKind::Aarch64AdrPrelPgHi21,
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_LDST128_ABS_LO12_NC),
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_LDST128_ABS_LO12_NC,
+                    ),
                     0,
                 ) => RelocationKind::Aarch64Ldst128AbsLo12Nc,
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_ADD_ABS_LO12_NC),
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_ADD_ABS_LO12_NC,
+                    ),
                     0,
                 ) => RelocationKind::Aarch64AddAbsLo12Nc,
                 (
                     object::Architecture::Aarch64,
-                    object::RelocationKind::Elf(object::elf::R_AARCH64_LDST64_ABS_LO12_NC),
+                    object::RelocationKind::Elf(
+                        object::elf::R_AARCH64_LDST64_ABS_LO12_NC,
+                    ),
                     0,
                 ) => RelocationKind::Aarch64Ldst64AbsLo12Nc,
 
@@ -318,7 +361,8 @@ where
             let mut addend = reloc.addend();
             let target = match reloc.target() {
                 object::read::RelocationTarget::Symbol(index) => {
-                    let symbol = elf.symbol_by_index(index).map_err(map_object_err)?;
+                    let symbol =
+                        elf.symbol_by_index(index).map_err(map_object_err)?;
                     let symbol_name = symbol.name().map_err(map_object_err)?;
                     if symbol.kind() == object::SymbolKind::Section {
                         match symbol.section() {
@@ -346,7 +390,9 @@ where
                         symbol_name_to_relocation_target(symbol_name)?
                     {
                         reloc_target
-                    } else if let object::SymbolSection::Section(section_index) = symbol.section() {
+                    } else if let object::SymbolSection::Section(section_index) =
+                        symbol.section()
+                    {
                         // TODO: Encode symbol address into addend, I think this is a bit hacky.
                         addend = addend.wrapping_add(symbol.address() as i64);
 

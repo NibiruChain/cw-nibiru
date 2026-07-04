@@ -20,10 +20,14 @@ pub fn clock_time_set<M: MemorySize>(
     if ret == Errno::Success {
         #[cfg(feature = "journal")]
         if env.enable_journal {
-            JournalEffector::save_clock_time_set(&mut ctx, clock_id, time).map_err(|err| {
-                tracing::error!("failed to save clock time set event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            })?;
+            JournalEffector::save_clock_time_set(&mut ctx, clock_id, time)
+                .map_err(|err| {
+                    tracing::error!(
+                        "failed to save clock time set event - {}",
+                        err
+                    );
+                    WasiError::Exit(ExitCode::from(Errno::Fault))
+                })?;
         }
     }
     Ok(ret)

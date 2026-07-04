@@ -79,7 +79,8 @@ pub(super) fn sock_recv_internal_handler<M: MemorySize>(
     let env = ctx.data();
     let memory = unsafe { env.memory_view(&ctx) };
 
-    let bytes_read: M::Offset = wasi_try_ok!(bytes_read.try_into().map_err(|_| Errno::Overflow));
+    let bytes_read: M::Offset =
+        wasi_try_ok!(bytes_read.try_into().map_err(|_| Errno::Overflow));
     wasi_try_mem_ok!(ro_flags.write(&memory, 0));
     wasi_try_mem_ok!(ro_data_len.write(&memory, bytes_read));
 

@@ -86,7 +86,8 @@ impl MemoryFile {
     }
 
     fn metadata(&self) -> Metadata {
-        let modified = self.modified.duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64;
+        let modified =
+            self.modified.duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64;
         Metadata::File {
             length: self.data.len(),
             timestamps: Some(webc::Timestamps::from_modified(modified)),
@@ -105,7 +106,8 @@ pub struct MemoryDir {
 
 impl MemoryDir {
     fn metadata(&self) -> Metadata {
-        let modified = self.modified.duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64;
+        let modified =
+            self.modified.duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64;
         Metadata::Dir {
             timestamps: Some(webc::Timestamps::from_modified(modified)),
         }
@@ -139,7 +141,10 @@ impl MemoryDir {
         None
     }
 
-    fn read_file(&self, path: &PathSegments) -> Option<shared_buffer::OwnedBuffer> {
+    fn read_file(
+        &self,
+        path: &PathSegments,
+    ) -> Option<shared_buffer::OwnedBuffer> {
         self.find_node(path).and_then(|n| {
             if let MemoryNode::File(f) = n {
                 Some(shared_buffer::OwnedBuffer::from_bytes(f.data.clone()))
@@ -235,8 +240,8 @@ impl WasmerPackageVolume for MemoryVolume {
 mod tests {
     use sha2::{Digest, Sha256};
     use v3::{
-        write::Writer, Checksum, ChecksumAlgorithm, Index, IndexEntry, Signature,
-        SignatureAlgorithm, Span, Tag, Timestamps,
+        write::Writer, Checksum, ChecksumAlgorithm, Index, IndexEntry,
+        Signature, SignatureAlgorithm, Span, Tag, Timestamps,
     };
     use webc::metadata::Manifest;
 
@@ -270,7 +275,8 @@ mod tests {
 
         let volume = MemoryVolume { node: dir };
 
-        let file_metadata = volume.metadata(&PathSegments::from_str("hello.txt")?);
+        let file_metadata =
+            volume.metadata(&PathSegments::from_str("hello.txt")?);
         assert!(file_metadata.is_some());
 
         let file_metadata = file_metadata.unwrap();
@@ -364,7 +370,8 @@ mod tests {
             0_u64.to_le_bytes(),
         };
 
-        let atoms_hash: [u8; 32] = sha2::Sha256::digest(&atoms_header_and_data).into();
+        let atoms_hash: [u8; 32] =
+            sha2::Sha256::digest(&atoms_header_and_data).into();
         let atoms_section = bytes! {
             Tag::Atoms,
             atoms_hash,
@@ -402,7 +409,8 @@ mod tests {
             13_u64.to_le_bytes(),
             file_contents,
         };
-        let volume_hash: [u8; 32] = sha2::Sha256::digest(&volume_header_and_data).into();
+        let volume_hash: [u8; 32] =
+            sha2::Sha256::digest(&volume_header_and_data).into();
         let first_volume_section = bytes! {
             Tag::Volume,
             volume_hash,
@@ -458,7 +466,10 @@ mod tests {
         // make sure the index is accurate
         assert_bytes_eq!(&webc[index.manifest.span], manifest_section);
         assert_bytes_eq!(&webc[index.atoms.span], atoms_section);
-        assert_bytes_eq!(&webc[index.volumes["first"].span], first_volume_section);
+        assert_bytes_eq!(
+            &webc[index.volumes["first"].span],
+            first_volume_section
+        );
 
         Ok(())
     }

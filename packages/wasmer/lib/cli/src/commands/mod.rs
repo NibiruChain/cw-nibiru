@@ -10,7 +10,10 @@ mod compile;
 mod config;
 mod connect;
 mod container;
-#[cfg(any(feature = "static-artifact-create", feature = "wasmer-artifact-create"))]
+#[cfg(any(
+    feature = "static-artifact-create",
+    feature = "wasmer-artifact-create"
+))]
 mod create_exe;
 #[cfg(feature = "static-artifact-create")]
 mod create_obj;
@@ -39,7 +42,10 @@ pub use binfmt::*;
 use clap::{CommandFactory, Parser};
 #[cfg(feature = "compiler")]
 pub use compile::*;
-#[cfg(any(feature = "static-artifact-create", feature = "wasmer-artifact-create"))]
+#[cfg(any(
+    feature = "static-artifact-create",
+    feature = "wasmer-artifact-create"
+))]
 pub use create_exe::*;
 #[cfg(feature = "wast")]
 pub use wast::*;
@@ -49,8 +55,8 @@ pub use {create_obj::*, gen_c_header::*};
 #[cfg(feature = "journal")]
 pub use self::journal::*;
 pub use self::{
-    add::*, auth::*, cache::*, config::*, container::*, init::*, inspect::*, package::*,
-    publish::*, run::Run, self_update::*, validate::*,
+    add::*, auth::*, cache::*, config::*, container::*, init::*, inspect::*,
+    package::*, publish::*, run::Run, self_update::*, validate::*,
 };
 use crate::error::PrettyError;
 
@@ -118,7 +124,9 @@ impl<O: Send + Sync, C: AsyncCliCommand<Output = O>> CliCommand for C {
 
             if let Some(handle) = handle {
                 if snd.send(()).is_err() {
-                    tracing::warn!("Failed to send 'done' signal to setup thread!");
+                    tracing::warn!(
+                        "Failed to send 'done' signal to setup thread!"
+                    );
                     handle.abort();
                 } else {
                     handle.await??;
@@ -177,7 +185,10 @@ impl WasmerCmd {
             Some(Cmd::Validate(validate)) => validate.execute(),
             #[cfg(feature = "compiler")]
             Some(Cmd::Compile(compile)) => compile.execute(),
-            #[cfg(any(feature = "static-artifact-create", feature = "wasmer-artifact-create"))]
+            #[cfg(any(
+                feature = "static-artifact-create",
+                feature = "wasmer-artifact-create"
+            ))]
             Some(Cmd::CreateExe(create_exe)) => create_exe.run(),
             #[cfg(feature = "static-artifact-create")]
             Some(Cmd::CreateObj(create_obj)) => create_obj.execute(),
@@ -240,21 +251,22 @@ impl WasmerCmd {
         match WasmerCmd::try_parse() {
             Ok(args) => args.execute(),
             Err(e) => {
-                let first_arg_is_subcommand = if let Some(first_arg) = args().nth(1) {
-                    let mut ret = false;
-                    let cmd = WasmerCmd::command();
+                let first_arg_is_subcommand =
+                    if let Some(first_arg) = args().nth(1) {
+                        let mut ret = false;
+                        let cmd = WasmerCmd::command();
 
-                    for cmd in cmd.get_subcommands() {
-                        if cmd.get_name() == first_arg {
-                            ret = true;
-                            break;
+                        for cmd in cmd.get_subcommands() {
+                            if cmd.get_name() == first_arg {
+                                ret = true;
+                                break;
+                            }
                         }
-                    }
 
-                    ret
-                } else {
-                    false
-                };
+                        ret
+                    } else {
+                        false
+                    };
 
                 let might_be_wasmer_run = matches!(
                     e.kind(),
@@ -334,7 +346,10 @@ enum Cmd {
     /// - "aarch64-linux-gnu"
     /// - "x86_64-apple-darwin"
     /// - "arm64-apple-darwin"
-    #[cfg(any(feature = "static-artifact-create", feature = "wasmer-artifact-create"))]
+    #[cfg(any(
+        feature = "static-artifact-create",
+        feature = "wasmer-artifact-create"
+    ))]
     #[clap(name = "create-exe", verbatim_doc_comment)]
     CreateExe(CreateExe),
 

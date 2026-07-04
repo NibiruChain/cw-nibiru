@@ -6,13 +6,15 @@ fn artifact_serialization_roundtrip() {
     let file_names = ["bash.wasm", "cowsay.wasm", "python-3.11.3.wasm"];
 
     for file_name in file_names {
-        let path = PathBuf::from("tests/integration/cli/tests/wasm").join(file_name);
+        let path =
+            PathBuf::from("tests/integration/cli/tests/wasm").join(file_name);
         let wasm_module = fs::read(path).unwrap();
         let engine = Engine::default();
         let module = Module::new(&engine, wasm_module).unwrap();
         let serialized_bytes = module.serialize().unwrap();
         let deserialized_module =
-            unsafe { Module::deserialize(&engine, serialized_bytes.clone()) }.unwrap();
+            unsafe { Module::deserialize(&engine, serialized_bytes.clone()) }
+                .unwrap();
         let reserialized_bytes = deserialized_module.serialize().unwrap();
         assert_eq!(serialized_bytes, reserialized_bytes);
     }
@@ -37,16 +39,21 @@ fn artifact_serialization_build() {
         cpu_feature.insert(CpuFeature::from_str("sse2").unwrap());
         let target = Target::new(triple, cpu_feature);
         for file_name in file_names {
-            let path = PathBuf::from("tests/integration/cli/tests/wasm").join(file_name);
+            let path = PathBuf::from("tests/integration/cli/tests/wasm")
+                .join(file_name);
             let wasm_module = fs::read(path).unwrap();
             let config = get_default_compiler_config().unwrap();
-            let mut engine = Engine::new(config, target.clone(), Features::default());
+            let mut engine =
+                Engine::new(config, target.clone(), Features::default());
 
             engine.set_hash_algorithm(Some(wasmer_types::HashAlgorithm::Sha256));
 
             let module = Module::new(&engine, wasm_module).unwrap();
             let serialized_bytes = module.serialize().unwrap();
-            let path = PathBuf::from(&format!("tests/compilers/wasmu/{}/{}u", os, file_name));
+            let path = PathBuf::from(&format!(
+                "tests/compilers/wasmu/{}/{}u",
+                os, file_name
+            ));
             std::fs::write(path, serialized_bytes).unwrap();
         }
     }
@@ -73,7 +80,9 @@ fn artifact_deserialization_roundtrip() {
         let path = PathBuf::from(base_path).join(file_name);
         let wasm_module_bytes = fs::read(path).unwrap();
         let engine = Engine::default();
-        let module = unsafe { Module::deserialize(&engine, wasm_module_bytes.clone()) }.unwrap();
+        let module =
+            unsafe { Module::deserialize(&engine, wasm_module_bytes.clone()) }
+                .unwrap();
         let reserialized_bytes = module.serialize().unwrap();
         assert_eq!(wasm_module_bytes.to_vec(), reserialized_bytes);
     }

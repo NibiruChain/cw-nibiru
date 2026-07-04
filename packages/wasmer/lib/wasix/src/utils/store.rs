@@ -15,13 +15,18 @@ impl StoreSnapshot {
     }
 }
 
-pub fn capture_store_snapshot(store: &mut impl wasmer::AsStoreMut) -> StoreSnapshot {
+pub fn capture_store_snapshot(
+    store: &mut impl wasmer::AsStoreMut,
+) -> StoreSnapshot {
     let objs = store.objects_mut();
     let globals = objs.as_u128_globals();
     StoreSnapshot { globals }
 }
 
-pub fn restore_store_snapshot(store: &mut impl wasmer::AsStoreMut, snapshot: &StoreSnapshot) {
+pub fn restore_store_snapshot(
+    store: &mut impl wasmer::AsStoreMut,
+    snapshot: &StoreSnapshot,
+) {
     let objs = store.objects_mut();
 
     for (index, value) in snapshot.globals.iter().enumerate() {

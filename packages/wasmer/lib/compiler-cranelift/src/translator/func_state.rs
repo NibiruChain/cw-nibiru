@@ -14,7 +14,9 @@ use crate::heap::Heap;
 use crate::{HashMap, Occupied, Vacant};
 use cranelift_codegen::ir::{self, Block, Inst, Value};
 use std::vec::Vec;
-use wasmer_types::{FunctionIndex, GlobalIndex, MemoryIndex, SignatureIndex, WasmResult};
+use wasmer_types::{
+    FunctionIndex, GlobalIndex, MemoryIndex, SignatureIndex, WasmResult,
+};
 
 /// Information about the presence of an associated `else` for an `if`, or the
 /// lack thereof.
@@ -131,7 +133,9 @@ impl ControlStackFrame {
     }
     pub fn br_destination(&self) -> Block {
         match *self {
-            Self::If { destination, .. } | Self::Block { destination, .. } => destination,
+            Self::If { destination, .. } | Self::Block { destination, .. } => {
+                destination
+            }
             Self::Loop { header, .. } => header,
         }
     }
@@ -459,7 +463,9 @@ impl FuncTranslationState {
         let index = GlobalIndex::from_u32(index);
         match self.globals.entry(index) {
             Occupied(entry) => Ok(*entry.get()),
-            Vacant(entry) => Ok(*entry.insert(environ.make_global(func, index)?)),
+            Vacant(entry) => {
+                Ok(*entry.insert(environ.make_global(func, index)?))
+            }
         }
     }
 
@@ -493,7 +499,10 @@ impl FuncTranslationState {
             Occupied(entry) => Ok(*entry.get()),
             Vacant(entry) => {
                 let sig = environ.make_indirect_sig(func, index)?;
-                Ok(*entry.insert((sig, num_wasm_parameters(environ, &func.dfg.signatures[sig]))))
+                Ok(*entry.insert((
+                    sig,
+                    num_wasm_parameters(environ, &func.dfg.signatures[sig]),
+                )))
             }
         }
     }

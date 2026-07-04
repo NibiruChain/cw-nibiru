@@ -22,10 +22,15 @@ pub fn fd_allocate(
 
     #[cfg(feature = "journal")]
     if env.enable_journal {
-        JournalEffector::save_fd_allocate(&mut ctx, fd, offset, len).map_err(|err| {
-            tracing::error!("failed to save file descriptor allocate event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_fd_allocate(&mut ctx, fd, offset, len).map_err(
+            |err| {
+                tracing::error!(
+                    "failed to save file descriptor allocate event - {}",
+                    err
+                );
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            },
+        )?;
     }
 
     Ok(Errno::Success)
@@ -63,7 +68,9 @@ pub(crate) fn fd_allocate_internal(
                 buffer.resize(new_size as usize, 0);
             }
             Kind::Symlink { .. } => return Err(Errno::Badf),
-            Kind::EventNotifications { .. } | Kind::Epoll { .. } => return Err(Errno::Badf),
+            Kind::EventNotifications { .. } | Kind::Epoll { .. } => {
+                return Err(Errno::Badf)
+            }
             Kind::Dir { .. } | Kind::Root { .. } => return Err(Errno::Isdir),
         }
     }

@@ -37,8 +37,9 @@ impl CliCommand for CmdJournalExtract {
 
         match self.what {
             CmdExtractWhat::Memory(cmd) => {
-                let memory_file =
-                    wasmer_wasix::journal::MemFileJournal::new(&cmd.memory_file_path)?;
+                let memory_file = wasmer_wasix::journal::MemFileJournal::new(
+                    &cmd.memory_file_path,
+                )?;
                 copy_journal(&journal, &memory_file)?;
             }
         }

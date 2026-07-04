@@ -18,7 +18,12 @@ pub struct CompactingTransactionJournal<W: WritableJournal, R: ReadableJournal> 
     rx: CompactingTransactionJournalRx<R>,
 }
 
-impl CompactingTransactionJournal<Box<DynWritableJournal>, Box<DynReadableJournal>> {
+impl
+    CompactingTransactionJournal<
+        Box<DynWritableJournal>,
+        Box<DynReadableJournal>,
+    >
+{
     /// Creates a compacting transactional journal which will hold events in
     /// memory until the journal is either committed or rolled back.
     ///
@@ -46,7 +51,10 @@ impl<W: WritableJournal, R: ReadableJournal> CompactingTransactionJournal<W, R> 
 }
 
 impl<W: WritableJournal> WritableJournal for CompactingTransactionJournalTx<W> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.inner.write(entry)
     }
 
@@ -80,7 +88,10 @@ impl<W: WritableJournal> WritableJournal for CompactingTransactionJournalTx<W> {
             inner: &'a CompactingTransactionJournalTx<W>,
         }
         impl<W: WritableJournal> WritableJournal for RelayJournal<'_, W> {
-            fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+            fn write<'a>(
+                &'a self,
+                entry: JournalEntry<'a>,
+            ) -> anyhow::Result<LogWriteResult> {
                 self.inner.write(entry)
             }
             fn flush(&self) -> anyhow::Result<()> {
@@ -98,8 +109,10 @@ impl<W: WritableJournal> WritableJournal for CompactingTransactionJournalTx<W> {
         // Now we create a filter journal which will filter out the events
         // that are not needed and stream them down
         let mut ret = 0;
-        let filter =
-            compacting.create_split_filter(relay_journal, NullJournal::default().split().1);
+        let filter = compacting.create_split_filter(
+            relay_journal,
+            NullJournal::default().split().1,
+        );
         for entry in records {
             let res = filter.write(entry)?;
             if res.record_start == 0 && res.record_end == 0 {
@@ -134,7 +147,10 @@ impl<R: ReadableJournal> ReadableJournal for CompactingTransactionJournalRx<R> {
 impl<W: WritableJournal, R: ReadableJournal> WritableJournal
     for CompactingTransactionJournal<W, R>
 {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 
@@ -163,7 +179,12 @@ impl<W: WritableJournal, R: ReadableJournal> ReadableJournal
     }
 }
 
-impl Journal for CompactingTransactionJournal<Box<DynWritableJournal>, Box<DynReadableJournal>> {
+impl Journal
+    for CompactingTransactionJournal<
+        Box<DynWritableJournal>,
+        Box<DynReadableJournal>,
+    >
+{
     fn split(self) -> (Box<DynWritableJournal>, Box<DynReadableJournal>) {
         (Box::new(self.tx), Box::new(self.rx))
     }

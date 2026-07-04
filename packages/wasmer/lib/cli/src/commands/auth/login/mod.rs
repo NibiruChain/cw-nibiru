@@ -83,8 +83,10 @@ impl Login {
     ) -> anyhow::Result<AuthorizationState> {
         let (listener, server_url) = setup_listener().await?;
 
-        let (server_shutdown_tx, mut server_shutdown_rx) = tokio::sync::mpsc::channel::<bool>(1);
-        let (token_tx, mut token_rx) = tokio::sync::mpsc::channel::<AuthorizationState>(1);
+        let (server_shutdown_tx, mut server_shutdown_rx) =
+            tokio::sync::mpsc::channel::<bool>(1);
+        let (token_tx, mut token_rx) =
+            tokio::sync::mpsc::channel::<AuthorizationState>(1);
 
         // Create a new AppContext
         let app_context = BrowserAuthContext {
@@ -92,12 +94,17 @@ impl Login {
             token_tx,
         };
 
-        let Nonce { auth_url, .. } =
-            wasmer_backend_api::query::create_nonce(client, "wasmer-cli".to_string(), server_url)
-                .await?
-                .ok_or_else(|| {
-                    anyhow::anyhow!("The backend did not return any nonce to auth the login!")
-                })?;
+        let Nonce { auth_url, .. } = wasmer_backend_api::query::create_nonce(
+            client,
+            "wasmer-cli".to_string(),
+            server_url,
+        )
+        .await?
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "The backend did not return any nonce to auth the login!"
+            )
+        })?;
 
         // if failed to open the browser, then don't error out just print the auth_url with a message
         println!("Opening auth link in your default browser: {}", &auth_url);
@@ -116,7 +123,8 @@ impl Login {
 
         let mut futs = FuturesUnordered::new();
 
-        let service = service_fn(move |req| service_router(app_context.clone(), req));
+        let service =
+            service_fn(move |req| service_router(app_context.clone(), req));
 
         print!("Waiting for session... ");
 
@@ -145,41 +153,45 @@ impl Login {
         }
 
         // receive the token from the server
-        let token = token_rx
-            .recv()
-            .await
-            .ok_or_else(|| anyhow::anyhow!("❌ Failed to receive token from localhost"))?;
+        let token = token_rx.recv().await.ok_or_else(|| {
+            anyhow::anyhow!("❌ Failed to receive token from localhost")
+        })?;
 
         Ok(token)
     }
 
-    async fn do_login(&self, env: &WasmerEnv) -> anyhow::Result<AuthorizationState> {
+    async fn do_login(
+        &self,
+        env: &WasmerEnv,
+    ) -> anyhow::Result<AuthorizationState> {
         let client = env.client_unauthennticated()?;
 
-        let should_login =
-            if let Some(user) = wasmer_backend_api::query::current_user(&client).await? {
-                #[cfg(not(test))]
-                {
-                    println!(
-                        "You are already logged in as {} in registry {}.",
-                        user.username.bold(),
-                        env.registry_public_url()?.host_str().unwrap().bold()
-                    );
-                    let theme = dialoguer::theme::ColorfulTheme::default();
-                    let dialog = dialoguer::Confirm::with_theme(&theme).with_prompt("Login again?");
+        let should_login = if let Some(user) =
+            wasmer_backend_api::query::current_user(&client).await?
+        {
+            #[cfg(not(test))]
+            {
+                println!(
+                    "You are already logged in as {} in registry {}.",
+                    user.username.bold(),
+                    env.registry_public_url()?.host_str().unwrap().bold()
+                );
+                let theme = dialoguer::theme::ColorfulTheme::default();
+                let dialog = dialoguer::Confirm::with_theme(&theme)
+                    .with_prompt("Login again?");
 
-                    dialog.interact()?
-                }
-                #[cfg(test)]
-                {
-                    // prevent unused binding warning
-                    _ = user;
+                dialog.interact()?
+            }
+            #[cfg(test)]
+            {
+                // prevent unused binding warning
+                _ = user;
 
-                    false
-                }
-            } else {
-                true
-            };
+                false
+            }
+        } else {
+            true
+        };
 
         if !should_login {
             Ok(AuthorizationState::Cancelled)
@@ -188,7 +200,8 @@ impl Login {
         } else {
             // switch between two methods of getting the token.
             // start two async processes, 10 minute timeout and get token from browser. Whichever finishes first, use that.
-            let timeout_future = tokio::time::sleep(Duration::from_secs(60 * 10));
+            let timeout_future =
+                tokio::time::sleep(Duration::from_secs(60 * 10));
             tokio::select! {
              _ = timeout_future => {
                      Ok(AuthorizationState::TimedOut)
@@ -200,7 +213,11 @@ impl Login {
         }
     }
 
-    async fn login_and_save(&self, env: &WasmerEnv, token: String) -> anyhow::Result<String> {
+    async fn login_and_save(
+        &self,
+        env: &WasmerEnv,
+        token: String,
+    ) -> anyhow::Result<String> {
         let registry = env.registry_endpoint()?;
         let mut config = WasmerConfig::from_file(env.dir())
             .map_err(|e| anyhow::anyhow!("config from file: {e}"))?;

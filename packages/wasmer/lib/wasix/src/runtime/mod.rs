@@ -98,12 +98,16 @@ where
     }
 
     /// Load a a Webassembly module, trying to use a pre-compiled version if possible.
-    fn load_module<'a>(&'a self, wasm: &'a [u8]) -> BoxFuture<'a, Result<Module, SpawnError>> {
+    fn load_module<'a>(
+        &'a self,
+        wasm: &'a [u8],
+    ) -> BoxFuture<'a, Result<Module, SpawnError>> {
         let engine = self.engine();
         let module_cache = self.module_cache();
         let hash = ModuleHash::xxhash(wasm);
 
-        let task = async move { load_module(&engine, &module_cache, wasm, hash).await };
+        let task =
+            async move { load_module(&engine, &module_cache, wasm, hash).await };
 
         Box::pin(task)
     }
@@ -164,9 +168,11 @@ pub async fn load_module(
         }
     }
 
-    let module = Module::new(&engine, wasm).map_err(|err| crate::SpawnError::CompileError {
-        module_hash: wasm_hash,
-        error: err,
+    let module = Module::new(&engine, wasm).map_err(|err| {
+        crate::SpawnError::CompileError {
+            module_hash: wasm_hash,
+            error: err,
+        }
     })?;
 
     if let Err(e) = module_cache.save(wasm_hash, engine, &module).await {
@@ -228,8 +234,8 @@ impl PluggableRuntime {
                 let networking = Arc::new(virtual_net::UnsupportedVirtualNetworking::default());
             }
         }
-        let http_client =
-            crate::http::default_http_client().map(|client| Arc::new(client) as DynHttpClient);
+        let http_client = crate::http::default_http_client()
+            .map(|client| Arc::new(client) as DynHttpClient);
 
         let loader = UnsupportedPackageLoader;
 
@@ -268,7 +274,10 @@ impl PluggableRuntime {
         self
     }
 
-    pub fn set_tty(&mut self, tty: Arc<dyn TtyBridge + Send + Sync>) -> &mut Self {
+    pub fn set_tty(
+        &mut self,
+        tty: Arc<dyn TtyBridge + Send + Sync>,
+    ) -> &mut Self {
         self.tty = Some(tty);
         self
     }
@@ -281,7 +290,10 @@ impl PluggableRuntime {
         self
     }
 
-    pub fn set_source(&mut self, source: impl Source + Send + 'static) -> &mut Self {
+    pub fn set_source(
+        &mut self,
+        source: impl Source + Send + 'static,
+    ) -> &mut Self {
         self.source = Arc::new(source);
         self
     }
@@ -394,7 +406,10 @@ impl OverriddenRuntime {
         }
     }
 
-    pub fn with_task_manager(mut self, task_manager: Arc<dyn VirtualTaskManager>) -> Self {
+    pub fn with_task_manager(
+        mut self,
+        task_manager: Arc<dyn VirtualTaskManager>,
+    ) -> Self {
         self.task_manager.replace(task_manager);
         self
     }
@@ -427,7 +442,10 @@ impl OverriddenRuntime {
         self
     }
 
-    pub fn with_module_cache(mut self, module_cache: Arc<dyn ModuleCache + Send + Sync>) -> Self {
+    pub fn with_module_cache(
+        mut self,
+        module_cache: Arc<dyn ModuleCache + Send + Sync>,
+    ) -> Self {
         self.module_cache.replace(module_cache);
         self
     }
@@ -536,13 +554,18 @@ impl Runtime for OverriddenRuntime {
         }
     }
 
-    fn load_module<'a>(&'a self, wasm: &'a [u8]) -> BoxFuture<'a, Result<Module, SpawnError>> {
+    fn load_module<'a>(
+        &'a self,
+        wasm: &'a [u8],
+    ) -> BoxFuture<'a, Result<Module, SpawnError>> {
         if self.engine.is_some() || self.module_cache.is_some() {
             let engine = self.engine();
             let module_cache = self.module_cache();
             let hash = ModuleHash::xxhash(wasm);
 
-            let task = async move { load_module(&engine, &module_cache, wasm, hash).await };
+            let task = async move {
+                load_module(&engine, &module_cache, wasm, hash).await
+            };
             Box::pin(task)
         } else {
             self.inner.load_module(wasm)

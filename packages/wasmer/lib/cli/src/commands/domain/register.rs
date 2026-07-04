@@ -1,4 +1,6 @@
-use crate::{commands::AsyncCliCommand, config::WasmerEnv, opts::ItemTableFormatOpts};
+use crate::{
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ItemTableFormatOpts,
+};
 
 /// Show a domain
 #[derive(clap::Parser, Debug)]

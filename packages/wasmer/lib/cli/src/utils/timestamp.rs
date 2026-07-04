@@ -16,7 +16,11 @@ pub fn parse_timestamp_or_relative_time(
     s: &str,
     assume_negative_offset: bool,
 ) -> Result<OffsetDateTime, anyhow::Error> {
-    parse_timestamp_or_relative_time_based(s, OffsetDateTime::now_utc(), assume_negative_offset)
+    parse_timestamp_or_relative_time_based(
+        s,
+        OffsetDateTime::now_utc(),
+        assume_negative_offset,
+    )
 }
 
 /// See [`parse_timestamp_or_relative_time`].
@@ -40,10 +44,15 @@ pub fn parse_timestamp_or_relative_time_based(
     if let Ok(t) = OffsetDateTime::parse(s, &Rfc2822) {
         return Ok(t);
     }
-    if let Ok(t) = Date::parse(s, time::macros::format_description!("[year]-[month]-[day]")) {
+    if let Ok(t) =
+        Date::parse(s, time::macros::format_description!("[year]-[month]-[day]"))
+    {
         return Ok(PrimitiveDateTime::new(t, Time::MIDNIGHT).assume_utc());
     }
-    if let Ok(t) = OffsetDateTime::parse(s, time::macros::format_description!("[unix_timestamp]")) {
+    if let Ok(t) = OffsetDateTime::parse(
+        s,
+        time::macros::format_description!("[unix_timestamp]"),
+    ) {
         return Ok(t);
     }
 

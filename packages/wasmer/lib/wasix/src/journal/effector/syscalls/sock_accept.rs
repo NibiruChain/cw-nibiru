@@ -75,9 +75,12 @@ impl JournalEffector {
         let env = ctx.data();
         let state = env.state();
         let inodes = &state.inodes;
-        let inode = state
-            .fs
-            .create_inode_with_default_stat(inodes, kind, false, "socket".into());
+        let inode = state.fs.create_inode_with_default_stat(
+            inodes,
+            kind,
+            false,
+            "socket".into(),
+        );
 
         let mut new_flags = Fdflags::empty();
         if nonblocking {

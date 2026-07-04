@@ -32,15 +32,23 @@ impl ReqwestHttpClient {
         self
     }
 
-    pub fn with_response_body_chunk_timeout(mut self, timeout: std::time::Duration) -> Self {
+    pub fn with_response_body_chunk_timeout(
+        mut self,
+        timeout: std::time::Duration,
+    ) -> Self {
         self.response_body_chunk_timeout = Some(timeout);
         self
     }
 
     #[tracing::instrument(skip_all, fields(method=?request.method, url=%request.url))]
-    async fn request(&self, request: HttpRequest) -> Result<HttpResponse, anyhow::Error> {
+    async fn request(
+        &self,
+        request: HttpRequest,
+    ) -> Result<HttpResponse, anyhow::Error> {
         let method = reqwest::Method::try_from(request.method.as_str())
-            .with_context(|| format!("Invalid http method {}", request.method))?;
+            .with_context(|| {
+                format!("Invalid http method {}", request.method)
+            })?;
 
         // TODO: use persistent client?
         let builder = {
@@ -52,7 +60,8 @@ impl ReqwestHttpClient {
             }
             builder
         };
-        let client = builder.build().context("failed to create reqwest client")?;
+        let client =
+            builder.build().context("failed to create reqwest client")?;
 
         tracing::debug!("sending http request");
         let mut builder = client.request(method, request.url.as_str());
@@ -77,7 +86,9 @@ impl ReqwestHttpClient {
 
         // Download the body.
         #[cfg(not(feature = "js"))]
-        let data = if let Some(timeout_duration) = self.response_body_chunk_timeout {
+        let data = if let Some(timeout_duration) =
+            self.response_body_chunk_timeout
+        {
             // Download the body with a chunk timeout.
             // The timeout prevents long stalls.
 
@@ -150,14 +161,20 @@ impl ReqwestHttpClient {
 
 impl super::HttpClient for ReqwestHttpClient {
     #[cfg(not(feature = "js"))]
-    fn request(&self, request: HttpRequest) -> BoxFuture<'_, Result<HttpResponse, anyhow::Error>> {
+    fn request(
+        &self,
+        request: HttpRequest,
+    ) -> BoxFuture<'_, Result<HttpResponse, anyhow::Error>> {
         let client = self.clone();
         let f = async move { client.request(request).await };
         Box::pin(f)
     }
 
     #[cfg(feature = "js")]
-    fn request(&self, request: HttpRequest) -> BoxFuture<'_, Result<HttpResponse, anyhow::Error>> {
+    fn request(
+        &self,
+        request: HttpRequest,
+    ) -> BoxFuture<'_, Result<HttpResponse, anyhow::Error>> {
         let client = self.clone();
         let (sender, receiver) = futures::channel::oneshot::channel();
         wasm_bindgen_futures::spawn_local(async move {

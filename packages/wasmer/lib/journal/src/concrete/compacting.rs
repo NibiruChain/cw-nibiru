@@ -146,7 +146,11 @@ impl State {
         self.create_split_filter(w, r)
     }
 
-    fn create_split_filter<W, R>(&self, writer: W, reader: R) -> FilteredJournal<W, R>
+    fn create_split_filter<W, R>(
+        &self,
+        writer: W,
+        reader: R,
+    ) -> FilteredJournal<W, R>
     where
         W: WritableJournal,
         R: ReadableJournal,
@@ -243,7 +247,11 @@ impl State {
         lookup
     }
 
-    fn append_to_sub_events(&mut self, lookup: &SubGroupIndex, event_index: usize) {
+    fn append_to_sub_events(
+        &mut self,
+        lookup: &SubGroupIndex,
+        event_index: usize,
+    ) {
         if let Some(state) = self.sub_events.get_mut(lookup) {
             state.events.push(event_index);
         }
@@ -317,7 +325,10 @@ pub struct CompactingJournalRx {
 }
 
 impl CompactingJournalRx {
-    pub fn swap_inner(&mut self, mut with: Box<DynReadableJournal>) -> Box<DynReadableJournal> {
+    pub fn swap_inner(
+        &mut self,
+        mut with: Box<DynReadableJournal>,
+    ) -> Box<DynReadableJournal> {
         std::mem::swap(&mut self.inner, &mut with);
         with
     }
@@ -387,7 +398,11 @@ impl CompactingJournal {
 
     /// Creates a filter journal which will write all
     /// its events to writer and readers supplied
-    pub fn create_split_filter<W, R>(&self, writer: W, reader: R) -> FilteredJournal<W, R>
+    pub fn create_split_filter<W, R>(
+        &self,
+        writer: W,
+        reader: R,
+    ) -> FilteredJournal<W, R>
     where
         W: WritableJournal,
         R: ReadableJournal,
@@ -415,7 +430,11 @@ impl CompactingJournalTx {
         state.create_filter(inner)
     }
 
-    pub fn create_split_filter<W, R>(&self, writer: W, reader: R) -> FilteredJournal<W, R>
+    pub fn create_split_filter<W, R>(
+        &self,
+        writer: W,
+        reader: R,
+    ) -> FilteredJournal<W, R>
     where
         W: WritableJournal,
         R: ReadableJournal,
@@ -507,7 +526,10 @@ impl CompactingJournalTx {
 
 impl WritableJournal for CompactingJournalTx {
     #[allow(clippy::assigning_clones)]
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         let mut state = self.state.lock().unwrap();
         let event_index = state.event_index;
         state.event_index += 1;
@@ -550,7 +572,9 @@ impl WritableJournal for CompactingJournalTx {
                 // Creating a file and erasing anything that was there before means
                 // the entire create branch that exists before this one can be ignored
                 let path = path.to_string();
-                if o_flags.contains(wasi::Oflags::CREATE) && o_flags.contains(wasi::Oflags::TRUNC) {
+                if o_flags.contains(wasi::Oflags::CREATE)
+                    && o_flags.contains(wasi::Oflags::TRUNC)
+                {
                     state.cancel_sub_events_by_path(path.as_ref());
                 }
                 // All file descriptors are opened in a suspect state which
@@ -592,7 +616,12 @@ impl WritableJournal for CompactingJournalTx {
                     .find_sub_events(fd)
                     .and_then(|lookup| state.sub_events.get_mut(&lookup))
                 {
-                    if let JournalEntry::FileDescriptorWriteV1 { offset, data, .. } = &entry {
+                    if let JournalEntry::FileDescriptorWriteV1 {
+                        offset,
+                        data,
+                        ..
+                    } = &entry
+                    {
                         state.write_map.insert(
                             MemoryRange {
                                 start: *offset,
@@ -640,7 +669,8 @@ impl WritableJournal for CompactingJournalTx {
                     state.sub_events.remove(&lookup);
                 } else if let Some(lookup) = state.open_pipes.remove(fd) {
                     state.sub_events.remove(&lookup);
-                } else if let Some(lookup) = state.suspect_descriptors.remove(fd) {
+                } else if let Some(lookup) = state.suspect_descriptors.remove(fd)
+                {
                     state.sub_events.remove(&lookup);
                 } else if let Some(lookup) = state.event_descriptors.remove(fd) {
                     state.sub_events.remove(&lookup);
@@ -658,19 +688,33 @@ impl WritableJournal for CompactingJournalTx {
                 original_fd,
                 copied_fd,
             } => {
-                if let Some(lookup) = state.suspect_descriptors.get(original_fd).cloned() {
+                if let Some(lookup) =
+                    state.suspect_descriptors.get(original_fd).cloned()
+                {
                     state.suspect_descriptors.insert(*copied_fd, lookup);
-                } else if let Some(lookup) = state.keep_descriptors.get(original_fd).cloned() {
+                } else if let Some(lookup) =
+                    state.keep_descriptors.get(original_fd).cloned()
+                {
                     state.keep_descriptors.insert(*copied_fd, lookup);
-                } else if let Some(lookup) = state.stdio_descriptors.get(original_fd).cloned() {
+                } else if let Some(lookup) =
+                    state.stdio_descriptors.get(original_fd).cloned()
+                {
                     state.stdio_descriptors.insert(*copied_fd, lookup);
-                } else if let Some(lookup) = state.open_pipes.get(original_fd).cloned() {
+                } else if let Some(lookup) =
+                    state.open_pipes.get(original_fd).cloned()
+                {
                     state.open_pipes.insert(*copied_fd, lookup);
-                } else if let Some(lookup) = state.open_sockets.get(original_fd).cloned() {
+                } else if let Some(lookup) =
+                    state.open_sockets.get(original_fd).cloned()
+                {
                     state.open_sockets.insert(*copied_fd, lookup);
-                } else if let Some(lookup) = state.accepted_sockets.get(original_fd).cloned() {
+                } else if let Some(lookup) =
+                    state.accepted_sockets.get(original_fd).cloned()
+                {
                     state.accepted_sockets.insert(*copied_fd, lookup);
-                } else if let Some(lookup) = state.event_descriptors.get(original_fd).cloned() {
+                } else if let Some(lookup) =
+                    state.event_descriptors.get(original_fd).cloned()
+                {
                     state.event_descriptors.insert(*copied_fd, lookup);
                 }
             }
@@ -678,9 +722,13 @@ impl WritableJournal for CompactingJournalTx {
             JournalEntry::RenumberFileDescriptorV1 { old_fd, new_fd } => {
                 if let Some(lookup) = state.suspect_descriptors.remove(old_fd) {
                     state.suspect_descriptors.insert(*new_fd, lookup);
-                } else if let Some(lookup) = state.keep_descriptors.remove(old_fd) {
+                } else if let Some(lookup) =
+                    state.keep_descriptors.remove(old_fd)
+                {
                     state.keep_descriptors.insert(*new_fd, lookup);
-                } else if let Some(lookup) = state.stdio_descriptors.remove(old_fd) {
+                } else if let Some(lookup) =
+                    state.stdio_descriptors.remove(old_fd)
+                {
                     state.stdio_descriptors.insert(*new_fd, lookup);
                 } else if let Some(lookup) = state.open_pipes.remove(old_fd) {
                     state.open_pipes.insert(*new_fd, lookup);
@@ -688,7 +736,9 @@ impl WritableJournal for CompactingJournalTx {
                     state.open_sockets.insert(*new_fd, lookup);
                 } else if let Some(lookup) = state.open_sockets.remove(old_fd) {
                     state.accepted_sockets.insert(*new_fd, lookup);
-                } else if let Some(lookup) = state.event_descriptors.remove(old_fd) {
+                } else if let Some(lookup) =
+                    state.event_descriptors.remove(old_fd)
+                {
                     state.event_descriptors.insert(*new_fd, lookup);
                 }
             }
@@ -726,7 +776,8 @@ impl WritableJournal for CompactingJournalTx {
             // Update all the directory operations
             JournalEntry::PathSetTimesV1 { path, .. } => {
                 let path = path.to_string();
-                if let Some(lookup) = state.create_directory.get(&path).cloned() {
+                if let Some(lookup) = state.create_directory.get(&path).cloned()
+                {
                     state.append_to_sub_events(&lookup, event_index);
                 } else if !state.remove_directory.contains_key(&path) {
                     state.whitelist.insert(event_index);
@@ -753,7 +804,8 @@ impl WritableJournal for CompactingJournalTx {
                 state.accepted_sockets.insert(*fd, lookup);
             }
             // Sockets that are accepted are suspect
-            JournalEntry::SocketAcceptedV1 { fd, .. } | JournalEntry::SocketOpenV1 { fd, .. } => {
+            JournalEntry::SocketAcceptedV1 { fd, .. }
+            | JournalEntry::SocketOpenV1 { fd, .. } => {
                 let lookup = state.insert_new_sub_events(event_index);
                 state.open_sockets.insert(*fd, lookup);
             }
@@ -798,7 +850,10 @@ impl WritableJournal for CompactingJournalTx {
 
 impl CompactingJournal {
     /// Compacts the inner journal into a new journal
-    pub fn compact_to<J>(&mut self, new_journal: J) -> anyhow::Result<CompactResult>
+    pub fn compact_to<J>(
+        &mut self,
+        new_journal: J,
+    ) -> anyhow::Result<CompactResult>
     where
         J: Journal,
     {
@@ -830,7 +885,10 @@ impl ReadableJournal for CompactingJournalRx {
 }
 
 impl WritableJournal for CompactingJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 
@@ -875,7 +933,8 @@ mod tests {
         out_records: Vec<JournalEntry<'a>>,
     ) -> anyhow::Result<()> {
         // Build a journal that will store the records before compacting
-        let mut compacting_journal = CompactingJournal::new(BufferedJournal::default())?;
+        let mut compacting_journal =
+            CompactingJournal::new(BufferedJournal::default())?;
         for record in in_records {
             compacting_journal.write(record)?;
         }

@@ -9,12 +9,17 @@ use std::{pin::Pin, time::Duration};
 use bytes::Bytes;
 use futures::future::BoxFuture;
 use futures::{Future, TryFutureExt};
-use wasmer::{AsStoreMut, AsStoreRef, Memory, MemoryType, Module, Store, StoreMut, StoreRef};
+use wasmer::{
+    AsStoreMut, AsStoreRef, Memory, MemoryType, Module, Store, StoreMut,
+    StoreRef,
+};
 use wasmer_wasix_types::wasi::{Errno, ExitCode};
 
 use crate::os::task::thread::WasiThreadError;
 use crate::syscalls::AsyncifyFuture;
-use crate::{capture_store_snapshot, StoreSnapshot, WasiEnv, WasiFunctionEnv, WasiThread};
+use crate::{
+    capture_store_snapshot, StoreSnapshot, WasiEnv, WasiFunctionEnv, WasiThread,
+};
 
 pub use virtual_mio::waker::*;
 
@@ -31,10 +36,12 @@ pub enum SpawnMemoryType<'a> {
     CopyMemory(Memory, StoreRef<'a>),
 }
 
-pub type WasmResumeTask = dyn FnOnce(WasiFunctionEnv, Store, Bytes) + Send + 'static;
+pub type WasmResumeTask =
+    dyn FnOnce(WasiFunctionEnv, Store, Bytes) + Send + 'static;
 
-pub type WasmResumeTrigger = dyn FnOnce() -> Pin<Box<dyn Future<Output = Result<Bytes, ExitCode>> + Send + 'static>>
-    + Send
+pub type WasmResumeTrigger = dyn FnOnce() -> Pin<
+        Box<dyn Future<Output = Result<Bytes, ExitCode>> + Send + 'static>,
+    > + Send
     + Sync;
 
 /// The properties passed to the task
@@ -66,7 +73,8 @@ pub struct TaskWasmRecycleProperties {
 }
 
 /// Callback that will be invoked
-pub type TaskWasmRecycle = dyn FnOnce(TaskWasmRecycleProperties) + Send + 'static;
+pub type TaskWasmRecycle =
+    dyn FnOnce(TaskWasmRecycleProperties) + Send + 'static;
 
 /// Represents a WASM task that will be executed on a dedicated thread
 pub struct TaskWasm<'a, 'b> {
@@ -81,7 +89,12 @@ pub struct TaskWasm<'a, 'b> {
 }
 
 impl<'a, 'b> TaskWasm<'a, 'b> {
-    pub fn new(run: Box<TaskWasmRun>, env: WasiEnv, module: Module, update_layout: bool) -> Self {
+    pub fn new(
+        run: Box<TaskWasmRun>,
+        env: WasiEnv,
+        module: Module,
+        update_layout: bool,
+    ) -> Self {
         let shared_memory = module.imports().memories().next().map(|a| *a.ty());
         Self {
             run,
@@ -103,7 +116,10 @@ impl<'a, 'b> TaskWasm<'a, 'b> {
         self
     }
 
-    pub fn with_optional_memory(mut self, spawn_type: Option<SpawnMemoryType<'a>>) -> Self {
+    pub fn with_optional_memory(
+        mut self,
+        spawn_type: Option<SpawnMemoryType<'a>>,
+    ) -> Self {
         if let Some(spawn_type) = spawn_type {
             self.spawn_type = spawn_type;
         }
@@ -157,7 +173,8 @@ pub trait VirtualTaskManager: std::fmt::Debug + Send + Sync + 'static {
 
                 // Note: If memory is shared, maximum needs to be set in the
                 // browser otherwise creation will fail.
-                let _ = ty.maximum.get_or_insert(wasmer_types::Pages::max_value());
+                let _ =
+                    ty.maximum.get_or_insert(wasmer_types::Pages::max_value());
 
                 let mem = Memory::new(&mut store, ty).map_err(|err| {
                     tracing::error!(
@@ -170,23 +187,25 @@ pub trait VirtualTaskManager: std::fmt::Debug + Send + Sync + 'static {
                 Ok(Some(mem))
             }
             SpawnMemoryType::ShareMemory(mem, old_store) => {
-                let mem = mem.share_in_store(&old_store, store).map_err(|err| {
-                    tracing::warn!(
-                        error = &err as &dyn std::error::Error,
-                        "could not clone memory",
-                    );
-                    WasiThreadError::MemoryCreateFailed(err)
-                })?;
+                let mem =
+                    mem.share_in_store(&old_store, store).map_err(|err| {
+                        tracing::warn!(
+                            error = &err as &dyn std::error::Error,
+                            "could not clone memory",
+                        );
+                        WasiThreadError::MemoryCreateFailed(err)
+                    })?;
                 Ok(Some(mem))
             }
             SpawnMemoryType::CopyMemory(mem, old_store) => {
-                let mem = mem.copy_to_store(&old_store, store).map_err(|err| {
-                    tracing::warn!(
-                        error = &err as &dyn std::error::Error,
-                        "could not copy memory",
-                    );
-                    WasiThreadError::MemoryCreateFailed(err)
-                })?;
+                let mem =
+                    mem.copy_to_store(&old_store, store).map_err(|err| {
+                        tracing::warn!(
+                            error = &err as &dyn std::error::Error,
+                            "could not copy memory",
+                        );
+                        WasiThreadError::MemoryCreateFailed(err)
+                    })?;
                 Ok(Some(mem))
             }
             SpawnMemoryType::CreateMemory => Ok(None),
@@ -329,15 +348,20 @@ impl dyn VirtualTaskManager {
         }
         impl Future for AsyncifyPollerOwned {
             type Output = Result<Bytes, ExitCode>;
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                mut self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 let work = self.trigger.as_mut();
                 Poll::Ready(if let Poll::Ready(res) = work.poll(cx) {
                     Ok(res)
                 } else if let Some(forced_exit) = self.thread.try_join() {
-                    return Poll::Ready(Err(forced_exit.unwrap_or_else(|err| {
-                        tracing::debug!("exit runtime error - {}", err);
-                        Errno::Child.into()
-                    })));
+                    return Poll::Ready(Err(forced_exit.unwrap_or_else(
+                        |err| {
+                            tracing::debug!("exit runtime error - {}", err);
+                            Errno::Child.into()
+                        },
+                    )));
                 } else {
                     return Poll::Pending;
                 })
@@ -410,7 +434,12 @@ pub trait VirtualTaskManagerExt {
     fn spawn_await<O, F>(
         &self,
         f: F,
-    ) -> Box<dyn Future<Output = Result<O, Box<dyn std::error::Error>>> + Unpin + Send + 'static>
+    ) -> Box<
+        dyn Future<Output = Result<O, Box<dyn std::error::Error>>>
+            + Unpin
+            + Send
+            + 'static,
+    >
     where
         O: Send + 'static,
         F: FnOnce() -> O + Send + 'static;
@@ -436,14 +465,20 @@ where
             tx.send(ret).ok();
         });
         self.task_shared(Box::new(move || work)).unwrap();
-        rx.blocking_recv()
-            .map_err(|_| anyhow::anyhow!("task execution failed - result channel dropped"))
+        rx.blocking_recv().map_err(|_| {
+            anyhow::anyhow!("task execution failed - result channel dropped")
+        })
     }
 
     fn spawn_await<O, F>(
         &self,
         f: F,
-    ) -> Box<dyn Future<Output = Result<O, Box<dyn std::error::Error>>> + Unpin + Send + 'static>
+    ) -> Box<
+        dyn Future<Output = Result<O, Box<dyn std::error::Error>>>
+            + Unpin
+            + Send
+            + 'static,
+    >
     where
         O: Send + 'static,
         F: FnOnce() -> O + Send + 'static,

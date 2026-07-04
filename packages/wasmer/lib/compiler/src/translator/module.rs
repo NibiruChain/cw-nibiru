@@ -6,13 +6,16 @@
 use super::environ::ModuleEnvironment;
 use super::error::from_binaryreadererror_wasmerror;
 use super::sections::{
-    parse_data_section, parse_element_section, parse_export_section, parse_function_section,
-    parse_global_section, parse_import_section, parse_memory_section, parse_name_section,
-    parse_start_section, parse_table_section, parse_type_section,
+    parse_data_section, parse_element_section, parse_export_section,
+    parse_function_section, parse_global_section, parse_import_section,
+    parse_memory_section, parse_name_section, parse_start_section,
+    parse_table_section, parse_type_section,
 };
 use super::state::ModuleTranslationState;
 use wasmer_types::WasmResult;
-use wasmparser::{BinaryReader, NameSectionReader, Parser, Payload, WasmFeatures};
+use wasmparser::{
+    BinaryReader, NameSectionReader, Parser, Payload, WasmFeatures,
+};
 
 /// Translate a sequence of bytes forming a valid Wasm binary into a
 /// parsed ModuleInfo `ModuleTranslationState`.
@@ -27,7 +30,11 @@ pub fn translate_module<'data>(
             Payload::Version { .. } | Payload::End { .. } => {}
 
             Payload::TypeSection(types) => {
-                parse_type_section(types, &mut module_translation_state, environ)?;
+                parse_type_section(
+                    types,
+                    &mut module_translation_state,
+                    environ,
+                )?;
             }
 
             Payload::ImportSection(imports) => {

@@ -27,11 +27,16 @@ pub fn fd_fdstat_set_rights(
 
     #[cfg(feature = "journal")]
     if env.enable_journal {
-        JournalEffector::save_fd_set_rights(&mut ctx, fd, fs_rights_base, fs_rights_inheriting)
-            .map_err(|err| {
-                tracing::error!("failed to save file set rights event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            })?;
+        JournalEffector::save_fd_set_rights(
+            &mut ctx,
+            fd,
+            fs_rights_base,
+            fs_rights_inheriting,
+        )
+        .map_err(|err| {
+            tracing::error!("failed to save file set rights event - {}", err);
+            WasiError::Exit(ExitCode::from(Errno::Fault))
+        })?;
     }
 
     Ok(Errno::Success)
@@ -50,7 +55,8 @@ pub(crate) fn fd_fdstat_set_rights_internal(
 
     // ensure new rights are a subset of current rights
     if fd_entry.rights | fs_rights_base != fd_entry.rights
-        || fd_entry.rights_inheriting | fs_rights_inheriting != fd_entry.rights_inheriting
+        || fd_entry.rights_inheriting | fs_rights_inheriting
+            != fd_entry.rights_inheriting
     {
         return Err(Errno::Notcapable);
     }

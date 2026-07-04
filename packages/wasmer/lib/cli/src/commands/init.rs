@@ -191,8 +191,9 @@ impl Init {
             resulting_string.push_str(NEWLINE);
         }
 
-        std::fs::write(path, resulting_string)
-            .with_context(|| format!("Unable to write to \"{}\"", path.display()))?;
+        std::fs::write(path, resulting_string).with_context(|| {
+            format!("Unable to write to \"{}\"", path.display())
+        })?;
 
         Ok(())
     }
@@ -235,7 +236,9 @@ impl Init {
         }
     }
 
-    fn get_filesystem_mapping(include: &[String]) -> impl Iterator<Item = (String, PathBuf)> + '_ {
+    fn get_filesystem_mapping(
+        include: &[String],
+    ) -> impl Iterator<Item = (String, PathBuf)> + '_ {
         include.iter().map(|path| {
             if path == "." || path == "/" {
                 return ("/".to_string(), Path::new("/").to_path_buf());
@@ -271,7 +274,9 @@ impl Init {
     }
 
     /// Returns the dependencies based on the `--template` flag
-    fn get_dependencies(template: Option<&Template>) -> HashMap<String, VersionReq> {
+    fn get_dependencies(
+        template: Option<&Template>,
+    ) -> HashMap<String, VersionReq> {
         let mut map = HashMap::default();
 
         match template {
@@ -294,13 +299,18 @@ impl Init {
             (false, true, false) => Ok(BinOrLib::Bin),
             (false, false, true) => Ok(BinOrLib::Lib),
             (false, false, false) => Ok(BinOrLib::Bin),
-            _ => anyhow::bail!("Only one of --bin, --lib, or --empty can be provided"),
+            _ => anyhow::bail!(
+                "Only one of --bin, --lib, or --empty can be provided"
+            ),
         }
     }
 
     /// Get bindings returns the first .wai / .wit file found and
     /// optionally takes a warning callback that is triggered when > 1 .wai files are found
-    fn get_bindings(target_file: &Path, bin_or_lib: BinOrLib) -> Option<GetBindingsResult> {
+    fn get_bindings(
+        target_file: &Path,
+        bin_or_lib: BinOrLib,
+    ) -> Option<GetBindingsResult> {
         match bin_or_lib {
             BinOrLib::Bin | BinOrLib::Empty => None,
             BinOrLib::Lib => target_file.parent().and_then(|parent| {
@@ -311,13 +321,18 @@ impl Init {
                     .into_iter()
                     .filter_map(|e| e.ok())
                     .filter_map(|e| {
-                        let is_wit = e.path().extension().and_then(|s| s.to_str()) == Some(".wit");
-                        let is_wai = e.path().extension().and_then(|s| s.to_str()) == Some(".wai");
+                        let is_wit =
+                            e.path().extension().and_then(|s| s.to_str())
+                                == Some(".wit");
+                        let is_wai =
+                            e.path().extension().and_then(|s| s.to_str())
+                                == Some(".wai");
                         if is_wit {
                             Some(wasmer_config::package::Bindings::Wit(
                                 wasmer_config::package::WitBindings {
                                     wit_exports: e.path().to_path_buf(),
-                                    wit_bindgen: semver::Version::parse("0.1.0").unwrap(),
+                                    wit_bindgen: semver::Version::parse("0.1.0")
+                                        .unwrap(),
                                 },
                             ))
                         } else if is_wai {
@@ -325,7 +340,8 @@ impl Init {
                                 wasmer_config::package::WaiBindings {
                                     exports: None,
                                     imports: vec![e.path().to_path_buf()],
-                                    wai_version: semver::Version::parse("0.2.0").unwrap(),
+                                    wai_version: semver::Version::parse("0.2.0")
+                                        .unwrap(),
                                 },
                             ))
                         } else {
@@ -396,7 +412,9 @@ async fn construct_manifest(
         Some(n) => Some(n),
         None => {
             if let Ok(client) = env.client() {
-                if let Ok(Some(u)) = wasmer_backend_api::query::current_user(&client).await {
+                if let Ok(Some(u)) =
+                    wasmer_backend_api::query::current_user(&client).await
+                {
                     Some(u.username)
                 } else {
                     None
@@ -430,10 +448,16 @@ async fn construct_manifest(
             .iter()
             .map(|m| match m {
                 wasmer_config::package::Bindings::Wit(wb) => {
-                    format!("found: {}", serde_json::to_string(wb).unwrap_or_default())
+                    format!(
+                        "found: {}",
+                        serde_json::to_string(wb).unwrap_or_default()
+                    )
                 }
                 wasmer_config::package::Bindings::Wai(wb) => {
-                    format!("found: {}", serde_json::to_string(wb).unwrap_or_default())
+                    format!(
+                        "found: {}",
+                        serde_json::to_string(wb).unwrap_or_default()
+                    )
                 }
             })
             .collect::<Vec<_>>()
@@ -441,8 +465,10 @@ async fn construct_manifest(
 
         let msg = [
             String::new(),
-            "    It looks like your project contains multiple *.wai files.".to_string(),
-            "    Make sure you update the [[module.bindings]] appropriately".to_string(),
+            "    It looks like your project contains multiple *.wai files."
+                .to_string(),
+            "    Make sure you update the [[module.bindings]] appropriately"
+                .to_string(),
             String::new(),
             found,
         ];
@@ -461,9 +487,11 @@ async fn construct_manifest(
                 .build_dir
                 .join("release")
                 .join(format!("{package_name}.wasm"));
-            let canonicalized_outpath = outpath.canonicalize().unwrap_or(outpath);
-            let outpath_str =
-                crate::common::normalize_path(&canonicalized_outpath.display().to_string());
+            let canonicalized_outpath =
+                outpath.canonicalize().unwrap_or(outpath);
+            let outpath_str = crate::common::normalize_path(
+                &canonicalized_outpath.display().to_string(),
+            );
             let manifest_canonicalized = crate::common::normalize_path(
                 &manifest_path
                     .parent()
@@ -480,7 +508,9 @@ async fn construct_manifest(
             let relative_str = diff.strip_prefix('/').unwrap_or(&diff);
             Path::new(&relative_str).to_path_buf()
         })
-        .unwrap_or_else(|| Path::new(&format!("{package_name}.wasm")).to_path_buf());
+        .unwrap_or_else(|| {
+            Path::new(&format!("{package_name}.wasm")).to_path_buf()
+        });
 
     let modules = vec![wasmer_config::package::Module {
         name: package_name.to_string(),
@@ -537,7 +567,9 @@ async fn construct_manifest(
 
     Ok(manifest)
 }
-fn parse_cargo_toml(manifest_path: &PathBuf) -> Result<MiniCargoTomlPackage, anyhow::Error> {
+fn parse_cargo_toml(
+    manifest_path: &PathBuf,
+) -> Result<MiniCargoTomlPackage, anyhow::Error> {
     let mut metadata = MetadataCommand::new();
     metadata.manifest_path(manifest_path);
     metadata.no_deps();
@@ -552,7 +584,9 @@ fn parse_cargo_toml(manifest_path: &PathBuf) -> Result<MiniCargoTomlPackage, any
 
     let package = metadata
         .root_package()
-        .ok_or_else(|| anyhow::anyhow!("no root package found in cargo metadata"))
+        .ok_or_else(|| {
+            anyhow::anyhow!("no root package found in cargo metadata")
+        })
         .context(anyhow::anyhow!("{}", manifest_path.display()))?;
 
     Ok(MiniCargoTomlPackage {
@@ -564,7 +598,10 @@ fn parse_cargo_toml(manifest_path: &PathBuf) -> Result<MiniCargoTomlPackage, any
         repository: package.repository.clone(),
         license: package.license.clone(),
         readme: package.readme.clone().map(|s| s.into_std_path_buf()),
-        license_file: package.license_file.clone().map(|f| f.into_std_path_buf()),
+        license_file: package
+            .license_file
+            .clone()
+            .map(|f| f.into_std_path_buf()),
         workspace_root: metadata.workspace_root.into_std_path_buf(),
         build_dir: metadata
             .target_directory

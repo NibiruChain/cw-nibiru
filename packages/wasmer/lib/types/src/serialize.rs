@@ -48,7 +48,9 @@ impl MetadataHeader {
         let bytes: [u8; 16] = bytes
             .get(..16)
             .ok_or_else(|| {
-                DeserializeError::CorruptedBinary("invalid metadata header".to_string())
+                DeserializeError::CorruptedBinary(
+                    "invalid metadata header".to_string(),
+                )
             })?
             .try_into()
             .unwrap();

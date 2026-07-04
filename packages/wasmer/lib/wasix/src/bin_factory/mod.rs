@@ -19,8 +19,8 @@ mod exec;
 pub use self::{
     binary_package::*,
     exec::{
-        run_exec, spawn_exec, spawn_exec_module, spawn_exec_wasm, spawn_load_module,
-        spawn_load_wasm, spawn_union_fs,
+        run_exec, spawn_exec, spawn_exec_module, spawn_exec_wasm,
+        spawn_load_module, spawn_load_wasm, spawn_union_fs,
     },
 };
 use crate::{
@@ -59,12 +59,12 @@ impl BinFactory {
         name: &str,
         fs: Option<&dyn FileSystem>,
     ) -> Option<BinaryPackage> {
-        self.get_executable(name, fs)
-            .await
-            .and_then(|executable| match executable {
+        self.get_executable(name, fs).await.and_then(|executable| {
+            match executable {
                 Executable::Wasm(_) => None,
                 Executable::BinaryPackage(pkg) => Some(pkg),
-            })
+            }
+        })
     }
 
     pub fn spawn<'a>(
@@ -72,7 +72,8 @@ impl BinFactory {
         name: String,
         store: wasmer::Store,
         env: WasiEnv,
-    ) -> Pin<Box<dyn Future<Output = Result<TaskJoinHandle, SpawnError>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Result<TaskJoinHandle, SpawnError>> + 'a>>
+    {
         Box::pin(async move {
             // Find the binary (or die trying) and make the spawn type
             let res = self
@@ -89,7 +90,8 @@ impl BinFactory {
             // Execute
             match executable {
                 Executable::Wasm(bytes) => {
-                    spawn_exec_wasm(&bytes, name.as_str(), env, &self.runtime).await
+                    spawn_exec_wasm(&bytes, name.as_str(), env, &self.runtime)
+                        .await
                 }
                 Executable::BinaryPackage(pkg) => {
                     // Get the command that is going to be executed
@@ -111,7 +113,8 @@ impl BinFactory {
 
                     env.prepare_spawn(cmd);
 
-                    spawn_exec(pkg, name.as_str(), store, env, &self.runtime).await
+                    spawn_exec(pkg, name.as_str(), store, env, &self.runtime)
+                        .await
                 }
             }
         })
@@ -127,9 +130,12 @@ impl BinFactory {
         // We check for built in commands
         if let Some(parent_ctx) = parent_ctx {
             if self.commands.exists(name.as_str()) {
-                return self
-                    .commands
-                    .exec(parent_ctx, name.as_str(), store, builder);
+                return self.commands.exec(
+                    parent_ctx,
+                    name.as_str(),
+                    store,
+                    builder,
+                );
             }
         } else if self.commands.exists(name.as_str()) {
             tracing::warn!("builtin command without a parent ctx - {}", name);
@@ -166,7 +172,13 @@ impl BinFactory {
         // Check the filesystem for the file
         if name.starts_with('/') {
             if let Some(fs) = fs {
-                match load_executable_from_filesystem(fs, name.as_ref(), self.runtime()).await {
+                match load_executable_from_filesystem(
+                    fs,
+                    name.as_ref(),
+                    self.runtime(),
+                )
+                .await
+                {
                     Ok(executable) => {
                         if let Executable::BinaryPackage(pkg) = &executable {
                             cache.insert(name, Some(pkg.clone()));

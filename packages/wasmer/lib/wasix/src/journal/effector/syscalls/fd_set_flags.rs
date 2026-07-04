@@ -6,7 +6,10 @@ impl JournalEffector {
         fd: Fd,
         flags: Fdflags,
     ) -> anyhow::Result<()> {
-        Self::save_event(ctx, JournalEntry::FileDescriptorSetFlagsV1 { fd, flags })
+        Self::save_event(
+            ctx,
+            JournalEntry::FileDescriptorSetFlagsV1 { fd, flags },
+        )
     }
 
     pub fn apply_fd_set_flags(

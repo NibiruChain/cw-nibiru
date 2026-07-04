@@ -43,7 +43,10 @@ pub fn get_abi(target_machine: &TargetMachine) -> Box<dyn Abi> {
 /// targets.
 pub trait Abi {
     /// Given a function definition, retrieve the parameter that is the vmctx pointer.
-    fn get_vmctx_ptr_param<'ctx>(&self, func_value: &FunctionValue<'ctx>) -> PointerValue<'ctx>;
+    fn get_vmctx_ptr_param<'ctx>(
+        &self,
+        func_value: &FunctionValue<'ctx>,
+    ) -> PointerValue<'ctx>;
 
     /// Given a wasm function type, produce an llvm function declaration.
     fn func_type_to_llvm<'ctx>(

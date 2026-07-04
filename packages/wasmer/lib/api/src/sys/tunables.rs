@@ -14,8 +14,8 @@ mod tests {
     use wasmer_compiler::Tunables;
     use wasmer_types::{MemoryType, Pages, WASM_PAGE_SIZE};
     use wasmer_vm::{
-        LinearMemory, MemoryError, MemoryStyle, TableStyle, VMConfig, VMMemory, VMMemoryDefinition,
-        VMTable, VMTableDefinition,
+        LinearMemory, MemoryError, MemoryStyle, TableStyle, VMConfig, VMMemory,
+        VMMemoryDefinition, VMTable, VMTableDefinition,
     };
 
     #[test]
@@ -30,7 +30,9 @@ mod tests {
         let requested = MemoryType::new(3, None, true);
         let style = tunables.memory_style(&requested);
         match style {
-            MemoryStyle::Dynamic { offset_guard_size } => assert_eq!(offset_guard_size, 256),
+            MemoryStyle::Dynamic { offset_guard_size } => {
+                assert_eq!(offset_guard_size, 256)
+            }
             s => panic!("Unexpected memory style: {:?}", s),
         }
 
@@ -38,7 +40,9 @@ mod tests {
         let requested = MemoryType::new(3, Some(5_000_000), true);
         let style = tunables.memory_style(&requested);
         match style {
-            MemoryStyle::Dynamic { offset_guard_size } => assert_eq!(offset_guard_size, 256),
+            MemoryStyle::Dynamic { offset_guard_size } => {
+                assert_eq!(offset_guard_size, 256)
+            }
             s => panic!("Unexpected memory style: {:?}", s),
         }
 
@@ -137,13 +141,17 @@ mod tests {
             }
         }
 
-        fn try_clone(&self) -> Result<Box<dyn LinearMemory + 'static>, MemoryError> {
+        fn try_clone(
+            &self,
+        ) -> Result<Box<dyn LinearMemory + 'static>, MemoryError> {
             Err(MemoryError::InvalidMemory {
                 reason: "VMTinyMemory can not be cloned".to_string(),
             })
         }
 
-        fn copy(&mut self) -> Result<Box<dyn LinearMemory + 'static>, MemoryError> {
+        fn copy(
+            &mut self,
+        ) -> Result<Box<dyn LinearMemory + 'static>, MemoryError> {
             let mem = self.mem.clone();
             Ok(Box::new(Self {
                 memory_definition: Some(UnsafeCell::new(VMMemoryDefinition {
@@ -207,7 +215,11 @@ mod tests {
         }
 
         /// Create a table owned by the host given a [`TableType`] and a [`TableStyle`].
-        fn create_host_table(&self, ty: &TableType, style: &TableStyle) -> Result<VMTable, String> {
+        fn create_host_table(
+            &self,
+            ty: &TableType,
+            style: &TableStyle,
+        ) -> Result<VMTable, String> {
             VMTable::new(ty, style)
         }
 
@@ -256,7 +268,9 @@ mod tests {
 
     #[test]
     fn check_custom_tunables() -> Result<(), Box<dyn std::error::Error>> {
-        use crate::{imports, wat2wasm, Engine, Instance, Memory, Module, Store};
+        use crate::{
+            imports, wat2wasm, Engine, Instance, Memory, Module, Store,
+        };
 
         let wasm_bytes = wat2wasm(
             br#"(module
@@ -279,7 +293,8 @@ mod tests {
 
         let tunables = TinyTunables {};
         #[allow(deprecated)]
-        let mut engine = Engine::new(compiler.into(), Default::default(), Default::default());
+        let mut engine =
+            Engine::new(compiler.into(), Default::default(), Default::default());
         engine.set_tunables(tunables);
         let mut store = Store::new(engine);
         //let mut store = Store::new(compiler);
@@ -459,7 +474,8 @@ mod tests {
 
         let tunables = TinyTunables {};
         #[allow(deprecated)]
-        let mut engine = Engine::new(compiler.into(), Default::default(), Default::default());
+        let mut engine =
+            Engine::new(compiler.into(), Default::default(), Default::default());
         engine.set_tunables(tunables);
         let mut store = Store::new(engine);
         let module = Module::new(&store, wasm_bytes)?;

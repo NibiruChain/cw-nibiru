@@ -32,7 +32,8 @@ pub fn environ_sizes_get<M: MemorySize>(
         .len()
         .try_into()
         .map_err(|_| Errno::Overflow));
-    let env_buf_size: usize = state.envs.lock().unwrap().iter().map(|v| v.len() + 1).sum();
+    let env_buf_size: usize =
+        state.envs.lock().unwrap().iter().map(|v| v.len() + 1).sum();
     let env_buf_size: M::Offset =
         wasi_try_ok!(env_buf_size.try_into().map_err(|_| Errno::Overflow));
     wasi_try_mem_ok!(environ_count.write(env_var_count));

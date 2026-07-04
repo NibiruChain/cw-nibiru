@@ -52,7 +52,9 @@ struct TxState {
 }
 
 impl TxState {
-    fn get_serializer(&mut self) -> Serializer<IoWriter<&File>, ArenaHandle<'_>, Share> {
+    fn get_serializer(
+        &mut self,
+    ) -> Serializer<IoWriter<&File>, ArenaHandle<'_>, Share> {
         self.get_serializer_with_pos(self.pos)
     }
 
@@ -68,8 +70,16 @@ impl TxState {
     }
 
     fn to_high<'a>(
-        serializer: &'a mut Serializer<IoWriter<&'a File>, ArenaHandle<'a>, Share>,
-    ) -> &'a mut HighSerializer<IoWriter<&'a File>, ArenaHandle<'a>, rkyv::rancor::Error> {
+        serializer: &'a mut Serializer<
+            IoWriter<&'a File>,
+            ArenaHandle<'a>,
+            Share,
+        >,
+    ) -> &'a mut HighSerializer<
+        IoWriter<&'a File>,
+        ArenaHandle<'a>,
+        rkyv::rancor::Error,
+    > {
         Strategy::wrap(serializer)
     }
 }
@@ -227,7 +237,10 @@ impl LogFileJournal {
 }
 
 impl WritableJournal for LogFileJournalTx {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         tracing::debug!("journal event: {:?}", entry);
 
         let mut state = self.state.lock().unwrap();
@@ -313,7 +326,9 @@ impl ReadableJournal for LogFileJournalRx {
                 // Otherwise we decode the header
                 let header = JournalEntryHeader {
                     record_type: u16::from_be_bytes([b[0], b[1]]),
-                    record_size: u64::from_be_bytes([0u8, 0u8, b[2], b[3], b[4], b[5], b[6], b[7]]),
+                    record_size: u64::from_be_bytes([
+                        0u8, 0u8, b[2], b[3], b[4], b[5], b[6], b[7],
+                    ]),
                 };
 
                 // Now we read the entry
@@ -364,7 +379,10 @@ impl ReadableJournal for LogFileJournalRx {
 }
 
 impl WritableJournal for LogFileJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 
@@ -410,7 +428,9 @@ mod tests {
         let file = tempfile::NamedTempFile::new().unwrap();
 
         // Write some events to it
-        let journal = LogFileJournal::from_file(file.as_file().try_clone().unwrap()).unwrap();
+        let journal =
+            LogFileJournal::from_file(file.as_file().try_clone().unwrap())
+                .unwrap();
         journal
             .write(JournalEntry::CreatePipeV1 { fd1: 1, fd2: 2 })
             .unwrap();

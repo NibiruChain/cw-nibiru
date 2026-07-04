@@ -81,7 +81,9 @@ impl schemars::JsonSchema for PackageId {
         "PackageIdent".to_string()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(
+        gen: &mut schemars::gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
         String::json_schema(gen)
     }
 }

@@ -8,7 +8,8 @@ pub fn try_unpack_targz<P: AsRef<Path>>(
     target_path: P,
     strip_toplevel: bool,
 ) -> Result<PathBuf, anyhow::Error> {
-    let target_targz_path = target_targz_path.as_ref().to_string_lossy().to_string();
+    let target_targz_path =
+        target_targz_path.as_ref().to_string_lossy().to_string();
     let target_targz_path = normalize_path(&target_targz_path);
     let target_targz_path = Path::new(&target_targz_path);
 
@@ -17,8 +18,12 @@ pub fn try_unpack_targz<P: AsRef<Path>>(
     let target_path = Path::new(&target_path);
 
     let open_file = || {
-        std::fs::File::open(target_targz_path)
-            .map_err(|e| anyhow::anyhow!("failed to open {}: {e}", target_targz_path.display()))
+        std::fs::File::open(target_targz_path).map_err(|e| {
+            anyhow::anyhow!(
+                "failed to open {}: {e}",
+                target_targz_path.display()
+            )
+        })
     };
 
     let try_decode_gz = || {
@@ -73,14 +78,20 @@ pub fn try_unpack_targz<P: AsRef<Path>>(
     };
 
     try_decode_gz().or_else(|e1| {
-        try_decode_xz()
-            .map_err(|e2| anyhow::anyhow!("could not decode gz: {e1}, could not decode xz: {e2}"))
+        try_decode_xz().map_err(|e2| {
+            anyhow::anyhow!(
+                "could not decode gz: {e1}, could not decode xz: {e2}"
+            )
+        })
     })?;
 
     Ok(Path::new(&target_targz_path).to_path_buf())
 }
 
-pub fn unpack_with_parent<R>(mut archive: tar::Archive<R>, dst: &Path) -> Result<(), anyhow::Error>
+pub fn unpack_with_parent<R>(
+    mut archive: tar::Archive<R>,
+    dst: &Path,
+) -> Result<(), anyhow::Error>
 where
     R: std::io::Read,
 {
@@ -105,7 +116,10 @@ where
     Ok(())
 }
 
-pub fn unpack_sans_parent<R>(mut archive: tar::Archive<R>, dst: &Path) -> std::io::Result<()>
+pub fn unpack_sans_parent<R>(
+    mut archive: tar::Archive<R>,
+    dst: &Path,
+) -> std::io::Result<()>
 where
     R: std::io::Read,
 {

@@ -20,7 +20,8 @@ impl CliCommand for CmdJournalCompact {
     type Output = ();
 
     fn run(self) -> Result<(), anyhow::Error> {
-        let compactor = CompactingLogFileJournal::new(&self.journal_path)?.with_compact_on_drop();
+        let compactor = CompactingLogFileJournal::new(&self.journal_path)?
+            .with_compact_on_drop();
         drop(compactor);
 
         let journal = LogFileJournal::new(&self.journal_path)?;

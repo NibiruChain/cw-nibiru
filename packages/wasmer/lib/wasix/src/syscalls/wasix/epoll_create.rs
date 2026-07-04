@@ -32,7 +32,8 @@ pub fn epoll_create<M: MemorySize + 'static>(
     Span::current().record("fd", fd);
 
     let env = ctx.data();
-    let (memory, state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
     wasi_try_mem_ok!(ret_fd.write(&memory, fd));
 
     Ok(Errno::Success)
@@ -45,7 +46,8 @@ pub fn epoll_create_internal(
     wasi_try_ok_ok!(WasiEnv::process_signals_and_exit(ctx)?);
 
     let env = ctx.data();
-    let (memory, state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
 
     let (tx, rx) = tokio::sync::watch::channel(Default::default());
 

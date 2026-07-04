@@ -55,15 +55,21 @@ pub enum Snapshot0Clockid {
 impl core::fmt::Debug for Snapshot0Clockid {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Snapshot0Clockid::Realtime => f.debug_tuple("Snapshot0Clockid::Realtime").finish(),
-            Snapshot0Clockid::Monotonic => f.debug_tuple("Snapshot0Clockid::Monotonic").finish(),
+            Snapshot0Clockid::Realtime => {
+                f.debug_tuple("Snapshot0Clockid::Realtime").finish()
+            }
+            Snapshot0Clockid::Monotonic => {
+                f.debug_tuple("Snapshot0Clockid::Monotonic").finish()
+            }
             Snapshot0Clockid::ProcessCputimeId => {
                 f.debug_tuple("Snapshot0Clockid::ProcessCputimeId").finish()
             }
             Snapshot0Clockid::ThreadCputimeId => {
                 f.debug_tuple("Snapshot0Clockid::ThreadCputimeId").finish()
             }
-            Snapshot0Clockid::Unknown => f.debug_tuple("Snapshot0Clockid::Unknown").finish(),
+            Snapshot0Clockid::Unknown => {
+                f.debug_tuple("Snapshot0Clockid::Unknown").finish()
+            }
         }
     }
 }
@@ -91,8 +97,12 @@ impl core::fmt::Debug for Clockid {
         match self {
             Clockid::Realtime => f.debug_tuple("Clockid::Realtime").finish(),
             Clockid::Monotonic => f.debug_tuple("Clockid::Monotonic").finish(),
-            Clockid::ProcessCputimeId => f.debug_tuple("Clockid::ProcessCputimeId").finish(),
-            Clockid::ThreadCputimeId => f.debug_tuple("Clockid::ThreadCputimeId").finish(),
+            Clockid::ProcessCputimeId => {
+                f.debug_tuple("Clockid::ProcessCputimeId").finish()
+            }
+            Clockid::ThreadCputimeId => {
+                f.debug_tuple("Clockid::ThreadCputimeId").finish()
+            }
             Clockid::Unknown => f.debug_tuple("Clockid::Unknown").finish(),
         }
     }
@@ -102,7 +112,17 @@ impl core::fmt::Debug for Clockid {
 #[doc = " API; some are used in higher-level library layers, and others are provided"]
 #[doc = " merely for alignment with POSIX."]
 #[repr(u16)]
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, IntoPrimitive, TryFromPrimitive)]
+#[derive(
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    IntoPrimitive,
+    TryFromPrimitive,
+)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum Errno {
     #[doc = " No error occurred. System call completed successfully."]
@@ -353,7 +373,9 @@ impl Errno {
     }
     pub fn message(&self) -> &'static str {
         match self {
-            Errno::Success => "No error occurred. System call completed successfully.",
+            Errno::Success => {
+                "No error occurred. System call completed successfully."
+            }
             Errno::Toobig => "Argument list too long.",
             Errno::Access => "Permission denied.",
             Errno::Addrinuse => "Address in use.",
@@ -407,11 +429,15 @@ impl Errno {
             Errno::Nospc => "No space left on device.",
             Errno::Nosys => "Function not supported.",
             Errno::Notconn => "The socket is not connected.",
-            Errno::Notdir => "Not a directory or a symbolic link to a directory.",
+            Errno::Notdir => {
+                "Not a directory or a symbolic link to a directory."
+            }
             Errno::Notempty => "Directory not empty.",
             Errno::Notrecoverable => "State not recoverable.",
             Errno::Notsock => "Not a socket.",
-            Errno::Notsup => "Not supported, or operation not supported on socket.",
+            Errno::Notsup => {
+                "Not supported, or operation not supported on socket."
+            }
             Errno::Notty => "Inappropriate I/O control operation.",
             Errno::Nxio => "No such device or address.",
             Errno::Overflow => "Value too large to be stored in data type.",
@@ -582,15 +608,29 @@ impl core::fmt::Debug for Filetype {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Filetype::Unknown => f.debug_tuple("Filetype::Unknown").finish(),
-            Filetype::BlockDevice => f.debug_tuple("Filetype::BlockDevice").finish(),
-            Filetype::CharacterDevice => f.debug_tuple("Filetype::CharacterDevice").finish(),
+            Filetype::BlockDevice => {
+                f.debug_tuple("Filetype::BlockDevice").finish()
+            }
+            Filetype::CharacterDevice => {
+                f.debug_tuple("Filetype::CharacterDevice").finish()
+            }
             Filetype::Directory => f.debug_tuple("Filetype::Directory").finish(),
-            Filetype::RegularFile => f.debug_tuple("Filetype::RegularFile").finish(),
-            Filetype::SocketDgram => f.debug_tuple("Filetype::SocketDgram").finish(),
-            Filetype::SocketStream => f.debug_tuple("Filetype::SocketStream").finish(),
-            Filetype::SymbolicLink => f.debug_tuple("Filetype::SymbolicLink").finish(),
+            Filetype::RegularFile => {
+                f.debug_tuple("Filetype::RegularFile").finish()
+            }
+            Filetype::SocketDgram => {
+                f.debug_tuple("Filetype::SocketDgram").finish()
+            }
+            Filetype::SocketStream => {
+                f.debug_tuple("Filetype::SocketStream").finish()
+            }
+            Filetype::SymbolicLink => {
+                f.debug_tuple("Filetype::SymbolicLink").finish()
+            }
             Filetype::SocketRaw => f.debug_tuple("Filetype::SocketRaw").finish(),
-            Filetype::SocketSeqpacket => f.debug_tuple("Filetype::SocketSeqpacket").finish(),
+            Filetype::SocketSeqpacket => {
+                f.debug_tuple("Filetype::SocketSeqpacket").finish()
+            }
         }
     }
 }
@@ -897,7 +937,9 @@ impl core::fmt::Debug for Preopentype {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Preopentype::Dir => f.debug_tuple("Preopentype::Dir").finish(),
-            Preopentype::Unknown => f.debug_tuple("Preopentype::Unknown").finish(),
+            Preopentype::Unknown => {
+                f.debug_tuple("Preopentype::Unknown").finish()
+            }
         }
     }
 }
@@ -1033,30 +1075,70 @@ impl core::fmt::Debug for Sockoption {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Sockoption::Noop => f.debug_tuple("Sockoption::Noop").finish(),
-            Sockoption::ReusePort => f.debug_tuple("Sockoption::ReusePort").finish(),
-            Sockoption::ReuseAddr => f.debug_tuple("Sockoption::ReuseAddr").finish(),
+            Sockoption::ReusePort => {
+                f.debug_tuple("Sockoption::ReusePort").finish()
+            }
+            Sockoption::ReuseAddr => {
+                f.debug_tuple("Sockoption::ReuseAddr").finish()
+            }
             Sockoption::NoDelay => f.debug_tuple("Sockoption::NoDelay").finish(),
-            Sockoption::DontRoute => f.debug_tuple("Sockoption::DontRoute").finish(),
+            Sockoption::DontRoute => {
+                f.debug_tuple("Sockoption::DontRoute").finish()
+            }
             Sockoption::OnlyV6 => f.debug_tuple("Sockoption::OnlyV6").finish(),
-            Sockoption::Broadcast => f.debug_tuple("Sockoption::Broadcast").finish(),
-            Sockoption::MulticastLoopV4 => f.debug_tuple("Sockoption::MulticastLoopV4").finish(),
-            Sockoption::MulticastLoopV6 => f.debug_tuple("Sockoption::MulticastLoopV6").finish(),
-            Sockoption::Promiscuous => f.debug_tuple("Sockoption::Promiscuous").finish(),
-            Sockoption::Listening => f.debug_tuple("Sockoption::Listening").finish(),
-            Sockoption::LastError => f.debug_tuple("Sockoption::LastError").finish(),
-            Sockoption::KeepAlive => f.debug_tuple("Sockoption::KeepAlive").finish(),
+            Sockoption::Broadcast => {
+                f.debug_tuple("Sockoption::Broadcast").finish()
+            }
+            Sockoption::MulticastLoopV4 => {
+                f.debug_tuple("Sockoption::MulticastLoopV4").finish()
+            }
+            Sockoption::MulticastLoopV6 => {
+                f.debug_tuple("Sockoption::MulticastLoopV6").finish()
+            }
+            Sockoption::Promiscuous => {
+                f.debug_tuple("Sockoption::Promiscuous").finish()
+            }
+            Sockoption::Listening => {
+                f.debug_tuple("Sockoption::Listening").finish()
+            }
+            Sockoption::LastError => {
+                f.debug_tuple("Sockoption::LastError").finish()
+            }
+            Sockoption::KeepAlive => {
+                f.debug_tuple("Sockoption::KeepAlive").finish()
+            }
             Sockoption::Linger => f.debug_tuple("Sockoption::Linger").finish(),
-            Sockoption::OobInline => f.debug_tuple("Sockoption::OobInline").finish(),
-            Sockoption::RecvBufSize => f.debug_tuple("Sockoption::RecvBufSize").finish(),
-            Sockoption::SendBufSize => f.debug_tuple("Sockoption::SendBufSize").finish(),
-            Sockoption::RecvLowat => f.debug_tuple("Sockoption::RecvLowat").finish(),
-            Sockoption::SendLowat => f.debug_tuple("Sockoption::SendLowat").finish(),
-            Sockoption::RecvTimeout => f.debug_tuple("Sockoption::RecvTimeout").finish(),
-            Sockoption::SendTimeout => f.debug_tuple("Sockoption::SendTimeout").finish(),
-            Sockoption::ConnectTimeout => f.debug_tuple("Sockoption::ConnectTimeout").finish(),
-            Sockoption::AcceptTimeout => f.debug_tuple("Sockoption::AcceptTimeout").finish(),
+            Sockoption::OobInline => {
+                f.debug_tuple("Sockoption::OobInline").finish()
+            }
+            Sockoption::RecvBufSize => {
+                f.debug_tuple("Sockoption::RecvBufSize").finish()
+            }
+            Sockoption::SendBufSize => {
+                f.debug_tuple("Sockoption::SendBufSize").finish()
+            }
+            Sockoption::RecvLowat => {
+                f.debug_tuple("Sockoption::RecvLowat").finish()
+            }
+            Sockoption::SendLowat => {
+                f.debug_tuple("Sockoption::SendLowat").finish()
+            }
+            Sockoption::RecvTimeout => {
+                f.debug_tuple("Sockoption::RecvTimeout").finish()
+            }
+            Sockoption::SendTimeout => {
+                f.debug_tuple("Sockoption::SendTimeout").finish()
+            }
+            Sockoption::ConnectTimeout => {
+                f.debug_tuple("Sockoption::ConnectTimeout").finish()
+            }
+            Sockoption::AcceptTimeout => {
+                f.debug_tuple("Sockoption::AcceptTimeout").finish()
+            }
             Sockoption::Ttl => f.debug_tuple("Sockoption::Ttl").finish(),
-            Sockoption::MulticastTtlV4 => f.debug_tuple("Sockoption::MulticastTtlV4").finish(),
+            Sockoption::MulticastTtlV4 => {
+                f.debug_tuple("Sockoption::MulticastTtlV4").finish()
+            }
             Sockoption::Type => f.debug_tuple("Sockoption::Type").finish(),
             Sockoption::Proto => f.debug_tuple("Sockoption::Proto").finish(),
         }
@@ -1074,7 +1156,9 @@ pub enum Streamsecurity {
 impl core::fmt::Debug for Streamsecurity {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Streamsecurity::Unencrypted => f.debug_tuple("Streamsecurity::Unencrypted").finish(),
+            Streamsecurity::Unencrypted => {
+                f.debug_tuple("Streamsecurity::Unencrypted").finish()
+            }
             Streamsecurity::AnyEncryption => {
                 f.debug_tuple("Streamsecurity::AnyEncryption").finish()
             }
@@ -1084,7 +1168,9 @@ impl core::fmt::Debug for Streamsecurity {
             Streamsecurity::DoubleEncryption => {
                 f.debug_tuple("Streamsecurity::DoubleEncryption").finish()
             }
-            Streamsecurity::Unknown => f.debug_tuple("Streamsecurity::Unknown").finish(),
+            Streamsecurity::Unknown => {
+                f.debug_tuple("Streamsecurity::Unknown").finish()
+            }
         }
     }
 }
@@ -1100,9 +1186,15 @@ pub enum Addressfamily {
 impl core::fmt::Debug for Addressfamily {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Addressfamily::Unspec => f.debug_tuple("Addressfamily::Unspec").finish(),
-            Addressfamily::Inet4 => f.debug_tuple("Addressfamily::Inet4").finish(),
-            Addressfamily::Inet6 => f.debug_tuple("Addressfamily::Inet6").finish(),
+            Addressfamily::Unspec => {
+                f.debug_tuple("Addressfamily::Unspec").finish()
+            }
+            Addressfamily::Inet4 => {
+                f.debug_tuple("Addressfamily::Inet4").finish()
+            }
+            Addressfamily::Inet6 => {
+                f.debug_tuple("Addressfamily::Inet6").finish()
+            }
             Addressfamily::Unix => f.debug_tuple("Addressfamily::Unix").finish(),
         }
     }
@@ -1170,10 +1262,18 @@ pub enum Snapshot0Whence {
 impl core::fmt::Debug for Snapshot0Whence {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Snapshot0Whence::Cur => f.debug_tuple("Snapshot0Whence::Cur").finish(),
-            Snapshot0Whence::End => f.debug_tuple("Snapshot0Whence::End").finish(),
-            Snapshot0Whence::Set => f.debug_tuple("Snapshot0Whence::Set").finish(),
-            Snapshot0Whence::Unknown => f.debug_tuple("Snapshot0Whence::Unknown").finish(),
+            Snapshot0Whence::Cur => {
+                f.debug_tuple("Snapshot0Whence::Cur").finish()
+            }
+            Snapshot0Whence::End => {
+                f.debug_tuple("Snapshot0Whence::End").finish()
+            }
+            Snapshot0Whence::Set => {
+                f.debug_tuple("Snapshot0Whence::Set").finish()
+            }
+            Snapshot0Whence::Unknown => {
+                f.debug_tuple("Snapshot0Whence::Unknown").finish()
+            }
         }
     }
 }
@@ -1634,104 +1734,256 @@ impl core::fmt::Debug for SockProto {
             SockProto::Ip => f.debug_tuple("SockProto::Ip").finish(),
             SockProto::Icmp => f.debug_tuple("SockProto::Icmp").finish(),
             SockProto::Igmp => f.debug_tuple("SockProto::Igmp").finish(),
-            SockProto::ProtoThree => f.debug_tuple("SockProto::ProtoThree").finish(),
+            SockProto::ProtoThree => {
+                f.debug_tuple("SockProto::ProtoThree").finish()
+            }
             SockProto::Ipip => f.debug_tuple("SockProto::Ipip").finish(),
-            SockProto::ProtoFive => f.debug_tuple("SockProto::ProtoFive").finish(),
+            SockProto::ProtoFive => {
+                f.debug_tuple("SockProto::ProtoFive").finish()
+            }
             SockProto::Tcp => f.debug_tuple("SockProto::Tcp").finish(),
-            SockProto::ProtoSeven => f.debug_tuple("SockProto::ProtoSeven").finish(),
+            SockProto::ProtoSeven => {
+                f.debug_tuple("SockProto::ProtoSeven").finish()
+            }
             SockProto::Egp => f.debug_tuple("SockProto::Egp").finish(),
-            SockProto::ProtoNine => f.debug_tuple("SockProto::ProtoNine").finish(),
+            SockProto::ProtoNine => {
+                f.debug_tuple("SockProto::ProtoNine").finish()
+            }
             SockProto::ProtoTen => f.debug_tuple("SockProto::ProtoTen").finish(),
-            SockProto::ProtoEleven => f.debug_tuple("SockProto::ProtoEleven").finish(),
+            SockProto::ProtoEleven => {
+                f.debug_tuple("SockProto::ProtoEleven").finish()
+            }
             SockProto::Pup => f.debug_tuple("SockProto::Pup").finish(),
-            SockProto::ProtoThirteen => f.debug_tuple("SockProto::ProtoThirteen").finish(),
-            SockProto::ProtoFourteen => f.debug_tuple("SockProto::ProtoFourteen").finish(),
-            SockProto::ProtoFifteen => f.debug_tuple("SockProto::ProtoFifteen").finish(),
-            SockProto::ProtoSixteen => f.debug_tuple("SockProto::ProtoSixteen").finish(),
+            SockProto::ProtoThirteen => {
+                f.debug_tuple("SockProto::ProtoThirteen").finish()
+            }
+            SockProto::ProtoFourteen => {
+                f.debug_tuple("SockProto::ProtoFourteen").finish()
+            }
+            SockProto::ProtoFifteen => {
+                f.debug_tuple("SockProto::ProtoFifteen").finish()
+            }
+            SockProto::ProtoSixteen => {
+                f.debug_tuple("SockProto::ProtoSixteen").finish()
+            }
             SockProto::Udp => f.debug_tuple("SockProto::Udp").finish(),
-            SockProto::ProtoEighteen => f.debug_tuple("SockProto::ProtoEighteen").finish(),
-            SockProto::ProtoNineteen => f.debug_tuple("SockProto::ProtoNineteen").finish(),
-            SockProto::ProtoTwenty => f.debug_tuple("SockProto::ProtoTwenty").finish(),
-            SockProto::ProtoTwentyone => f.debug_tuple("SockProto::ProtoTwentyone").finish(),
+            SockProto::ProtoEighteen => {
+                f.debug_tuple("SockProto::ProtoEighteen").finish()
+            }
+            SockProto::ProtoNineteen => {
+                f.debug_tuple("SockProto::ProtoNineteen").finish()
+            }
+            SockProto::ProtoTwenty => {
+                f.debug_tuple("SockProto::ProtoTwenty").finish()
+            }
+            SockProto::ProtoTwentyone => {
+                f.debug_tuple("SockProto::ProtoTwentyone").finish()
+            }
             SockProto::Idp => f.debug_tuple("SockProto::Idp").finish(),
-            SockProto::ProtoTwentythree => f.debug_tuple("SockProto::ProtoTwentythree").finish(),
-            SockProto::ProtoTwentyfour => f.debug_tuple("SockProto::ProtoTwentyfour").finish(),
-            SockProto::ProtoTwentyfive => f.debug_tuple("SockProto::ProtoTwentyfive").finish(),
-            SockProto::ProtoTwentysix => f.debug_tuple("SockProto::ProtoTwentysix").finish(),
-            SockProto::ProtoTwentyseven => f.debug_tuple("SockProto::ProtoTwentyseven").finish(),
-            SockProto::ProtoTwentyeight => f.debug_tuple("SockProto::ProtoTwentyeight").finish(),
+            SockProto::ProtoTwentythree => {
+                f.debug_tuple("SockProto::ProtoTwentythree").finish()
+            }
+            SockProto::ProtoTwentyfour => {
+                f.debug_tuple("SockProto::ProtoTwentyfour").finish()
+            }
+            SockProto::ProtoTwentyfive => {
+                f.debug_tuple("SockProto::ProtoTwentyfive").finish()
+            }
+            SockProto::ProtoTwentysix => {
+                f.debug_tuple("SockProto::ProtoTwentysix").finish()
+            }
+            SockProto::ProtoTwentyseven => {
+                f.debug_tuple("SockProto::ProtoTwentyseven").finish()
+            }
+            SockProto::ProtoTwentyeight => {
+                f.debug_tuple("SockProto::ProtoTwentyeight").finish()
+            }
             SockProto::ProtoTp => f.debug_tuple("SockProto::ProtoTp").finish(),
-            SockProto::ProtoThirty => f.debug_tuple("SockProto::ProtoThirty").finish(),
-            SockProto::ProtoThirtyone => f.debug_tuple("SockProto::ProtoThirtyone").finish(),
-            SockProto::ProtoThirtytwo => f.debug_tuple("SockProto::ProtoThirtytwo").finish(),
+            SockProto::ProtoThirty => {
+                f.debug_tuple("SockProto::ProtoThirty").finish()
+            }
+            SockProto::ProtoThirtyone => {
+                f.debug_tuple("SockProto::ProtoThirtyone").finish()
+            }
+            SockProto::ProtoThirtytwo => {
+                f.debug_tuple("SockProto::ProtoThirtytwo").finish()
+            }
             SockProto::Dccp => f.debug_tuple("SockProto::Dccp").finish(),
-            SockProto::ProtoThirtyfour => f.debug_tuple("SockProto::ProtoThirtyfour").finish(),
-            SockProto::ProtoThirtyfive => f.debug_tuple("SockProto::ProtoThirtyfive").finish(),
-            SockProto::ProtoThirtysix => f.debug_tuple("SockProto::ProtoThirtysix").finish(),
-            SockProto::ProtoThirtyseven => f.debug_tuple("SockProto::ProtoThirtyseven").finish(),
-            SockProto::ProtoThirtyeight => f.debug_tuple("SockProto::ProtoThirtyeight").finish(),
-            SockProto::ProtoThirtynine => f.debug_tuple("SockProto::ProtoThirtynine").finish(),
-            SockProto::ProtoFourty => f.debug_tuple("SockProto::ProtoFourty").finish(),
+            SockProto::ProtoThirtyfour => {
+                f.debug_tuple("SockProto::ProtoThirtyfour").finish()
+            }
+            SockProto::ProtoThirtyfive => {
+                f.debug_tuple("SockProto::ProtoThirtyfive").finish()
+            }
+            SockProto::ProtoThirtysix => {
+                f.debug_tuple("SockProto::ProtoThirtysix").finish()
+            }
+            SockProto::ProtoThirtyseven => {
+                f.debug_tuple("SockProto::ProtoThirtyseven").finish()
+            }
+            SockProto::ProtoThirtyeight => {
+                f.debug_tuple("SockProto::ProtoThirtyeight").finish()
+            }
+            SockProto::ProtoThirtynine => {
+                f.debug_tuple("SockProto::ProtoThirtynine").finish()
+            }
+            SockProto::ProtoFourty => {
+                f.debug_tuple("SockProto::ProtoFourty").finish()
+            }
             SockProto::Ipv6 => f.debug_tuple("SockProto::Ipv6").finish(),
-            SockProto::ProtoFourtytwo => f.debug_tuple("SockProto::ProtoFourtytwo").finish(),
+            SockProto::ProtoFourtytwo => {
+                f.debug_tuple("SockProto::ProtoFourtytwo").finish()
+            }
             SockProto::Routing => f.debug_tuple("SockProto::Routing").finish(),
             SockProto::Fragment => f.debug_tuple("SockProto::Fragment").finish(),
-            SockProto::ProtoFourtyfive => f.debug_tuple("SockProto::ProtoFourtyfive").finish(),
+            SockProto::ProtoFourtyfive => {
+                f.debug_tuple("SockProto::ProtoFourtyfive").finish()
+            }
             SockProto::Rsvp => f.debug_tuple("SockProto::Rsvp").finish(),
             SockProto::Gre => f.debug_tuple("SockProto::Gre").finish(),
-            SockProto::ProtoFourtyeight => f.debug_tuple("SockProto::ProtoFourtyeight").finish(),
-            SockProto::ProtoFourtynine => f.debug_tuple("SockProto::ProtoFourtynine").finish(),
+            SockProto::ProtoFourtyeight => {
+                f.debug_tuple("SockProto::ProtoFourtyeight").finish()
+            }
+            SockProto::ProtoFourtynine => {
+                f.debug_tuple("SockProto::ProtoFourtynine").finish()
+            }
             SockProto::Esp => f.debug_tuple("SockProto::Esp").finish(),
             SockProto::Ah => f.debug_tuple("SockProto::Ah").finish(),
-            SockProto::ProtoFiftytwo => f.debug_tuple("SockProto::ProtoFiftytwo").finish(),
-            SockProto::ProtoFiftythree => f.debug_tuple("SockProto::ProtoFiftythree").finish(),
-            SockProto::ProtoFiftyfour => f.debug_tuple("SockProto::ProtoFiftyfour").finish(),
-            SockProto::ProtoFiftyfive => f.debug_tuple("SockProto::ProtoFiftyfive").finish(),
-            SockProto::ProtoFiftysix => f.debug_tuple("SockProto::ProtoFiftysix").finish(),
-            SockProto::ProtoFiftyseven => f.debug_tuple("SockProto::ProtoFiftyseven").finish(),
+            SockProto::ProtoFiftytwo => {
+                f.debug_tuple("SockProto::ProtoFiftytwo").finish()
+            }
+            SockProto::ProtoFiftythree => {
+                f.debug_tuple("SockProto::ProtoFiftythree").finish()
+            }
+            SockProto::ProtoFiftyfour => {
+                f.debug_tuple("SockProto::ProtoFiftyfour").finish()
+            }
+            SockProto::ProtoFiftyfive => {
+                f.debug_tuple("SockProto::ProtoFiftyfive").finish()
+            }
+            SockProto::ProtoFiftysix => {
+                f.debug_tuple("SockProto::ProtoFiftysix").finish()
+            }
+            SockProto::ProtoFiftyseven => {
+                f.debug_tuple("SockProto::ProtoFiftyseven").finish()
+            }
             SockProto::Icmpv6 => f.debug_tuple("SockProto::Icmpv6").finish(),
             SockProto::None => f.debug_tuple("SockProto::None").finish(),
             SockProto::Dstopts => f.debug_tuple("SockProto::Dstopts").finish(),
-            SockProto::ProtoSixtyone => f.debug_tuple("SockProto::ProtoSixtyone").finish(),
-            SockProto::ProtoSixtytwo => f.debug_tuple("SockProto::ProtoSixtytwo").finish(),
-            SockProto::ProtoSixtythree => f.debug_tuple("SockProto::ProtoSixtythree").finish(),
-            SockProto::ProtoSixtyfour => f.debug_tuple("SockProto::ProtoSixtyfour").finish(),
-            SockProto::ProtoSixtyfive => f.debug_tuple("SockProto::ProtoSixtyfive").finish(),
-            SockProto::ProtoSixtysix => f.debug_tuple("SockProto::ProtoSixtysix").finish(),
-            SockProto::ProtoSixtyseven => f.debug_tuple("SockProto::ProtoSixtyseven").finish(),
-            SockProto::ProtoSixtyeight => f.debug_tuple("SockProto::ProtoSixtyeight").finish(),
-            SockProto::ProtoSixtynine => f.debug_tuple("SockProto::ProtoSixtynine").finish(),
-            SockProto::ProtoSeventy => f.debug_tuple("SockProto::ProtoSeventy").finish(),
-            SockProto::ProtoSeventyone => f.debug_tuple("SockProto::ProtoSeventyone").finish(),
-            SockProto::ProtoSeventytwo => f.debug_tuple("SockProto::ProtoSeventytwo").finish(),
-            SockProto::ProtoSeventythree => f.debug_tuple("SockProto::ProtoSeventythree").finish(),
-            SockProto::ProtoSeventyfour => f.debug_tuple("SockProto::ProtoSeventyfour").finish(),
-            SockProto::ProtoSeventyfive => f.debug_tuple("SockProto::ProtoSeventyfive").finish(),
-            SockProto::ProtoSeventysix => f.debug_tuple("SockProto::ProtoSeventysix").finish(),
-            SockProto::ProtoSeventyseven => f.debug_tuple("SockProto::ProtoSeventyseven").finish(),
-            SockProto::ProtoSeventyeight => f.debug_tuple("SockProto::ProtoSeventyeight").finish(),
-            SockProto::ProtoSeventynine => f.debug_tuple("SockProto::ProtoSeventynine").finish(),
-            SockProto::ProtoEighty => f.debug_tuple("SockProto::ProtoEighty").finish(),
-            SockProto::ProtoEightyone => f.debug_tuple("SockProto::ProtoEightyone").finish(),
-            SockProto::ProtoEightytwo => f.debug_tuple("SockProto::ProtoEightytwo").finish(),
-            SockProto::ProtoEightythree => f.debug_tuple("SockProto::ProtoEightythree").finish(),
-            SockProto::ProtoEightyfour => f.debug_tuple("SockProto::ProtoEightyfour").finish(),
-            SockProto::ProtoEightyfive => f.debug_tuple("SockProto::ProtoEightyfive").finish(),
-            SockProto::ProtoEightysix => f.debug_tuple("SockProto::ProtoEightysix").finish(),
-            SockProto::ProtoEightyseven => f.debug_tuple("SockProto::ProtoEightyseven").finish(),
-            SockProto::ProtoEightyeight => f.debug_tuple("SockProto::ProtoEightyeight").finish(),
-            SockProto::ProtoEightynine => f.debug_tuple("SockProto::ProtoEightynine").finish(),
-            SockProto::ProtoNinety => f.debug_tuple("SockProto::ProtoNinety").finish(),
-            SockProto::ProtoNinetyone => f.debug_tuple("SockProto::ProtoNinetyone").finish(),
+            SockProto::ProtoSixtyone => {
+                f.debug_tuple("SockProto::ProtoSixtyone").finish()
+            }
+            SockProto::ProtoSixtytwo => {
+                f.debug_tuple("SockProto::ProtoSixtytwo").finish()
+            }
+            SockProto::ProtoSixtythree => {
+                f.debug_tuple("SockProto::ProtoSixtythree").finish()
+            }
+            SockProto::ProtoSixtyfour => {
+                f.debug_tuple("SockProto::ProtoSixtyfour").finish()
+            }
+            SockProto::ProtoSixtyfive => {
+                f.debug_tuple("SockProto::ProtoSixtyfive").finish()
+            }
+            SockProto::ProtoSixtysix => {
+                f.debug_tuple("SockProto::ProtoSixtysix").finish()
+            }
+            SockProto::ProtoSixtyseven => {
+                f.debug_tuple("SockProto::ProtoSixtyseven").finish()
+            }
+            SockProto::ProtoSixtyeight => {
+                f.debug_tuple("SockProto::ProtoSixtyeight").finish()
+            }
+            SockProto::ProtoSixtynine => {
+                f.debug_tuple("SockProto::ProtoSixtynine").finish()
+            }
+            SockProto::ProtoSeventy => {
+                f.debug_tuple("SockProto::ProtoSeventy").finish()
+            }
+            SockProto::ProtoSeventyone => {
+                f.debug_tuple("SockProto::ProtoSeventyone").finish()
+            }
+            SockProto::ProtoSeventytwo => {
+                f.debug_tuple("SockProto::ProtoSeventytwo").finish()
+            }
+            SockProto::ProtoSeventythree => {
+                f.debug_tuple("SockProto::ProtoSeventythree").finish()
+            }
+            SockProto::ProtoSeventyfour => {
+                f.debug_tuple("SockProto::ProtoSeventyfour").finish()
+            }
+            SockProto::ProtoSeventyfive => {
+                f.debug_tuple("SockProto::ProtoSeventyfive").finish()
+            }
+            SockProto::ProtoSeventysix => {
+                f.debug_tuple("SockProto::ProtoSeventysix").finish()
+            }
+            SockProto::ProtoSeventyseven => {
+                f.debug_tuple("SockProto::ProtoSeventyseven").finish()
+            }
+            SockProto::ProtoSeventyeight => {
+                f.debug_tuple("SockProto::ProtoSeventyeight").finish()
+            }
+            SockProto::ProtoSeventynine => {
+                f.debug_tuple("SockProto::ProtoSeventynine").finish()
+            }
+            SockProto::ProtoEighty => {
+                f.debug_tuple("SockProto::ProtoEighty").finish()
+            }
+            SockProto::ProtoEightyone => {
+                f.debug_tuple("SockProto::ProtoEightyone").finish()
+            }
+            SockProto::ProtoEightytwo => {
+                f.debug_tuple("SockProto::ProtoEightytwo").finish()
+            }
+            SockProto::ProtoEightythree => {
+                f.debug_tuple("SockProto::ProtoEightythree").finish()
+            }
+            SockProto::ProtoEightyfour => {
+                f.debug_tuple("SockProto::ProtoEightyfour").finish()
+            }
+            SockProto::ProtoEightyfive => {
+                f.debug_tuple("SockProto::ProtoEightyfive").finish()
+            }
+            SockProto::ProtoEightysix => {
+                f.debug_tuple("SockProto::ProtoEightysix").finish()
+            }
+            SockProto::ProtoEightyseven => {
+                f.debug_tuple("SockProto::ProtoEightyseven").finish()
+            }
+            SockProto::ProtoEightyeight => {
+                f.debug_tuple("SockProto::ProtoEightyeight").finish()
+            }
+            SockProto::ProtoEightynine => {
+                f.debug_tuple("SockProto::ProtoEightynine").finish()
+            }
+            SockProto::ProtoNinety => {
+                f.debug_tuple("SockProto::ProtoNinety").finish()
+            }
+            SockProto::ProtoNinetyone => {
+                f.debug_tuple("SockProto::ProtoNinetyone").finish()
+            }
             SockProto::Mtp => f.debug_tuple("SockProto::Mtp").finish(),
-            SockProto::ProtoNinetythree => f.debug_tuple("SockProto::ProtoNinetythree").finish(),
+            SockProto::ProtoNinetythree => {
+                f.debug_tuple("SockProto::ProtoNinetythree").finish()
+            }
             SockProto::Beetph => f.debug_tuple("SockProto::Beetph").finish(),
-            SockProto::ProtoNinetyfive => f.debug_tuple("SockProto::ProtoNinetyfive").finish(),
-            SockProto::ProtoNinetysix => f.debug_tuple("SockProto::ProtoNinetysix").finish(),
-            SockProto::ProtoNineetyseven => f.debug_tuple("SockProto::ProtoNineetyseven").finish(),
+            SockProto::ProtoNinetyfive => {
+                f.debug_tuple("SockProto::ProtoNinetyfive").finish()
+            }
+            SockProto::ProtoNinetysix => {
+                f.debug_tuple("SockProto::ProtoNinetysix").finish()
+            }
+            SockProto::ProtoNineetyseven => {
+                f.debug_tuple("SockProto::ProtoNineetyseven").finish()
+            }
             SockProto::Encap => f.debug_tuple("SockProto::Encap").finish(),
-            SockProto::ProtoNinetynine => f.debug_tuple("SockProto::ProtoNinetynine").finish(),
-            SockProto::ProtoOnehundred => f.debug_tuple("SockProto::ProtoOnehundred").finish(),
+            SockProto::ProtoNinetynine => {
+                f.debug_tuple("SockProto::ProtoNinetynine").finish()
+            }
+            SockProto::ProtoOnehundred => {
+                f.debug_tuple("SockProto::ProtoOnehundred").finish()
+            }
             SockProto::ProtoOnehundredandone => {
                 f.debug_tuple("SockProto::ProtoOnehundredandone").finish()
             }
@@ -2015,7 +2267,9 @@ impl core::fmt::Debug for SockProto {
             SockProto::ProtoOnehundredandninetynine => f
                 .debug_tuple("SockProto::ProtoOnehundredandninetynine")
                 .finish(),
-            SockProto::ProtoTwohundred => f.debug_tuple("SockProto::ProtoTwohundred").finish(),
+            SockProto::ProtoTwohundred => {
+                f.debug_tuple("SockProto::ProtoTwohundred").finish()
+            }
             SockProto::ProtoTwohundredandone => {
                 f.debug_tuple("SockProto::ProtoTwohundredandone").finish()
             }
@@ -2440,10 +2694,18 @@ pub enum JoinStatusType {
 impl core::fmt::Debug for JoinStatusType {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            JoinStatusType::Nothing => f.debug_tuple("JoinStatusType::Nothing").finish(),
-            JoinStatusType::ExitNormal => f.debug_tuple("JoinStatusType::ExitNormal").finish(),
-            JoinStatusType::ExitSignal => f.debug_tuple("JoinStatusType::ExitSignal").finish(),
-            JoinStatusType::Stopped => f.debug_tuple("JoinStatusType::Stopped").finish(),
+            JoinStatusType::Nothing => {
+                f.debug_tuple("JoinStatusType::Nothing").finish()
+            }
+            JoinStatusType::ExitNormal => {
+                f.debug_tuple("JoinStatusType::ExitNormal").finish()
+            }
+            JoinStatusType::ExitSignal => {
+                f.debug_tuple("JoinStatusType::ExitSignal").finish()
+            }
+            JoinStatusType::Stopped => {
+                f.debug_tuple("JoinStatusType::Stopped").finish()
+            }
         }
     }
 }
@@ -2501,7 +2763,9 @@ unsafe impl wasmer::FromToNativeWasmType for Snapshot0Clockid {
             3 => Self::ThreadCputimeId,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Snapshot0Clockid");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Snapshot0Clockid"
+                );
                 Self::Unknown
             }
         }
@@ -2533,7 +2797,9 @@ unsafe impl wasmer::FromToNativeWasmType for Clockid {
             3 => Self::ThreadCputimeId,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Clockid");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Clockid"
+                );
                 Self::Unknown
             }
         }
@@ -2682,7 +2948,9 @@ unsafe impl wasmer::FromToNativeWasmType for Filetype {
             9 => Self::SocketSeqpacket,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Filetype");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Filetype"
+                );
                 Self::Unknown
             }
         }
@@ -2789,7 +3057,9 @@ unsafe impl wasmer::FromToNativeWasmType for Eventtype {
             2 => Self::FdWrite,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Eventtype");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Eventtype"
+                );
                 Self::Unknown
             }
         }
@@ -2836,7 +3106,9 @@ unsafe impl wasmer::FromToNativeWasmType for Preopentype {
             0 => Self::Dir,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Preopentype");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Preopentype"
+                );
                 Self::Unknown
             }
         }
@@ -2887,7 +3159,9 @@ unsafe impl wasmer::FromToNativeWasmType for Socktype {
             4 => Self::Seqpacket,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Socktype");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Socktype"
+                );
                 Self::Unknown
             }
         }
@@ -2919,7 +3193,9 @@ unsafe impl wasmer::FromToNativeWasmType for Sockstatus {
             3 => Self::Failed,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Sockstatus");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Sockstatus"
+                );
                 Self::Unknown
             }
         }
@@ -2974,7 +3250,9 @@ unsafe impl wasmer::FromToNativeWasmType for Sockoption {
             26 => Self::Proto,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Sockoption");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Sockoption"
+                );
                 Self::Noop
             }
         }
@@ -3006,7 +3284,9 @@ unsafe impl wasmer::FromToNativeWasmType for Streamsecurity {
             3 => Self::DoubleEncryption,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Streamsecurity");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Streamsecurity"
+                );
                 Self::Unknown
             }
         }
@@ -3038,7 +3318,9 @@ unsafe impl wasmer::FromToNativeWasmType for Addressfamily {
             3 => Self::Unix,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Addressfamily");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Addressfamily"
+                );
                 Self::Unspec
             }
         }
@@ -3081,7 +3363,9 @@ unsafe impl wasmer::FromToNativeWasmType for Snapshot0Whence {
             2 => Self::Set,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Snapshot0Whence");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Snapshot0Whence"
+                );
                 Self::Unknown
             }
         }
@@ -3148,7 +3432,9 @@ unsafe impl wasmer::FromToNativeWasmType for OptionTag {
             1 => Self::Some,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum OptionTag");
+                tracing::debug!(
+                    "could not serialize number {q} to enum OptionTag"
+                );
                 Self::None
             }
         }
@@ -3216,7 +3502,9 @@ unsafe impl wasmer::FromToNativeWasmType for StdioMode {
             3 => Self::Log,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum StdioMode");
+                tracing::debug!(
+                    "could not serialize number {q} to enum StdioMode"
+                );
                 Self::Null
             }
         }
@@ -3508,7 +3796,9 @@ unsafe impl wasmer::FromToNativeWasmType for SockProto {
             263 => Self::Max,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum SockProto");
+                tracing::debug!(
+                    "could not serialize number {q} to enum SockProto"
+                );
                 Self::None
             }
         }
@@ -3663,7 +3953,9 @@ unsafe impl wasmer::FromToNativeWasmType for Timeout {
             3 => Self::Accept,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum Timeout");
+                tracing::debug!(
+                    "could not serialize number {q} to enum Timeout"
+                );
                 Self::Unknown
             }
         }
@@ -3701,7 +3993,9 @@ unsafe impl wasmer::FromToNativeWasmType for JoinStatusType {
             3 => Self::Stopped,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum JoinStatusType");
+                tracing::debug!(
+                    "could not serialize number {q} to enum JoinStatusType"
+                );
                 Self::Nothing
             }
         }

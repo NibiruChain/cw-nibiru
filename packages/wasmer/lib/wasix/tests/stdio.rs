@@ -103,7 +103,9 @@ async fn test_env() {
     #[cfg(feature = "js")]
     tracing_wasm::set_as_global_default_with_config({
         let mut builder = tracing_wasm::WASMLayerConfigBuilder::new();
-        builder.set_console_config(tracing_wasm::ConsoleConfig::ReportWithoutConsoleColor);
+        builder.set_console_config(
+            tracing_wasm::ConsoleConfig::ReportWithoutConsoleColor,
+        );
         builder.build()
     });
 
@@ -138,7 +140,8 @@ async fn test_env() {
 
 async fn test_stdin() {
     let mut store = Store::default();
-    let module = Module::new(&store, include_bytes!("stdin-hello.wasm")).unwrap();
+    let module =
+        Module::new(&store, include_bytes!("stdin-hello.wasm")).unwrap();
 
     // Create the `WasiEnv`.
     let (mut pipe_tx, pipe_rx) = Pipe::channel();

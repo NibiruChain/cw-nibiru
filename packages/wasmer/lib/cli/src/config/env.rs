@@ -134,7 +134,9 @@ impl WasmerEnv {
             .get_login_token_for_registry(registry_endpoint.as_str())
     }
 
-    pub fn client_unauthennticated(&self) -> Result<WasmerClient, anyhow::Error> {
+    pub fn client_unauthennticated(
+        &self,
+    ) -> Result<WasmerClient, anyhow::Error> {
         let registry_url = self.registry_endpoint()?;
 
         let proxy = self.proxy()?;

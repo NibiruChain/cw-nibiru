@@ -16,8 +16,10 @@ impl CliRender for Secret {
         let value = sanitize_value(value);
         table.add_rows([
             vec![
-                Cell::new("Name".to_string()).add_attribute(comfy_table::Attribute::Bold),
-                Cell::new("Value".to_string()).add_attribute(comfy_table::Attribute::Bold),
+                Cell::new("Name".to_string())
+                    .add_attribute(comfy_table::Attribute::Bold),
+                Cell::new("Value".to_string())
+                    .add_attribute(comfy_table::Attribute::Bold),
             ],
             vec![Cell::new(name.to_string()), Cell::new(format!("'{value}'"))],
         ]);
@@ -33,8 +35,10 @@ impl CliRender for Secret {
         table.set_content_arrangement(comfy_table::ContentArrangement::Dynamic);
 
         table.set_header(vec![
-            Cell::new("Name".to_string()).add_attribute(comfy_table::Attribute::Bold),
-            Cell::new("Value".to_string()).add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("Name".to_string())
+                .add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("Value".to_string())
+                .add_attribute(comfy_table::Attribute::Bold),
         ]);
         table.add_rows(items.iter().map(|s| {
             vec![
@@ -74,8 +78,10 @@ impl CliRender for BackendSecretWrapper {
         table.set_content_arrangement(comfy_table::ContentArrangement::Dynamic);
 
         table.set_header(vec![
-            Cell::new("Name".to_string()).add_attribute(comfy_table::Attribute::Bold),
-            Cell::new("Last updated".to_string()).add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("Name".to_string())
+                .add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("Last updated".to_string())
+                .add_attribute(comfy_table::Attribute::Bold),
         ]);
         table.add_rows(items.iter().map(|s| {
             let last_updated = last_updated_to_human(s.0.updated_at.clone())
@@ -90,9 +96,12 @@ impl CliRender for BackendSecretWrapper {
     }
 }
 
-fn last_updated_to_human(last_update: DateTime) -> anyhow::Result<humantime::Duration> {
+fn last_updated_to_human(
+    last_update: DateTime,
+) -> anyhow::Result<humantime::Duration> {
     let last_update: OffsetDateTime = last_update.try_into()?;
-    let elapsed: std::time::Duration = (OffsetDateTime::now_utc() - last_update).try_into()?;
+    let elapsed: std::time::Duration =
+        (OffsetDateTime::now_utc() - last_update).try_into()?;
     Ok(humantime::Duration::from(std::time::Duration::from_secs(
         elapsed.as_secs(),
     )))

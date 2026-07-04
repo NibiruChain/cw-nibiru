@@ -98,9 +98,10 @@ impl CmdWasmer {
                 let bytes: bytes::Bytes = data.into();
 
                 if let Ok(container) = from_bytes(bytes.clone()) {
-                    let pkg = BinaryPackage::from_webc(&container, &*self.runtime)
-                        .await
-                        .unwrap();
+                    let pkg =
+                        BinaryPackage::from_webc(&container, &*self.runtime)
+                            .await
+                            .unwrap();
 
                     Executable::BinaryPackage(pkg)
                 } else {
@@ -109,9 +110,12 @@ impl CmdWasmer {
             } else if let Ok(pkg) = self.get_package(&what).await {
                 Executable::BinaryPackage(pkg)
             } else {
-                let _ = unsafe { stderr_write(parent_ctx, HELP_RUN.as_bytes()) }.await;
-                let handle =
-                    OwnedTaskStatus::new_finished_with_code(Errno::Success.into()).handle();
+                let _ = unsafe { stderr_write(parent_ctx, HELP_RUN.as_bytes()) }
+                    .await;
+                let handle = OwnedTaskStatus::new_finished_with_code(
+                    Errno::Success.into(),
+                )
+                .handle();
                 return Ok(handle);
             };
 
@@ -119,17 +123,20 @@ impl CmdWasmer {
                 Executable::BinaryPackage(binary) => {
                     // Infer the command that is going to be executed
                     let cmd_name: &str =
-                        binary
-                            .infer_entrypoint()
-                            .map_err(|_| SpawnError::MissingEntrypoint {
+                        binary.infer_entrypoint().map_err(|_| {
+                            SpawnError::MissingEntrypoint {
                                 package_id: binary.id.clone(),
-                            })?;
-
-                    let cmd = binary
-                        .get_command(cmd_name)
-                        .ok_or_else(|| SpawnError::NotFound {
-                            message: format!("{cmd_name} command in package: {}", binary.id),
+                            }
                         })?;
+
+                    let cmd = binary.get_command(cmd_name).ok_or_else(|| {
+                        SpawnError::NotFound {
+                            message: format!(
+                                "{cmd_name} command in package: {}",
+                                binary.id
+                            ),
+                        }
+                    })?;
 
                     env.prepare_spawn(cmd);
 
@@ -138,29 +145,39 @@ impl CmdWasmer {
                     // Now run the module
                     spawn_exec(binary, name, store, env, &self.runtime).await
                 }
-                Executable::Wasm(bytes) => spawn_exec_wasm(&bytes, name, env, &self.runtime).await,
+                Executable::Wasm(bytes) => {
+                    spawn_exec_wasm(&bytes, name, env, &self.runtime).await
+                }
             }
         } else {
-            let _ = unsafe { stderr_write(parent_ctx, HELP_RUN.as_bytes()) }.await;
-            let handle = OwnedTaskStatus::new_finished_with_code(Errno::Success.into()).handle();
+            let _ =
+                unsafe { stderr_write(parent_ctx, HELP_RUN.as_bytes()) }.await;
+            let handle =
+                OwnedTaskStatus::new_finished_with_code(Errno::Success.into())
+                    .handle();
             Ok(handle)
         }
     }
 
-    pub async fn get_package(&self, name: &str) -> Result<BinaryPackage, anyhow::Error> {
+    pub async fn get_package(
+        &self,
+        name: &str,
+    ) -> Result<BinaryPackage, anyhow::Error> {
         // Need to make sure this task runs on the main runtime.
         let (tx, rx) = tokio::sync::oneshot::channel();
         let specifier = name.parse()?;
         let rt = self.runtime.clone();
         self.runtime.task_manager().task_shared(Box::new(|| {
             Box::pin(async move {
-                let res = BinaryPackage::from_registry(&specifier, rt.as_ref()).await;
+                let res =
+                    BinaryPackage::from_registry(&specifier, rt.as_ref()).await;
                 tx.send(res)
                     .expect("could not send response to output channel");
             })
         }))?;
-        rx.await
-            .map_err(|_| anyhow::anyhow!("package retrieval response channel died"))?
+        rx.await.map_err(|_| {
+            anyhow::anyhow!("package retrieval response channel died")
+        })?
     }
 }
 
@@ -199,8 +216,10 @@ impl VirtualCommand for CmdWasmer {
                     unsafe { stderr_write(parent_ctx, HELP.as_bytes()) }
                         .await
                         .ok();
-                    let handle =
-                        OwnedTaskStatus::new_finished_with_code(Errno::Success.into()).handle();
+                    let handle = OwnedTaskStatus::new_finished_with_code(
+                        Errno::Success.into(),
+                    )
+                    .handle();
                     Ok(handle)
                 }
                 Some(what) => {

@@ -29,9 +29,11 @@ impl AsyncCliCommand for CmdAppVolumesCredentials {
         let client = self.env.client()?;
         let (_ident, app) = self.ident.load_app(&client).await?;
 
-        let creds =
-            wasmer_backend_api::query::get_app_s3_credentials(&client, app.id.clone().into_inner())
-                .await?;
+        let creds = wasmer_backend_api::query::get_app_s3_credentials(
+            &client,
+            app.id.clone().into_inner(),
+        )
+        .await?;
 
         match self.fmt.format {
             CredsItemFormat::Rclone => {
@@ -82,7 +84,12 @@ endpoint: {endpoint}
 
             CredsItemFormat::Table => {
                 let mut table = comfy_table::Table::new();
-                table.add_row(vec!["App name", "Access key", "Secret key", "Endpoint"]);
+                table.add_row(vec![
+                    "App name",
+                    "Access key",
+                    "Secret key",
+                    "Endpoint",
+                ]);
                 table.add_row(vec![
                     app.name,
                     creds.access_key,

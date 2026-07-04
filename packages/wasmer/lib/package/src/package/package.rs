@@ -22,8 +22,8 @@ use webc::{
         write::{FileEntry, Writer},
         ChecksumAlgorithm, Timestamps,
     },
-    AbstractVolume, AbstractWebc, Container, ContainerError, DetectError, PathSegment, Version,
-    Volume,
+    AbstractVolume, AbstractWebc, Container, ContainerError, DetectError,
+    PathSegment, Version, Volume,
 };
 
 use super::{
@@ -139,7 +139,8 @@ pub struct Package {
     manifest: WebcManifest,
     atoms: BTreeMap<String, OwnedBuffer>,
     strictness: Strictness,
-    volumes: BTreeMap<String, Arc<dyn WasmerPackageVolume + Send + Sync + 'static>>,
+    volumes:
+        BTreeMap<String, Arc<dyn WasmerPackageVolume + Send + Sync + 'static>>,
 }
 
 impl Package {
@@ -149,8 +150,13 @@ impl Package {
     ///
     /// This will unpack the tarball to a temporary directory on disk and use
     /// memory-mapped files in order to reduce RAM usage.
-    pub fn from_tarball_file(path: impl AsRef<Path>) -> Result<Self, WasmerPackageError> {
-        Package::from_tarball_file_with_strictness(path.as_ref(), Strictness::default())
+    pub fn from_tarball_file(
+        path: impl AsRef<Path>,
+    ) -> Result<Self, WasmerPackageError> {
+        Package::from_tarball_file_with_strictness(
+            path.as_ref(),
+            Strictness::default(),
+        )
     }
     /// Load a [`Package`] from a `*.tar.gz` file on disk.
     ///
@@ -163,16 +169,19 @@ impl Package {
         strictness: Strictness,
     ) -> Result<Self, WasmerPackageError> {
         let path = path.as_ref();
-        let f = File::open(path).map_err(|error| WasmerPackageError::FileOpen {
-            path: path.to_path_buf(),
-            error,
-        })?;
+        let f =
+            File::open(path).map_err(|error| WasmerPackageError::FileOpen {
+                path: path.to_path_buf(),
+                error,
+            })?;
 
         Package::from_tarball_with_strictness(BufReader::new(f), strictness)
     }
 
     /// Load a package from a `*.tar.gz` archive.
-    pub fn from_tarball(tarball: impl BufRead) -> Result<Self, WasmerPackageError> {
+    pub fn from_tarball(
+        tarball: impl BufRead,
+    ) -> Result<Self, WasmerPackageError> {
         Package::from_tarball_with_strictness(tarball, Strictness::default())
     }
 
@@ -184,7 +193,8 @@ impl Package {
         let tarball = GzDecoder::new(tarball);
         let temp = tempdir().map_err(WasmerPackageError::TempDir)?;
         let archive = Archive::new(tarball);
-        unpack_archive(archive, temp.path()).map_err(WasmerPackageError::Tarball)?;
+        unpack_archive(archive, temp.path())
+            .map_err(WasmerPackageError::Tarball)?;
 
         let (_manifest_path, manifest) = read_manifest(temp.path())?;
 
@@ -192,8 +202,13 @@ impl Package {
     }
 
     /// Load a package from a `wasmer.toml` manifest on disk.
-    pub fn from_manifest(wasmer_toml: impl AsRef<Path>) -> Result<Self, WasmerPackageError> {
-        Package::from_manifest_with_strictness(wasmer_toml, Strictness::default())
+    pub fn from_manifest(
+        wasmer_toml: impl AsRef<Path>,
+    ) -> Result<Self, WasmerPackageError> {
+        Package::from_manifest_with_strictness(
+            wasmer_toml,
+            Strictness::default(),
+        )
     }
 
     /// Load a package from a `wasmer.toml` manifest on disk.
@@ -202,22 +217,25 @@ impl Package {
         strictness: Strictness,
     ) -> Result<Self, WasmerPackageError> {
         let path = wasmer_toml.as_ref();
-        let path = path
-            .canonicalize()
-            .map_err(|error| WasmerPackageError::Canonicalize {
+        let path = path.canonicalize().map_err(|error| {
+            WasmerPackageError::Canonicalize {
                 path: path.to_path_buf(),
                 error,
-            })?;
+            }
+        })?;
 
-        let wasmer_toml =
-            std::fs::read_to_string(&path).map_err(|error| WasmerPackageError::FileRead {
+        let wasmer_toml = std::fs::read_to_string(&path).map_err(|error| {
+            WasmerPackageError::FileRead {
                 path: path.to_path_buf(),
                 error,
-            })?;
+            }
+        })?;
         let wasmer_toml: WasmerManifest =
-            toml::from_str(&wasmer_toml).map_err(|error| WasmerPackageError::TomlDeserialize {
-                path: path.to_path_buf(),
-                error,
+            toml::from_str(&wasmer_toml).map_err(|error| {
+                WasmerPackageError::TomlDeserialize {
+                    path: path.to_path_buf(),
+                    error,
+                }
             })?;
 
         let base_dir = path
@@ -227,7 +245,9 @@ impl Package {
 
         for path in wasmer_toml.fs.values() {
             if !base_dir.join(path).exists() {
-                return Err(WasmerPackageError::PathNotExists { path: path.clone() });
+                return Err(WasmerPackageError::PathNotExists {
+                    path: path.clone(),
+                });
             }
         }
 
@@ -235,7 +255,9 @@ impl Package {
     }
 
     /// (Re)loads a package from a manifest.json file which was created as the result of calling [`Container::unpack`](crate::Container::unpack)
-    pub fn from_json_manifest(manifest: PathBuf) -> Result<Self, WasmerPackageError> {
+    pub fn from_json_manifest(
+        manifest: PathBuf,
+    ) -> Result<Self, WasmerPackageError> {
         Self::from_json_manifest_with_strictness(manifest, Strictness::default())
     }
 
@@ -253,9 +275,11 @@ impl Package {
 
         let contents = std::fs::read(&manifest)?;
         let manifest: WebcManifest =
-            serde_json::from_slice(&contents).map_err(|e| WasmerPackageError::JsonDeserialize {
-                path: manifest.clone(),
-                error: e,
+            serde_json::from_slice(&contents).map_err(|e| {
+                WasmerPackageError::JsonDeserialize {
+                    path: manifest.clone(),
+                    error: e,
+                }
             })?;
 
         let mut atoms = BTreeMap::<String, OwnedBuffer>::new();
@@ -268,14 +292,19 @@ impl Package {
             atoms.insert(atom.clone(), contents.into());
         }
 
-        let mut volumes: BTreeMap<String, Arc<dyn WasmerPackageVolume + Send + Sync + 'static>> =
-            BTreeMap::new();
+        let mut volumes: BTreeMap<
+            String,
+            Arc<dyn WasmerPackageVolume + Send + Sync + 'static>,
+        > = BTreeMap::new();
         if let Some(fs_mappings) = manifest.filesystem()? {
             for entry in fs_mappings.iter() {
                 let mut dirs = BTreeSet::new();
-                let path = entry.volume_name.strip_prefix('/').ok_or_else(|| {
-                    WasmerPackageError::MalformedPath(PathBuf::from(&entry.volume_name))
-                })?;
+                let path =
+                    entry.volume_name.strip_prefix('/').ok_or_else(|| {
+                        WasmerPackageError::MalformedPath(PathBuf::from(
+                            &entry.volume_name,
+                        ))
+                    })?;
                 let path = base_dir.path().join(path);
                 dirs.insert(path);
 
@@ -292,7 +321,8 @@ impl Package {
         }
 
         let mut files = BTreeSet::new();
-        for entry in std::fs::read_dir(base_dir.path().join(FsVolume::METADATA))? {
+        for entry in std::fs::read_dir(base_dir.path().join(FsVolume::METADATA))?
+        {
             let entry = entry?;
 
             files.insert(entry.path());
@@ -300,18 +330,24 @@ impl Package {
 
         if let Some(wapm) = manifest.wapm().unwrap() {
             if let Some(license_file) = wapm.license_file.as_ref() {
-                let path = license_file.path.strip_prefix('/').ok_or_else(|| {
-                    WasmerPackageError::MalformedPath(PathBuf::from(&license_file.path))
-                })?;
+                let path =
+                    license_file.path.strip_prefix('/').ok_or_else(|| {
+                        WasmerPackageError::MalformedPath(PathBuf::from(
+                            &license_file.path,
+                        ))
+                    })?;
                 let path = base_dir.path().join(FsVolume::METADATA).join(path);
 
                 files.insert(path);
             }
 
             if let Some(readme_file) = wapm.readme.as_ref() {
-                let path = readme_file.path.strip_prefix('/').ok_or_else(|| {
-                    WasmerPackageError::MalformedPath(PathBuf::from(&readme_file.path))
-                })?;
+                let path =
+                    readme_file.path.strip_prefix('/').ok_or_else(|| {
+                        WasmerPackageError::MalformedPath(PathBuf::from(
+                            &readme_file.path,
+                        ))
+                    })?;
                 let path = base_dir.path().join(FsVolume::METADATA).join(path);
 
                 files.insert(path);
@@ -351,12 +387,15 @@ impl Package {
             new_volumes.insert(k, Arc::new(v) as _);
         }
 
-        new_volumes.insert(MemoryVolume::METADATA.to_string(), Arc::new(metadata) as _);
+        new_volumes
+            .insert(MemoryVolume::METADATA.to_string(), Arc::new(metadata) as _);
 
         let volumes = new_volumes;
 
         let (mut manifest, atoms) =
-            super::manifest::in_memory_wasmer_manifest_to_webc(&manifest, &atoms)?;
+            super::manifest::in_memory_wasmer_manifest_to_webc(
+                &manifest, &atoms,
+            )?;
 
         if let Some(entry) = manifest.package.get_mut(Wapm::KEY) {
             let mut wapm: Wapm = entry.deserialized()?;
@@ -405,9 +444,13 @@ impl Package {
         // Create volumes
         let base_dir_path = base_dir.path().to_path_buf();
         // Create metadata volume
-        let metadata_volume = FsVolume::new_metadata(&wasmer_toml, base_dir_path.clone())?;
+        let metadata_volume =
+            FsVolume::new_metadata(&wasmer_toml, base_dir_path.clone())?;
         // Create assets volume
-        let mut volumes: BTreeMap<String, Arc<dyn WasmerPackageVolume + Send + Sync + 'static>> = {
+        let mut volumes: BTreeMap<
+            String,
+            Arc<dyn WasmerPackageVolume + Send + Sync + 'static>,
+        > = {
             let old = FsVolume::new_assets(&wasmer_toml, &base_dir_path)?;
             let mut new = BTreeMap::new();
 
@@ -449,7 +492,8 @@ impl Package {
     /// Returns all volumes in this package
     pub fn volumes(
         &self,
-    ) -> impl Iterator<Item = &Arc<dyn WasmerPackageVolume + Sync + Send + 'static>> {
+    ) -> impl Iterator<Item = &Arc<dyn WasmerPackageVolume + Sync + Send + 'static>>
+    {
         self.volumes.values()
     }
 
@@ -461,7 +505,10 @@ impl Package {
             .write_atoms(self.atom_entries()?)?;
 
         for (name, volume) in &self.volumes {
-            w.write_volume(name.as_str(), volume.as_directory_tree(self.strictness)?)?;
+            w.write_volume(
+                name.as_str(),
+                volume.as_directory_tree(self.strictness)?,
+            )?;
         }
 
         let serialized = w.finish(webc::v3::SignatureAlgorithm::None)?;
@@ -469,14 +516,22 @@ impl Package {
         Ok(serialized)
     }
 
-    fn atom_entries(&self) -> Result<BTreeMap<PathSegment, FileEntry<'_>>, Error> {
+    fn atom_entries(
+        &self,
+    ) -> Result<BTreeMap<PathSegment, FileEntry<'_>>, Error> {
         self.atoms()
             .iter()
             .map(|(key, value)| {
-                let filename = PathSegment::parse(key)
-                    .with_context(|| format!("\"{key}\" isn't a valid atom name"))?;
+                let filename = PathSegment::parse(key).with_context(|| {
+                    format!("\"{key}\" isn't a valid atom name")
+                })?;
                 // FIXME: maybe?
-                Ok((filename, FileEntry::borrowed(value, Timestamps::default())))
+                Ok(
+                    (
+                        filename,
+                        FileEntry::borrowed(value, Timestamps::default()),
+                    ),
+                )
             })
             .collect()
     }
@@ -530,7 +585,8 @@ impl AbstractWebc for Package {
 
     fn get_volume(&self, name: &str) -> Option<Volume> {
         self.get_volume(name).map(|v| {
-            let a: Arc<dyn AbstractVolume + Send + Sync + 'static> = v.as_volume();
+            let a: Arc<dyn AbstractVolume + Send + Sync + 'static> =
+                v.as_volume();
 
             Volume::from(a)
         })
@@ -689,7 +745,9 @@ fn resolve_archive_path(base_dir: &Path, path: &Path) -> PathBuf {
     buffer
 }
 
-fn read_manifest(base_dir: &Path) -> Result<(PathBuf, WasmerManifest), WasmerPackageError> {
+fn read_manifest(
+    base_dir: &Path,
+) -> Result<(PathBuf, WasmerManifest), WasmerPackageError> {
     for path in ["wasmer.toml", "wapm.toml"] {
         let path = base_dir.join(path);
 
@@ -769,8 +827,12 @@ mod tests {
     fn nonexistent_files() {
         let temp = TempDir::new().unwrap();
 
-        assert!(Package::from_manifest(temp.path().join("nonexistent.toml")).is_err());
-        assert!(Package::from_tarball_file(temp.path().join("nonexistent.tar.gz")).is_err());
+        assert!(Package::from_manifest(temp.path().join("nonexistent.toml"))
+            .is_err());
+        assert!(Package::from_tarball_file(
+            temp.path().join("nonexistent.tar.gz")
+        )
+        .is_err());
     }
 
     #[test]
@@ -908,7 +970,8 @@ mod tests {
         let second = temp.path().join("nested").join("dir");
         std::fs::create_dir_all(&second).unwrap();
         std::fs::write(second.join("README.md"), "please").unwrap();
-        let another_dir = temp.path().join("nested").join("dir").join("another-dir");
+        let another_dir =
+            temp.path().join("nested").join("dir").join("another-dir");
         std::fs::create_dir_all(&another_dir).unwrap();
         std::fs::write(another_dir.join("empty.txt"), "").unwrap();
         // The "second/child" entry
@@ -962,7 +1025,8 @@ mod tests {
         let first_file_hash: [u8; 32] = sha2::Sha256::digest(b"File").into();
         let readme_hash: [u8; 32] = sha2::Sha256::digest(b"please").into();
         let empty_hash: [u8; 32] = sha2::Sha256::digest(b"").into();
-        let third_file_hash: [u8; 32] = sha2::Sha256::digest(b"Hello, World!").into();
+        let third_file_hash: [u8; 32] =
+            sha2::Sha256::digest(b"Hello, World!").into();
 
         let first_volume = webc.get_volume("/first").unwrap();
         assert_eq!(
@@ -1063,12 +1127,12 @@ mod tests {
             vec![Binding {
                 name: "library-bindings".to_string(),
                 kind: "wit@0.1.0".to_string(),
-                annotations: ciborium::value::Value::serialized(&BindingsExtended::Wit(
-                    WitBindings {
+                annotations: ciborium::value::Value::serialized(
+                    &BindingsExtended::Wit(WitBindings {
                         exports: "metadata://file.wit".to_string(),
                         module: "my-lib".to_string(),
-                    }
-                ))
+                    })
+                )
                 .unwrap(),
             }]
         );
@@ -1116,16 +1180,16 @@ mod tests {
             vec![Binding {
                 name: "library-bindings".to_string(),
                 kind: "wai@0.2.0".to_string(),
-                annotations: ciborium::value::Value::serialized(&BindingsExtended::Wai(
-                    WaiBindings {
+                annotations: ciborium::value::Value::serialized(
+                    &BindingsExtended::Wai(WaiBindings {
                         exports: Some("metadata://file.wai".to_string()),
                         module: "my-lib".to_string(),
                         imports: vec![
                             "metadata://a.wai".to_string(),
                             "metadata://b.wai".to_string(),
                         ]
-                    }
-                ))
+                    })
+                )
                 .unwrap(),
             }]
         );
@@ -1566,7 +1630,8 @@ mod tests {
         std::fs::write(temp.path().join("asdf.wasm"), b"\0asm...").unwrap();
         std::fs::write(temp.path().join("asdf.wai"), "exports").unwrap();
         std::fs::write(temp.path().join("browser.wai"), "imports").unwrap();
-        std::fs::write(temp.path().join("unwanted_file.txt"), "unwanted_file").unwrap();
+        std::fs::write(temp.path().join("unwanted_file.txt"), "unwanted_file")
+            .unwrap();
 
         let package = Package::from_manifest(manifest).unwrap();
 
@@ -1895,7 +1960,11 @@ mod tests {
                         children.insert(
                             "README.md".to_owned(),
                             MemoryNode::File(MemoryFile {
-                                modified: temp.path().join("README.md").metadata()?.modified()?,
+                                modified: temp
+                                    .path()
+                                    .join("README.md")
+                                    .metadata()?
+                                    .modified()?,
                                 data: b"readme".to_vec(),
                             }),
                         );
@@ -1903,7 +1972,11 @@ mod tests {
                         children.insert(
                             "LICENSE".to_owned(),
                             MemoryNode::File(MemoryFile {
-                                modified: temp.path().join("LICENSE").metadata()?.modified()?,
+                                modified: temp
+                                    .path()
+                                    .join("LICENSE")
+                                    .metadata()?
+                                    .modified()?,
                                 data: b"license".to_vec(),
                             }),
                         );
@@ -1911,7 +1984,11 @@ mod tests {
                         children.insert(
                             "asdf.wai".to_owned(),
                             MemoryNode::File(MemoryFile {
-                                modified: temp.path().join("asdf.wai").metadata()?.modified()?,
+                                modified: temp
+                                    .path()
+                                    .join("asdf.wai")
+                                    .metadata()?
+                                    .modified()?,
                                 data: b"exports".to_vec(),
                             }),
                         );
@@ -1919,7 +1996,11 @@ mod tests {
                         children.insert(
                             "browser.wai".to_owned(),
                             MemoryNode::File(MemoryFile {
-                                modified: temp.path().join("browser.wai").metadata()?.modified()?,
+                                modified: temp
+                                    .path()
+                                    .join("browser.wai")
+                                    .metadata()?
+                                    .modified()?,
                                 data: b"imports".to_vec(),
                             }),
                         );

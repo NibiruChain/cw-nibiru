@@ -6,7 +6,10 @@ use tokio::time;
 use tracing::*;
 use wasmer::{sys::Features, Engine, NativeEngineExt, Target};
 use wasmer_backend_api::types::PackageVersionWithPackage;
-use webc::{v2::read::OwnedReader, v3::read::OwnedReader as OwnedReaderV3, Container, Version};
+use webc::{
+    v2::read::OwnedReader, v3::read::OwnedReader as OwnedReaderV3, Container,
+    Version,
+};
 
 pub struct LibRunner<'a> {
     pub test_id: u64,
@@ -72,7 +75,9 @@ impl<'a> Tester for LibRunner<'a> {
         let test_exec_result = std::panic::catch_unwind(|| {
             self.p.set_message("reading webc bytes from filesystem");
             let bytes = std::fs::read(&webc_v2_path)?;
-            let store = wasmer::Store::new(Self::backend_to_engine(&self.config.compiler_backend));
+            let store = wasmer::Store::new(Self::backend_to_engine(
+                &self.config.compiler_backend,
+            ));
 
             let webc = match webc::detect(bytes.as_slice()) {
                 Ok(Version::V2) => Container::from(OwnedReader::parse(bytes)?),
@@ -98,7 +103,9 @@ impl<'a> Tester for LibRunner<'a> {
 
             self.p.set_message("reading webc bytes from filesystem");
             let bytes = std::fs::read(&webc_v3_path)?;
-            let store = wasmer::Store::new(Self::backend_to_engine(&self.config.compiler_backend));
+            let store = wasmer::Store::new(Self::backend_to_engine(
+                &self.config.compiler_backend,
+            ));
 
             let webc = match webc::detect(bytes.as_slice()) {
                 Ok(Version::V3) => {

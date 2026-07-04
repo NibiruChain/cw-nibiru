@@ -8,11 +8,21 @@ use super::*;
 impl From<wasi::Snapshot0Clockid> for JournalSnapshot0ClockidV1 {
     fn from(val: wasi::Snapshot0Clockid) -> Self {
         match val {
-            wasi::Snapshot0Clockid::Realtime => JournalSnapshot0ClockidV1::Realtime,
-            wasi::Snapshot0Clockid::Monotonic => JournalSnapshot0ClockidV1::Monotonic,
-            wasi::Snapshot0Clockid::ProcessCputimeId => JournalSnapshot0ClockidV1::ProcessCputimeId,
-            wasi::Snapshot0Clockid::ThreadCputimeId => JournalSnapshot0ClockidV1::ThreadCputimeId,
-            wasi::Snapshot0Clockid::Unknown => JournalSnapshot0ClockidV1::Unknown,
+            wasi::Snapshot0Clockid::Realtime => {
+                JournalSnapshot0ClockidV1::Realtime
+            }
+            wasi::Snapshot0Clockid::Monotonic => {
+                JournalSnapshot0ClockidV1::Monotonic
+            }
+            wasi::Snapshot0Clockid::ProcessCputimeId => {
+                JournalSnapshot0ClockidV1::ProcessCputimeId
+            }
+            wasi::Snapshot0Clockid::ThreadCputimeId => {
+                JournalSnapshot0ClockidV1::ThreadCputimeId
+            }
+            wasi::Snapshot0Clockid::Unknown => {
+                JournalSnapshot0ClockidV1::Unknown
+            }
         }
     }
 }
@@ -20,11 +30,21 @@ impl From<wasi::Snapshot0Clockid> for JournalSnapshot0ClockidV1 {
 impl From<JournalSnapshot0ClockidV1> for wasi::Snapshot0Clockid {
     fn from(val: JournalSnapshot0ClockidV1) -> Self {
         match val {
-            JournalSnapshot0ClockidV1::Realtime => wasi::Snapshot0Clockid::Realtime,
-            JournalSnapshot0ClockidV1::Monotonic => wasi::Snapshot0Clockid::Monotonic,
-            JournalSnapshot0ClockidV1::ProcessCputimeId => wasi::Snapshot0Clockid::ProcessCputimeId,
-            JournalSnapshot0ClockidV1::ThreadCputimeId => wasi::Snapshot0Clockid::ThreadCputimeId,
-            JournalSnapshot0ClockidV1::Unknown => wasi::Snapshot0Clockid::Unknown,
+            JournalSnapshot0ClockidV1::Realtime => {
+                wasi::Snapshot0Clockid::Realtime
+            }
+            JournalSnapshot0ClockidV1::Monotonic => {
+                wasi::Snapshot0Clockid::Monotonic
+            }
+            JournalSnapshot0ClockidV1::ProcessCputimeId => {
+                wasi::Snapshot0Clockid::ProcessCputimeId
+            }
+            JournalSnapshot0ClockidV1::ThreadCputimeId => {
+                wasi::Snapshot0Clockid::ThreadCputimeId
+            }
+            JournalSnapshot0ClockidV1::Unknown => {
+                wasi::Snapshot0Clockid::Unknown
+            }
         }
     }
 }
@@ -32,15 +52,21 @@ impl From<JournalSnapshot0ClockidV1> for wasi::Snapshot0Clockid {
 impl From<&'_ ArchivedJournalSnapshot0ClockidV1> for wasi::Snapshot0Clockid {
     fn from(val: &'_ ArchivedJournalSnapshot0ClockidV1) -> Self {
         match val {
-            ArchivedJournalSnapshot0ClockidV1::Realtime => wasi::Snapshot0Clockid::Realtime,
-            ArchivedJournalSnapshot0ClockidV1::Monotonic => wasi::Snapshot0Clockid::Monotonic,
+            ArchivedJournalSnapshot0ClockidV1::Realtime => {
+                wasi::Snapshot0Clockid::Realtime
+            }
+            ArchivedJournalSnapshot0ClockidV1::Monotonic => {
+                wasi::Snapshot0Clockid::Monotonic
+            }
             ArchivedJournalSnapshot0ClockidV1::ProcessCputimeId => {
                 wasi::Snapshot0Clockid::ProcessCputimeId
             }
             ArchivedJournalSnapshot0ClockidV1::ThreadCputimeId => {
                 wasi::Snapshot0Clockid::ThreadCputimeId
             }
-            ArchivedJournalSnapshot0ClockidV1::Unknown => wasi::Snapshot0Clockid::Unknown,
+            ArchivedJournalSnapshot0ClockidV1::Unknown => {
+                wasi::Snapshot0Clockid::Unknown
+            }
         }
     }
 }
@@ -156,8 +182,12 @@ impl From<JournalExitCodeV1> for wasi::ExitCode {
 impl From<&'_ ArchivedJournalExitCodeV1> for wasi::ExitCode {
     fn from(val: &'_ ArchivedJournalExitCodeV1) -> Self {
         match val {
-            ArchivedJournalExitCodeV1::Errno(errno) => wasi::ExitCode::from(errno.to_native()),
-            ArchivedJournalExitCodeV1::Other(id) => wasi::ExitCode::from(id.to_native()),
+            ArchivedJournalExitCodeV1::Errno(errno) => {
+                wasi::ExitCode::from(errno.to_native())
+            }
+            ArchivedJournalExitCodeV1::Other(id) => {
+                wasi::ExitCode::from(id.to_native())
+            }
         }
     }
 }
@@ -175,9 +205,13 @@ impl From<SnapshotTrigger> for JournalSnapshotTriggerV1 {
             SnapshotTrigger::Sigalrm => JournalSnapshotTriggerV1::Sigalrm,
             SnapshotTrigger::Sigtstp => JournalSnapshotTriggerV1::Sigtstp,
             SnapshotTrigger::Sigstop => JournalSnapshotTriggerV1::Sigstop,
-            SnapshotTrigger::NonDeterministicCall => JournalSnapshotTriggerV1::NonDeterministicCall,
+            SnapshotTrigger::NonDeterministicCall => {
+                JournalSnapshotTriggerV1::NonDeterministicCall
+            }
             SnapshotTrigger::Bootstrap => JournalSnapshotTriggerV1::Bootstrap,
-            SnapshotTrigger::Transaction => JournalSnapshotTriggerV1::Transaction,
+            SnapshotTrigger::Transaction => {
+                JournalSnapshotTriggerV1::Transaction
+            }
         }
     }
 }
@@ -194,9 +228,13 @@ impl From<JournalSnapshotTriggerV1> for SnapshotTrigger {
             JournalSnapshotTriggerV1::Sigalrm => SnapshotTrigger::Sigalrm,
             JournalSnapshotTriggerV1::Sigtstp => SnapshotTrigger::Sigtstp,
             JournalSnapshotTriggerV1::Sigstop => SnapshotTrigger::Sigstop,
-            JournalSnapshotTriggerV1::NonDeterministicCall => SnapshotTrigger::NonDeterministicCall,
+            JournalSnapshotTriggerV1::NonDeterministicCall => {
+                SnapshotTrigger::NonDeterministicCall
+            }
             JournalSnapshotTriggerV1::Bootstrap => SnapshotTrigger::Bootstrap,
-            JournalSnapshotTriggerV1::Transaction => SnapshotTrigger::Transaction,
+            JournalSnapshotTriggerV1::Transaction => {
+                SnapshotTrigger::Transaction
+            }
         }
     }
 }
@@ -205,19 +243,37 @@ impl From<&'_ ArchivedJournalSnapshotTriggerV1> for SnapshotTrigger {
     fn from(val: &'_ ArchivedJournalSnapshotTriggerV1) -> Self {
         match val {
             ArchivedJournalSnapshotTriggerV1::Idle => SnapshotTrigger::Idle,
-            ArchivedJournalSnapshotTriggerV1::Listen => SnapshotTrigger::FirstListen,
-            ArchivedJournalSnapshotTriggerV1::Environ => SnapshotTrigger::FirstEnviron,
-            ArchivedJournalSnapshotTriggerV1::Stdin => SnapshotTrigger::FirstStdin,
-            ArchivedJournalSnapshotTriggerV1::Timer => SnapshotTrigger::PeriodicInterval,
+            ArchivedJournalSnapshotTriggerV1::Listen => {
+                SnapshotTrigger::FirstListen
+            }
+            ArchivedJournalSnapshotTriggerV1::Environ => {
+                SnapshotTrigger::FirstEnviron
+            }
+            ArchivedJournalSnapshotTriggerV1::Stdin => {
+                SnapshotTrigger::FirstStdin
+            }
+            ArchivedJournalSnapshotTriggerV1::Timer => {
+                SnapshotTrigger::PeriodicInterval
+            }
             ArchivedJournalSnapshotTriggerV1::Sigint => SnapshotTrigger::Sigint,
-            ArchivedJournalSnapshotTriggerV1::Sigalrm => SnapshotTrigger::Sigalrm,
-            ArchivedJournalSnapshotTriggerV1::Sigtstp => SnapshotTrigger::Sigtstp,
-            ArchivedJournalSnapshotTriggerV1::Sigstop => SnapshotTrigger::Sigstop,
+            ArchivedJournalSnapshotTriggerV1::Sigalrm => {
+                SnapshotTrigger::Sigalrm
+            }
+            ArchivedJournalSnapshotTriggerV1::Sigtstp => {
+                SnapshotTrigger::Sigtstp
+            }
+            ArchivedJournalSnapshotTriggerV1::Sigstop => {
+                SnapshotTrigger::Sigstop
+            }
             ArchivedJournalSnapshotTriggerV1::NonDeterministicCall => {
                 SnapshotTrigger::NonDeterministicCall
             }
-            ArchivedJournalSnapshotTriggerV1::Bootstrap => SnapshotTrigger::Bootstrap,
-            ArchivedJournalSnapshotTriggerV1::Transaction => SnapshotTrigger::Transaction,
+            ArchivedJournalSnapshotTriggerV1::Bootstrap => {
+                SnapshotTrigger::Bootstrap
+            }
+            ArchivedJournalSnapshotTriggerV1::Transaction => {
+                SnapshotTrigger::Transaction
+            }
         }
     }
 }
@@ -296,9 +352,15 @@ impl From<virtual_net::StreamSecurity> for JournalStreamSecurityV1 {
         use virtual_net::StreamSecurity;
         match val {
             StreamSecurity::Unencrypted => JournalStreamSecurityV1::Unencrypted,
-            StreamSecurity::AnyEncyption => JournalStreamSecurityV1::AnyEncryption,
-            StreamSecurity::ClassicEncryption => JournalStreamSecurityV1::ClassicEncryption,
-            StreamSecurity::DoubleEncryption => JournalStreamSecurityV1::DoubleEncryption,
+            StreamSecurity::AnyEncyption => {
+                JournalStreamSecurityV1::AnyEncryption
+            }
+            StreamSecurity::ClassicEncryption => {
+                JournalStreamSecurityV1::ClassicEncryption
+            }
+            StreamSecurity::DoubleEncryption => {
+                JournalStreamSecurityV1::DoubleEncryption
+            }
         }
     }
 }
@@ -308,9 +370,15 @@ impl From<JournalStreamSecurityV1> for virtual_net::StreamSecurity {
         use virtual_net::StreamSecurity;
         match val {
             JournalStreamSecurityV1::Unencrypted => StreamSecurity::Unencrypted,
-            JournalStreamSecurityV1::AnyEncryption => StreamSecurity::AnyEncyption,
-            JournalStreamSecurityV1::ClassicEncryption => StreamSecurity::ClassicEncryption,
-            JournalStreamSecurityV1::DoubleEncryption => StreamSecurity::DoubleEncryption,
+            JournalStreamSecurityV1::AnyEncryption => {
+                StreamSecurity::AnyEncyption
+            }
+            JournalStreamSecurityV1::ClassicEncryption => {
+                StreamSecurity::ClassicEncryption
+            }
+            JournalStreamSecurityV1::DoubleEncryption => {
+                StreamSecurity::DoubleEncryption
+            }
             JournalStreamSecurityV1::Unknown => StreamSecurity::AnyEncyption,
         }
     }
@@ -320,11 +388,21 @@ impl From<&'_ ArchivedJournalStreamSecurityV1> for virtual_net::StreamSecurity {
     fn from(val: &'_ ArchivedJournalStreamSecurityV1) -> Self {
         use virtual_net::StreamSecurity;
         match val {
-            ArchivedJournalStreamSecurityV1::Unencrypted => StreamSecurity::Unencrypted,
-            ArchivedJournalStreamSecurityV1::AnyEncryption => StreamSecurity::AnyEncyption,
-            ArchivedJournalStreamSecurityV1::ClassicEncryption => StreamSecurity::ClassicEncryption,
-            ArchivedJournalStreamSecurityV1::DoubleEncryption => StreamSecurity::DoubleEncryption,
-            ArchivedJournalStreamSecurityV1::Unknown => StreamSecurity::AnyEncyption,
+            ArchivedJournalStreamSecurityV1::Unencrypted => {
+                StreamSecurity::Unencrypted
+            }
+            ArchivedJournalStreamSecurityV1::AnyEncryption => {
+                StreamSecurity::AnyEncyption
+            }
+            ArchivedJournalStreamSecurityV1::ClassicEncryption => {
+                StreamSecurity::ClassicEncryption
+            }
+            ArchivedJournalStreamSecurityV1::DoubleEncryption => {
+                StreamSecurity::DoubleEncryption
+            }
+            ArchivedJournalStreamSecurityV1::Unknown => {
+                StreamSecurity::AnyEncyption
+            }
         }
     }
 }
@@ -354,7 +432,9 @@ impl From<JournalAddressfamilyV1> for wasi::Addressfamily {
 impl From<&'_ ArchivedJournalAddressfamilyV1> for wasi::Addressfamily {
     fn from(val: &'_ ArchivedJournalAddressfamilyV1) -> Self {
         match val {
-            ArchivedJournalAddressfamilyV1::Unspec => wasi::Addressfamily::Unspec,
+            ArchivedJournalAddressfamilyV1::Unspec => {
+                wasi::Addressfamily::Unspec
+            }
             ArchivedJournalAddressfamilyV1::Inet4 => wasi::Addressfamily::Inet4,
             ArchivedJournalAddressfamilyV1::Inet6 => wasi::Addressfamily::Inet6,
             ArchivedJournalAddressfamilyV1::Unix => wasi::Addressfamily::Unix,
@@ -408,8 +488,12 @@ impl From<wasi::Sockoption> for JournalSockoptionV1 {
             wasi::Sockoption::DontRoute => JournalSockoptionV1::DontRoute,
             wasi::Sockoption::OnlyV6 => JournalSockoptionV1::OnlyV6,
             wasi::Sockoption::Broadcast => JournalSockoptionV1::Broadcast,
-            wasi::Sockoption::MulticastLoopV4 => JournalSockoptionV1::MulticastLoopV4,
-            wasi::Sockoption::MulticastLoopV6 => JournalSockoptionV1::MulticastLoopV6,
+            wasi::Sockoption::MulticastLoopV4 => {
+                JournalSockoptionV1::MulticastLoopV4
+            }
+            wasi::Sockoption::MulticastLoopV6 => {
+                JournalSockoptionV1::MulticastLoopV6
+            }
             wasi::Sockoption::Promiscuous => JournalSockoptionV1::Promiscuous,
             wasi::Sockoption::Listening => JournalSockoptionV1::Listening,
             wasi::Sockoption::LastError => JournalSockoptionV1::LastError,
@@ -422,10 +506,16 @@ impl From<wasi::Sockoption> for JournalSockoptionV1 {
             wasi::Sockoption::SendLowat => JournalSockoptionV1::SendLowat,
             wasi::Sockoption::RecvTimeout => JournalSockoptionV1::RecvTimeout,
             wasi::Sockoption::SendTimeout => JournalSockoptionV1::SendTimeout,
-            wasi::Sockoption::ConnectTimeout => JournalSockoptionV1::ConnectTimeout,
-            wasi::Sockoption::AcceptTimeout => JournalSockoptionV1::AcceptTimeout,
+            wasi::Sockoption::ConnectTimeout => {
+                JournalSockoptionV1::ConnectTimeout
+            }
+            wasi::Sockoption::AcceptTimeout => {
+                JournalSockoptionV1::AcceptTimeout
+            }
             wasi::Sockoption::Ttl => JournalSockoptionV1::Ttl,
-            wasi::Sockoption::MulticastTtlV4 => JournalSockoptionV1::MulticastTtlV4,
+            wasi::Sockoption::MulticastTtlV4 => {
+                JournalSockoptionV1::MulticastTtlV4
+            }
             wasi::Sockoption::Type => JournalSockoptionV1::Type,
             wasi::Sockoption::Proto => JournalSockoptionV1::Proto,
         }
@@ -442,8 +532,12 @@ impl From<JournalSockoptionV1> for wasi::Sockoption {
             JournalSockoptionV1::DontRoute => wasi::Sockoption::DontRoute,
             JournalSockoptionV1::OnlyV6 => wasi::Sockoption::OnlyV6,
             JournalSockoptionV1::Broadcast => wasi::Sockoption::Broadcast,
-            JournalSockoptionV1::MulticastLoopV4 => wasi::Sockoption::MulticastLoopV4,
-            JournalSockoptionV1::MulticastLoopV6 => wasi::Sockoption::MulticastLoopV6,
+            JournalSockoptionV1::MulticastLoopV4 => {
+                wasi::Sockoption::MulticastLoopV4
+            }
+            JournalSockoptionV1::MulticastLoopV6 => {
+                wasi::Sockoption::MulticastLoopV6
+            }
             JournalSockoptionV1::Promiscuous => wasi::Sockoption::Promiscuous,
             JournalSockoptionV1::Listening => wasi::Sockoption::Listening,
             JournalSockoptionV1::LastError => wasi::Sockoption::LastError,
@@ -456,10 +550,16 @@ impl From<JournalSockoptionV1> for wasi::Sockoption {
             JournalSockoptionV1::SendLowat => wasi::Sockoption::SendLowat,
             JournalSockoptionV1::RecvTimeout => wasi::Sockoption::RecvTimeout,
             JournalSockoptionV1::SendTimeout => wasi::Sockoption::SendTimeout,
-            JournalSockoptionV1::ConnectTimeout => wasi::Sockoption::ConnectTimeout,
-            JournalSockoptionV1::AcceptTimeout => wasi::Sockoption::AcceptTimeout,
+            JournalSockoptionV1::ConnectTimeout => {
+                wasi::Sockoption::ConnectTimeout
+            }
+            JournalSockoptionV1::AcceptTimeout => {
+                wasi::Sockoption::AcceptTimeout
+            }
             JournalSockoptionV1::Ttl => wasi::Sockoption::Ttl,
-            JournalSockoptionV1::MulticastTtlV4 => wasi::Sockoption::MulticastTtlV4,
+            JournalSockoptionV1::MulticastTtlV4 => {
+                wasi::Sockoption::MulticastTtlV4
+            }
             JournalSockoptionV1::Type => wasi::Sockoption::Type,
             JournalSockoptionV1::Proto => wasi::Sockoption::Proto,
         }
@@ -470,30 +570,70 @@ impl From<&'_ ArchivedJournalSockoptionV1> for wasi::Sockoption {
     fn from(val: &'_ ArchivedJournalSockoptionV1) -> Self {
         match val {
             ArchivedJournalSockoptionV1::Noop => wasi::Sockoption::Noop,
-            ArchivedJournalSockoptionV1::ReusePort => wasi::Sockoption::ReusePort,
-            ArchivedJournalSockoptionV1::ReuseAddr => wasi::Sockoption::ReuseAddr,
+            ArchivedJournalSockoptionV1::ReusePort => {
+                wasi::Sockoption::ReusePort
+            }
+            ArchivedJournalSockoptionV1::ReuseAddr => {
+                wasi::Sockoption::ReuseAddr
+            }
             ArchivedJournalSockoptionV1::NoDelay => wasi::Sockoption::NoDelay,
-            ArchivedJournalSockoptionV1::DontRoute => wasi::Sockoption::DontRoute,
+            ArchivedJournalSockoptionV1::DontRoute => {
+                wasi::Sockoption::DontRoute
+            }
             ArchivedJournalSockoptionV1::OnlyV6 => wasi::Sockoption::OnlyV6,
-            ArchivedJournalSockoptionV1::Broadcast => wasi::Sockoption::Broadcast,
-            ArchivedJournalSockoptionV1::MulticastLoopV4 => wasi::Sockoption::MulticastLoopV4,
-            ArchivedJournalSockoptionV1::MulticastLoopV6 => wasi::Sockoption::MulticastLoopV6,
-            ArchivedJournalSockoptionV1::Promiscuous => wasi::Sockoption::Promiscuous,
-            ArchivedJournalSockoptionV1::Listening => wasi::Sockoption::Listening,
-            ArchivedJournalSockoptionV1::LastError => wasi::Sockoption::LastError,
-            ArchivedJournalSockoptionV1::KeepAlive => wasi::Sockoption::KeepAlive,
+            ArchivedJournalSockoptionV1::Broadcast => {
+                wasi::Sockoption::Broadcast
+            }
+            ArchivedJournalSockoptionV1::MulticastLoopV4 => {
+                wasi::Sockoption::MulticastLoopV4
+            }
+            ArchivedJournalSockoptionV1::MulticastLoopV6 => {
+                wasi::Sockoption::MulticastLoopV6
+            }
+            ArchivedJournalSockoptionV1::Promiscuous => {
+                wasi::Sockoption::Promiscuous
+            }
+            ArchivedJournalSockoptionV1::Listening => {
+                wasi::Sockoption::Listening
+            }
+            ArchivedJournalSockoptionV1::LastError => {
+                wasi::Sockoption::LastError
+            }
+            ArchivedJournalSockoptionV1::KeepAlive => {
+                wasi::Sockoption::KeepAlive
+            }
             ArchivedJournalSockoptionV1::Linger => wasi::Sockoption::Linger,
-            ArchivedJournalSockoptionV1::OobInline => wasi::Sockoption::OobInline,
-            ArchivedJournalSockoptionV1::RecvBufSize => wasi::Sockoption::RecvBufSize,
-            ArchivedJournalSockoptionV1::SendBufSize => wasi::Sockoption::SendBufSize,
-            ArchivedJournalSockoptionV1::RecvLowat => wasi::Sockoption::RecvLowat,
-            ArchivedJournalSockoptionV1::SendLowat => wasi::Sockoption::SendLowat,
-            ArchivedJournalSockoptionV1::RecvTimeout => wasi::Sockoption::RecvTimeout,
-            ArchivedJournalSockoptionV1::SendTimeout => wasi::Sockoption::SendTimeout,
-            ArchivedJournalSockoptionV1::ConnectTimeout => wasi::Sockoption::ConnectTimeout,
-            ArchivedJournalSockoptionV1::AcceptTimeout => wasi::Sockoption::AcceptTimeout,
+            ArchivedJournalSockoptionV1::OobInline => {
+                wasi::Sockoption::OobInline
+            }
+            ArchivedJournalSockoptionV1::RecvBufSize => {
+                wasi::Sockoption::RecvBufSize
+            }
+            ArchivedJournalSockoptionV1::SendBufSize => {
+                wasi::Sockoption::SendBufSize
+            }
+            ArchivedJournalSockoptionV1::RecvLowat => {
+                wasi::Sockoption::RecvLowat
+            }
+            ArchivedJournalSockoptionV1::SendLowat => {
+                wasi::Sockoption::SendLowat
+            }
+            ArchivedJournalSockoptionV1::RecvTimeout => {
+                wasi::Sockoption::RecvTimeout
+            }
+            ArchivedJournalSockoptionV1::SendTimeout => {
+                wasi::Sockoption::SendTimeout
+            }
+            ArchivedJournalSockoptionV1::ConnectTimeout => {
+                wasi::Sockoption::ConnectTimeout
+            }
+            ArchivedJournalSockoptionV1::AcceptTimeout => {
+                wasi::Sockoption::AcceptTimeout
+            }
             ArchivedJournalSockoptionV1::Ttl => wasi::Sockoption::Ttl,
-            ArchivedJournalSockoptionV1::MulticastTtlV4 => wasi::Sockoption::MulticastTtlV4,
+            ArchivedJournalSockoptionV1::MulticastTtlV4 => {
+                wasi::Sockoption::MulticastTtlV4
+            }
             ArchivedJournalSockoptionV1::Type => wasi::Sockoption::Type,
             ArchivedJournalSockoptionV1::Proto => wasi::Sockoption::Proto,
         }
@@ -506,7 +646,9 @@ impl From<SocketOptTimeType> for JournalTimeTypeV1 {
             SocketOptTimeType::ReadTimeout => JournalTimeTypeV1::ReadTimeout,
             SocketOptTimeType::WriteTimeout => JournalTimeTypeV1::WriteTimeout,
             SocketOptTimeType::AcceptTimeout => JournalTimeTypeV1::AcceptTimeout,
-            SocketOptTimeType::ConnectTimeout => JournalTimeTypeV1::ConnectTimeout,
+            SocketOptTimeType::ConnectTimeout => {
+                JournalTimeTypeV1::ConnectTimeout
+            }
             SocketOptTimeType::BindTimeout => JournalTimeTypeV1::BindTimeout,
             SocketOptTimeType::Linger => JournalTimeTypeV1::Linger,
         }
@@ -519,7 +661,9 @@ impl From<JournalTimeTypeV1> for SocketOptTimeType {
             JournalTimeTypeV1::ReadTimeout => SocketOptTimeType::ReadTimeout,
             JournalTimeTypeV1::WriteTimeout => SocketOptTimeType::WriteTimeout,
             JournalTimeTypeV1::AcceptTimeout => SocketOptTimeType::AcceptTimeout,
-            JournalTimeTypeV1::ConnectTimeout => SocketOptTimeType::ConnectTimeout,
+            JournalTimeTypeV1::ConnectTimeout => {
+                SocketOptTimeType::ConnectTimeout
+            }
             JournalTimeTypeV1::BindTimeout => SocketOptTimeType::BindTimeout,
             JournalTimeTypeV1::Linger => SocketOptTimeType::Linger,
         }
@@ -529,11 +673,21 @@ impl From<JournalTimeTypeV1> for SocketOptTimeType {
 impl From<&'_ ArchivedJournalTimeTypeV1> for SocketOptTimeType {
     fn from(val: &'_ ArchivedJournalTimeTypeV1) -> Self {
         match val {
-            ArchivedJournalTimeTypeV1::ReadTimeout => SocketOptTimeType::ReadTimeout,
-            ArchivedJournalTimeTypeV1::WriteTimeout => SocketOptTimeType::WriteTimeout,
-            ArchivedJournalTimeTypeV1::AcceptTimeout => SocketOptTimeType::AcceptTimeout,
-            ArchivedJournalTimeTypeV1::ConnectTimeout => SocketOptTimeType::ConnectTimeout,
-            ArchivedJournalTimeTypeV1::BindTimeout => SocketOptTimeType::BindTimeout,
+            ArchivedJournalTimeTypeV1::ReadTimeout => {
+                SocketOptTimeType::ReadTimeout
+            }
+            ArchivedJournalTimeTypeV1::WriteTimeout => {
+                SocketOptTimeType::WriteTimeout
+            }
+            ArchivedJournalTimeTypeV1::AcceptTimeout => {
+                SocketOptTimeType::AcceptTimeout
+            }
+            ArchivedJournalTimeTypeV1::ConnectTimeout => {
+                SocketOptTimeType::ConnectTimeout
+            }
+            ArchivedJournalTimeTypeV1::BindTimeout => {
+                SocketOptTimeType::BindTimeout
+            }
             ArchivedJournalTimeTypeV1::Linger => SocketOptTimeType::Linger,
         }
     }
@@ -583,7 +737,9 @@ impl From<JournalThreadStartTypeV1> for ThreadStartType {
 impl From<&'_ ArchivedJournalThreadStartTypeV1> for ThreadStartType {
     fn from(value: &'_ ArchivedJournalThreadStartTypeV1) -> Self {
         match value {
-            ArchivedJournalThreadStartTypeV1::MainThread => ThreadStartType::MainThread,
+            ArchivedJournalThreadStartTypeV1::MainThread => {
+                ThreadStartType::MainThread
+            }
             ArchivedJournalThreadStartTypeV1::ThreadSpawn { start_ptr } => {
                 ThreadStartType::ThreadSpawn {
                     start_ptr: start_ptr.to_native(),
@@ -642,14 +798,14 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
 
     fn try_from(value: ArchivedJournalEntry<'a>) -> anyhow::Result<Self> {
         Ok(match value {
-            ArchivedJournalEntry::InitModuleV1(ArchivedJournalEntryInitModuleV1 { wasm_hash }) => {
-                Self::InitModuleV1 {
-                    wasm_hash: Box::from(wasm_hash.get()),
-                }
-            }
-            ArchivedJournalEntry::ClearEtherealV1(ArchivedJournalEntryClearEtherealV1 {
-                ..
-            }) => Self::ClearEtherealV1,
+            ArchivedJournalEntry::InitModuleV1(
+                ArchivedJournalEntryInitModuleV1 { wasm_hash },
+            ) => Self::InitModuleV1 {
+                wasm_hash: Box::from(wasm_hash.get()),
+            },
+            ArchivedJournalEntry::ClearEtherealV1(
+                ArchivedJournalEntryClearEtherealV1 { .. },
+            ) => Self::ClearEtherealV1,
             ArchivedJournalEntry::UpdateMemoryRegionV1(
                 ArchivedJournalEntryUpdateMemoryRegionV1 {
                     start,
@@ -660,20 +816,22 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 region: (start.to_native())..(end.to_native()),
                 compressed_data: Cow::Borrowed(compressed_data.as_ref()),
             },
-            ArchivedJournalEntry::ProcessExitV1(ArchivedJournalEntryProcessExitV1 {
-                exit_code,
-            }) => Self::ProcessExitV1 {
+            ArchivedJournalEntry::ProcessExitV1(
+                ArchivedJournalEntryProcessExitV1 { exit_code },
+            ) => Self::ProcessExitV1 {
                 exit_code: exit_code.as_ref().map(|code| code.into()),
             },
-            ArchivedJournalEntry::SetThreadV1(ArchivedJournalEntrySetThreadV1 {
-                id,
-                call_stack,
-                memory_stack,
-                store_data,
-                is_64bit,
-                start,
-                layout,
-            }) => Self::SetThreadV1 {
+            ArchivedJournalEntry::SetThreadV1(
+                ArchivedJournalEntrySetThreadV1 {
+                    id,
+                    call_stack,
+                    memory_stack,
+                    store_data,
+                    is_64bit,
+                    start,
+                    layout,
+                },
+            ) => Self::SetThreadV1 {
                 id: id.to_native(),
                 call_stack: call_stack.as_ref().into(),
                 memory_stack: memory_stack.as_ref().into(),
@@ -682,10 +840,9 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 layout: layout.into(),
                 is_64bit: *is_64bit,
             },
-            ArchivedJournalEntry::CloseThreadV1(ArchivedJournalEntryCloseThreadV1 {
-                id,
-                exit_code,
-            }) => Self::CloseThreadV1 {
+            ArchivedJournalEntry::CloseThreadV1(
+                ArchivedJournalEntryCloseThreadV1 { id, exit_code },
+            ) => Self::CloseThreadV1 {
                 id: id.to_native(),
                 exit_code: exit_code.as_ref().map(|code| code.into()),
             },
@@ -730,52 +887,58 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 dirflags: dirflags.to_native(),
                 path: String::from_utf8_lossy(path.as_ref()),
                 o_flags: wasi::Oflags::from_bits_truncate(o_flags.to_native()),
-                fs_rights_base: wasi::Rights::from_bits_truncate(fs_rights_base.to_native()),
+                fs_rights_base: wasi::Rights::from_bits_truncate(
+                    fs_rights_base.to_native(),
+                ),
                 fs_rights_inheriting: wasi::Rights::from_bits_truncate(
                     fs_rights_inheriting.to_native(),
                 ),
-                fs_flags: wasi::Fdflags::from_bits_truncate(fs_flags.to_native()),
+                fs_flags: wasi::Fdflags::from_bits_truncate(
+                    fs_flags.to_native(),
+                ),
             },
             ArchivedJournalEntry::CloseFileDescriptorV1(
                 ArchivedJournalEntryCloseFileDescriptorV1 { fd },
             ) => Self::CloseFileDescriptorV1 { fd: fd.to_native() },
-            ArchivedJournalEntry::RemoveDirectoryV1(ArchivedJournalEntryRemoveDirectoryV1 {
-                fd,
-                path,
-            }) => Self::RemoveDirectoryV1 {
+            ArchivedJournalEntry::RemoveDirectoryV1(
+                ArchivedJournalEntryRemoveDirectoryV1 { fd, path },
+            ) => Self::RemoveDirectoryV1 {
                 fd: fd.to_native(),
                 path: String::from_utf8_lossy(path.as_ref()),
             },
-            ArchivedJournalEntry::UnlinkFileV1(ArchivedJournalEntryUnlinkFileV1 { fd, path }) => {
-                Self::UnlinkFileV1 {
-                    fd: fd.to_native(),
-                    path: String::from_utf8_lossy(path.as_ref()),
-                }
-            }
-            ArchivedJournalEntry::PathRenameV1(ArchivedJournalEntryPathRenameV1 {
-                old_fd,
-                old_path,
-                new_fd,
-                new_path,
-            }) => Self::PathRenameV1 {
+            ArchivedJournalEntry::UnlinkFileV1(
+                ArchivedJournalEntryUnlinkFileV1 { fd, path },
+            ) => Self::UnlinkFileV1 {
+                fd: fd.to_native(),
+                path: String::from_utf8_lossy(path.as_ref()),
+            },
+            ArchivedJournalEntry::PathRenameV1(
+                ArchivedJournalEntryPathRenameV1 {
+                    old_fd,
+                    old_path,
+                    new_fd,
+                    new_path,
+                },
+            ) => Self::PathRenameV1 {
                 old_fd: old_fd.to_native(),
                 old_path: String::from_utf8_lossy(old_path.as_ref()),
                 new_fd: new_fd.to_native(),
                 new_path: String::from_utf8_lossy(new_path.as_ref()),
             },
-            ArchivedJournalEntry::SnapshotV1(ArchivedJournalEntrySnapshotV1 {
-                since_epoch,
-                ref trigger,
-            }) => Self::SnapshotV1 {
+            ArchivedJournalEntry::SnapshotV1(
+                ArchivedJournalEntrySnapshotV1 {
+                    since_epoch,
+                    ref trigger,
+                },
+            ) => Self::SnapshotV1 {
                 when: SystemTime::UNIX_EPOCH
                     .checked_add((*since_epoch).into())
                     .unwrap_or(SystemTime::UNIX_EPOCH),
                 trigger: trigger.into(),
             },
-            ArchivedJournalEntry::SetClockTimeV1(ArchivedJournalEntrySetClockTimeV1 {
-                ref clock_id,
-                time,
-            }) => Self::SetClockTimeV1 {
+            ArchivedJournalEntry::SetClockTimeV1(
+                ArchivedJournalEntrySetClockTimeV1 { ref clock_id, time },
+            ) => Self::SetClockTimeV1 {
                 clock_id: clock_id.into(),
                 time: time.to_native(),
             },
@@ -794,27 +957,30 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 original_fd: old_fd.to_native(),
                 copied_fd: new_fd.to_native(),
             },
-            ArchivedJournalEntry::CreateDirectoryV1(ArchivedJournalEntryCreateDirectoryV1 {
-                fd,
-                path,
-            }) => Self::CreateDirectoryV1 {
+            ArchivedJournalEntry::CreateDirectoryV1(
+                ArchivedJournalEntryCreateDirectoryV1 { fd, path },
+            ) => Self::CreateDirectoryV1 {
                 fd: fd.to_native(),
                 path: String::from_utf8_lossy(path.as_ref()),
             },
-            ArchivedJournalEntry::PathSetTimesV1(ArchivedJournalEntryPathSetTimesV1 {
-                fd,
-                path,
-                flags,
-                st_atim,
-                st_mtim,
-                fst_flags,
-            }) => Self::PathSetTimesV1 {
+            ArchivedJournalEntry::PathSetTimesV1(
+                ArchivedJournalEntryPathSetTimesV1 {
+                    fd,
+                    path,
+                    flags,
+                    st_atim,
+                    st_mtim,
+                    fst_flags,
+                },
+            ) => Self::PathSetTimesV1 {
                 fd: fd.to_native(),
                 path: String::from_utf8_lossy(path.as_ref()),
                 flags: flags.to_native(),
                 st_atim: st_atim.to_native(),
                 st_mtim: st_mtim.to_native(),
-                fst_flags: wasi::Fstflags::from_bits_truncate(fst_flags.to_native()),
+                fst_flags: wasi::Fstflags::from_bits_truncate(
+                    fst_flags.to_native(),
+                ),
             },
             ArchivedJournalEntry::FileDescriptorSetTimesV1(
                 ArchivedJournalEntryFileDescriptorSetTimesV1 {
@@ -827,7 +993,9 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 fd: fd.to_native(),
                 st_atim: st_atim.to_native(),
                 st_mtim: st_mtim.to_native(),
-                fst_flags: wasi::Fstflags::from_bits_truncate(fst_flags.to_native()),
+                fst_flags: wasi::Fstflags::from_bits_truncate(
+                    fst_flags.to_native(),
+                ),
             },
             ArchivedJournalEntry::FileDescriptorSetSizeV1(
                 ArchivedJournalEntryFileDescriptorSetSizeV1 { fd, st_size },
@@ -849,7 +1017,9 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 },
             ) => Self::FileDescriptorSetRightsV1 {
                 fd: fd.to_native(),
-                fs_rights_base: wasi::Rights::from_bits_truncate(fs_rights_base.to_native()),
+                fs_rights_base: wasi::Rights::from_bits_truncate(
+                    fs_rights_base.to_native(),
+                ),
                 fs_rights_inheriting: wasi::Rights::from_bits_truncate(
                     fs_rights_inheriting.to_native(),
                 ),
@@ -874,13 +1044,15 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 offset: offset.to_native(),
                 len: len.to_native(),
             },
-            ArchivedJournalEntry::CreateHardLinkV1(ArchivedJournalEntryCreateHardLinkV1 {
-                old_fd,
-                old_path,
-                old_flags,
-                new_fd,
-                new_path,
-            }) => Self::CreateHardLinkV1 {
+            ArchivedJournalEntry::CreateHardLinkV1(
+                ArchivedJournalEntryCreateHardLinkV1 {
+                    old_fd,
+                    old_path,
+                    old_flags,
+                    new_fd,
+                    new_path,
+                },
+            ) => Self::CreateHardLinkV1 {
                 old_fd: old_fd.to_native(),
                 old_path: String::from_utf8_lossy(old_path.as_ref()),
                 old_flags: old_flags.to_native(),
@@ -898,20 +1070,22 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 fd: fd.to_native(),
                 new_path: String::from_utf8_lossy(new_path.as_ref()),
             },
-            ArchivedJournalEntry::ChangeDirectoryV1(ArchivedJournalEntryChangeDirectoryV1 {
-                path,
-            }) => Self::ChangeDirectoryV1 {
+            ArchivedJournalEntry::ChangeDirectoryV1(
+                ArchivedJournalEntryChangeDirectoryV1 { path },
+            ) => Self::ChangeDirectoryV1 {
                 path: String::from_utf8_lossy(path.as_ref()),
             },
-            ArchivedJournalEntry::EpollCreateV1(ArchivedJournalEntryEpollCreateV1 { fd }) => {
-                Self::EpollCreateV1 { fd: fd.to_native() }
-            }
-            ArchivedJournalEntry::EpollCtlV1(ArchivedJournalEntryEpollCtlV1 {
-                epfd,
-                ref op,
-                fd,
-                ref event,
-            }) => Self::EpollCtlV1 {
+            ArchivedJournalEntry::EpollCreateV1(
+                ArchivedJournalEntryEpollCreateV1 { fd },
+            ) => Self::EpollCreateV1 { fd: fd.to_native() },
+            ArchivedJournalEntry::EpollCtlV1(
+                ArchivedJournalEntryEpollCtlV1 {
+                    epfd,
+                    ref op,
+                    fd,
+                    ref event,
+                },
+            ) => Self::EpollCtlV1 {
                 epfd: epfd.to_native(),
                 op: op.into(),
                 fd: fd.to_native(),
@@ -942,106 +1116,119 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 },
                 line_feeds: *line_feeds,
             },
-            ArchivedJournalEntry::CreatePipeV1(ArchivedJournalEntryCreatePipeV1 { fd1, fd2 }) => {
-                Self::CreatePipeV1 {
-                    fd1: fd1.to_native(),
-                    fd2: fd2.to_native(),
+            ArchivedJournalEntry::CreatePipeV1(
+                ArchivedJournalEntryCreatePipeV1 { fd1, fd2 },
+            ) => Self::CreatePipeV1 {
+                fd1: fd1.to_native(),
+                fd2: fd2.to_native(),
+            },
+            ArchivedJournalEntry::PortAddAddrV1(
+                ArchivedJournalEntryPortAddAddrV1 { cidr },
+            ) => Self::PortAddAddrV1 {
+                cidr: JournalIpCidrV1 {
+                    ip: cidr.ip.as_ipaddr(),
+                    prefix: cidr.prefix,
                 }
-            }
-            ArchivedJournalEntry::PortAddAddrV1(ArchivedJournalEntryPortAddAddrV1 { cidr }) => {
-                Self::PortAddAddrV1 {
-                    cidr: JournalIpCidrV1 {
-                        ip: cidr.ip.as_ipaddr(),
-                        prefix: cidr.prefix,
-                    }
-                    .into(),
-                }
-            }
-            ArchivedJournalEntry::PortDelAddrV1(ArchivedJournalEntryPortDelAddrV1 { addr }) => {
-                Self::PortDelAddrV1 {
-                    addr: addr.as_ipaddr(),
-                }
-            }
+                .into(),
+            },
+            ArchivedJournalEntry::PortDelAddrV1(
+                ArchivedJournalEntryPortDelAddrV1 { addr },
+            ) => Self::PortDelAddrV1 {
+                addr: addr.as_ipaddr(),
+            },
             ArchivedJournalEntry::PortAddrClearV1 => Self::PortAddrClearV1,
-            ArchivedJournalEntry::PortBridgeV1(ArchivedJournalEntryPortBridgeV1 {
-                network,
-                token,
-                ref security,
-            }) => Self::PortBridgeV1 {
+            ArchivedJournalEntry::PortBridgeV1(
+                ArchivedJournalEntryPortBridgeV1 {
+                    network,
+                    token,
+                    ref security,
+                },
+            ) => Self::PortBridgeV1 {
                 network: String::from_utf8_lossy(network.as_ref()),
                 token: String::from_utf8_lossy(token.as_ref()),
                 security: security.into(),
             },
             ArchivedJournalEntry::PortUnbridgeV1 => Self::PortUnbridgeV1,
             ArchivedJournalEntry::PortDhcpAcquireV1 => Self::PortDhcpAcquireV1,
-            ArchivedJournalEntry::PortGatewaySetV1(ArchivedJournalEntryPortGatewaySetV1 { ip }) => {
-                Self::PortGatewaySetV1 { ip: ip.as_ipaddr() }
-            }
-            ArchivedJournalEntry::PortRouteAddV1(ArchivedJournalEntryPortRouteAddV1 {
-                cidr,
-                via_router,
-                preferred_until,
-                expires_at,
-            }) => Self::PortRouteAddV1 {
+            ArchivedJournalEntry::PortGatewaySetV1(
+                ArchivedJournalEntryPortGatewaySetV1 { ip },
+            ) => Self::PortGatewaySetV1 { ip: ip.as_ipaddr() },
+            ArchivedJournalEntry::PortRouteAddV1(
+                ArchivedJournalEntryPortRouteAddV1 {
+                    cidr,
+                    via_router,
+                    preferred_until,
+                    expires_at,
+                },
+            ) => Self::PortRouteAddV1 {
                 cidr: JournalIpCidrV1 {
                     ip: cidr.ip.as_ipaddr(),
                     prefix: cidr.prefix,
                 }
                 .into(),
                 via_router: via_router.as_ipaddr(),
-                preferred_until: preferred_until.as_ref().map(|time| (*time).into()),
+                preferred_until: preferred_until
+                    .as_ref()
+                    .map(|time| (*time).into()),
                 expires_at: expires_at.as_ref().map(|time| (*time).into()),
             },
             ArchivedJournalEntry::PortRouteClearV1 => Self::PortRouteClearV1,
-            ArchivedJournalEntry::PortRouteDelV1(ArchivedJournalEntryPortRouteDelV1 { ip }) => {
-                Self::PortRouteDelV1 { ip: ip.as_ipaddr() }
-            }
-            ArchivedJournalEntry::SocketOpenV1(ArchivedJournalEntrySocketOpenV1 {
-                ref af,
-                ref ty,
-                pt,
-                fd,
-            }) => Self::SocketOpenV1 {
+            ArchivedJournalEntry::PortRouteDelV1(
+                ArchivedJournalEntryPortRouteDelV1 { ip },
+            ) => Self::PortRouteDelV1 { ip: ip.as_ipaddr() },
+            ArchivedJournalEntry::SocketOpenV1(
+                ArchivedJournalEntrySocketOpenV1 {
+                    ref af,
+                    ref ty,
+                    pt,
+                    fd,
+                },
+            ) => Self::SocketOpenV1 {
                 af: af.into(),
                 ty: ty.into(),
                 pt: (pt.to_native()).try_into().unwrap_or(wasi::SockProto::Max),
                 fd: fd.to_native(),
             },
-            ArchivedJournalEntry::SocketListenV1(ArchivedJournalEntrySocketListenV1 {
-                fd,
-                backlog,
-            }) => Self::SocketListenV1 {
+            ArchivedJournalEntry::SocketListenV1(
+                ArchivedJournalEntrySocketListenV1 { fd, backlog },
+            ) => Self::SocketListenV1 {
                 fd: fd.to_native(),
                 backlog: backlog.to_native(),
             },
-            ArchivedJournalEntry::SocketBindV1(ArchivedJournalEntrySocketBindV1 { fd, addr }) => {
-                Self::SocketBindV1 {
-                    fd: fd.to_native(),
-                    addr: addr.as_socket_addr(),
-                }
-            }
-            ArchivedJournalEntry::SocketConnectedV1(ArchivedJournalEntrySocketConnectedV1 {
-                fd,
-                local_addr,
-                peer_addr,
-            }) => Self::SocketConnectedV1 {
+            ArchivedJournalEntry::SocketBindV1(
+                ArchivedJournalEntrySocketBindV1 { fd, addr },
+            ) => Self::SocketBindV1 {
+                fd: fd.to_native(),
+                addr: addr.as_socket_addr(),
+            },
+            ArchivedJournalEntry::SocketConnectedV1(
+                ArchivedJournalEntrySocketConnectedV1 {
+                    fd,
+                    local_addr,
+                    peer_addr,
+                },
+            ) => Self::SocketConnectedV1 {
                 fd: fd.to_native(),
                 local_addr: local_addr.as_socket_addr(),
                 peer_addr: peer_addr.as_socket_addr(),
             },
-            ArchivedJournalEntry::SocketAcceptedV1(ArchivedJournalEntrySocketAcceptedV1 {
-                listen_fd,
-                fd,
-                local_addr,
-                peer_addr,
-                fd_flags,
-                nonblocking,
-            }) => Self::SocketAcceptedV1 {
+            ArchivedJournalEntry::SocketAcceptedV1(
+                ArchivedJournalEntrySocketAcceptedV1 {
+                    listen_fd,
+                    fd,
+                    local_addr,
+                    peer_addr,
+                    fd_flags,
+                    nonblocking,
+                },
+            ) => Self::SocketAcceptedV1 {
                 listen_fd: listen_fd.to_native(),
                 fd: fd.to_native(),
                 local_addr: local_addr.as_socket_addr(),
                 peer_addr: peer_addr.as_socket_addr(),
-                fd_flags: wasi::Fdflags::from_bits_truncate(fd_flags.to_native()),
+                fd_flags: wasi::Fdflags::from_bits_truncate(
+                    fd_flags.to_native(),
+                ),
                 non_blocking: *nonblocking,
             },
             ArchivedJournalEntry::SocketJoinIpv4MulticastV1(
@@ -1088,80 +1275,81 @@ impl<'a> TryFrom<ArchivedJournalEntry<'a>> for JournalEntry<'a> {
                 multi_addr: multiaddr.as_ipv6(),
                 iface: iface.to_native(),
             },
-            ArchivedJournalEntry::SocketSendFileV1(ArchivedJournalEntrySocketSendFileV1 {
-                socket_fd,
-                file_fd,
-                offset,
-                count,
-            }) => Self::SocketSendFileV1 {
+            ArchivedJournalEntry::SocketSendFileV1(
+                ArchivedJournalEntrySocketSendFileV1 {
+                    socket_fd,
+                    file_fd,
+                    offset,
+                    count,
+                },
+            ) => Self::SocketSendFileV1 {
                 socket_fd: socket_fd.to_native(),
                 file_fd: file_fd.to_native(),
                 offset: offset.to_native(),
                 count: count.to_native(),
             },
-            ArchivedJournalEntry::SocketSendToV1(ArchivedJournalEntrySocketSendToV1 {
-                fd,
-                data,
-                flags,
-                addr,
-                is_64bit,
-            }) => Self::SocketSendToV1 {
+            ArchivedJournalEntry::SocketSendToV1(
+                ArchivedJournalEntrySocketSendToV1 {
+                    fd,
+                    data,
+                    flags,
+                    addr,
+                    is_64bit,
+                },
+            ) => Self::SocketSendToV1 {
                 fd: fd.to_native(),
                 data: data.as_ref().into(),
                 flags: flags.to_native(),
                 addr: addr.as_socket_addr(),
                 is_64bit: *is_64bit,
             },
-            ArchivedJournalEntry::SocketSendV1(ArchivedJournalEntrySocketSendV1 {
-                fd,
-                data,
-                flags,
-                is_64bit,
-            }) => Self::SocketSendV1 {
+            ArchivedJournalEntry::SocketSendV1(
+                ArchivedJournalEntrySocketSendV1 {
+                    fd,
+                    data,
+                    flags,
+                    is_64bit,
+                },
+            ) => Self::SocketSendV1 {
                 fd: fd.to_native(),
                 data: data.as_ref().into(),
                 flags: flags.to_native(),
                 is_64bit: *is_64bit,
             },
-            ArchivedJournalEntry::SocketSetOptFlagV1(ArchivedJournalEntrySocketSetOptFlagV1 {
-                fd,
-                ref opt,
-                flag,
-            }) => Self::SocketSetOptFlagV1 {
+            ArchivedJournalEntry::SocketSetOptFlagV1(
+                ArchivedJournalEntrySocketSetOptFlagV1 { fd, ref opt, flag },
+            ) => Self::SocketSetOptFlagV1 {
                 fd: fd.to_native(),
                 opt: opt.into(),
                 flag: *flag,
             },
-            ArchivedJournalEntry::SocketSetOptSizeV1(ArchivedJournalEntrySocketSetOptSizeV1 {
-                fd,
-                ref opt,
-                size,
-            }) => Self::SocketSetOptSizeV1 {
+            ArchivedJournalEntry::SocketSetOptSizeV1(
+                ArchivedJournalEntrySocketSetOptSizeV1 { fd, ref opt, size },
+            ) => Self::SocketSetOptSizeV1 {
                 fd: fd.to_native(),
                 opt: opt.into(),
                 size: size.to_native(),
             },
-            ArchivedJournalEntry::SocketSetOptTimeV1(ArchivedJournalEntrySocketSetOptTimeV1 {
-                fd,
-                ref ty,
-                time,
-            }) => Self::SocketSetOptTimeV1 {
+            ArchivedJournalEntry::SocketSetOptTimeV1(
+                ArchivedJournalEntrySocketSetOptTimeV1 { fd, ref ty, time },
+            ) => Self::SocketSetOptTimeV1 {
                 fd: fd.to_native(),
                 ty: ty.into(),
                 time: time.as_ref().map(|time| (*time).into()),
             },
-            ArchivedJournalEntry::SocketShutdownV1(ArchivedJournalEntrySocketShutdownV1 {
-                fd,
-                ref how,
-            }) => Self::SocketShutdownV1 {
+            ArchivedJournalEntry::SocketShutdownV1(
+                ArchivedJournalEntrySocketShutdownV1 { fd, ref how },
+            ) => Self::SocketShutdownV1 {
                 fd: fd.to_native(),
                 how: how.into(),
             },
-            ArchivedJournalEntry::CreateEventV1(ArchivedJournalEntryCreateEventV1 {
-                initial_val,
-                flags,
-                fd,
-            }) => Self::CreateEventV1 {
+            ArchivedJournalEntry::CreateEventV1(
+                ArchivedJournalEntryCreateEventV1 {
+                    initial_val,
+                    flags,
+                    fd,
+                },
+            ) => Self::CreateEventV1 {
                 initial_val: initial_val.to_native(),
                 flags: flags.to_native(),
                 fd: fd.to_native(),

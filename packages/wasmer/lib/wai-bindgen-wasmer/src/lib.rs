@@ -38,13 +38,25 @@ pub mod rt {
     use wasmer::*;
 
     pub trait RawMem {
-        fn store<T: Endian>(&mut self, offset: i32, val: T) -> Result<(), RuntimeError>;
-        fn store_many<T: Endian>(&mut self, offset: i32, vals: &[T]) -> Result<(), RuntimeError>;
+        fn store<T: Endian>(
+            &mut self,
+            offset: i32,
+            val: T,
+        ) -> Result<(), RuntimeError>;
+        fn store_many<T: Endian>(
+            &mut self,
+            offset: i32,
+            vals: &[T],
+        ) -> Result<(), RuntimeError>;
         fn load<T: Endian>(&self, offset: i32) -> Result<T, RuntimeError>;
     }
 
     impl RawMem for [u8] {
-        fn store<T: Endian>(&mut self, offset: i32, val: T) -> Result<(), RuntimeError> {
+        fn store<T: Endian>(
+            &mut self,
+            offset: i32,
+            val: T,
+        ) -> Result<(), RuntimeError> {
             let mem = self
                 .get_mut(offset as usize..)
                 .and_then(|m| m.get_mut(..mem::size_of::<T>()))
@@ -53,7 +65,11 @@ pub mod rt {
             Ok(())
         }
 
-        fn store_many<T: Endian>(&mut self, offset: i32, val: &[T]) -> Result<(), RuntimeError> {
+        fn store_many<T: Endian>(
+            &mut self,
+            offset: i32,
+            val: &[T],
+        ) -> Result<(), RuntimeError> {
             let mem = self
                 .get_mut(offset as usize..)
                 .and_then(|m| {
@@ -93,7 +109,11 @@ pub mod rt {
         mk: impl FnOnce(T) -> U,
     ) -> Result<U, RuntimeError>
     where
-        T: std::ops::Not<Output = T> + std::ops::BitAnd<Output = T> + From<u8> + PartialEq + Copy,
+        T: std::ops::Not<Output = T>
+            + std::ops::BitAnd<Output = T>
+            + From<u8>
+            + PartialEq
+            + Copy,
     {
         if bits & !all != 0u8.into() {
             let msg = format!("invalid flags specified for `{}`", name);
@@ -118,7 +138,9 @@ pub mod rt {
     ) -> Result<Vec<T>, RuntimeError> {
         let size = (len as u32)
             .checked_mul(mem::size_of::<T>() as u32)
-            .ok_or_else(|| RuntimeError::new("array too large to fit in wasm memory"))?;
+            .ok_or_else(|| {
+                RuntimeError::new("array too large to fit in wasm memory")
+            })?;
         let memory_view = memory.view(store);
         let slice = unsafe {
             memory_view
@@ -180,14 +202,21 @@ pub mod rt {
         pub fn get(&self, slab_idx: u32) -> Result<ResourceIndex, RuntimeError> {
             match self.slab.get(slab_idx) {
                 Some(idx) => Ok(*idx),
-                None => Err(RuntimeError::new("invalid index specified for handle")),
+                None => {
+                    Err(RuntimeError::new("invalid index specified for handle"))
+                }
             }
         }
 
-        pub fn remove(&mut self, slab_idx: u32) -> Result<ResourceIndex, RuntimeError> {
+        pub fn remove(
+            &mut self,
+            slab_idx: u32,
+        ) -> Result<ResourceIndex, RuntimeError> {
             match self.slab.remove(slab_idx) {
                 Some(idx) => Ok(idx),
-                None => Err(RuntimeError::new("invalid index specified for handle")),
+                None => {
+                    Err(RuntimeError::new("invalid index specified for handle"))
+                }
             }
         }
     }
@@ -219,7 +248,11 @@ pub mod rt {
             let resource = self.slab.get_mut(idx.0).unwrap();
             resource.refcnt = match resource.refcnt.checked_add(1) {
                 Some(cnt) => cnt,
-                None => return Err(RuntimeError::new("resource index count overflow")),
+                None => {
+                    return Err(RuntimeError::new(
+                        "resource index count overflow",
+                    ))
+                }
             };
             Ok(())
         }

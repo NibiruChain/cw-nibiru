@@ -4,7 +4,10 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use wasmer_backend_api::WasmerClient;
 use wasmer_config::package::NamedPackageIdent;
 
-pub fn prompt_for_ident(message: &str, default: Option<&str>) -> Result<String, anyhow::Error> {
+pub fn prompt_for_ident(
+    message: &str,
+    default: Option<&str>,
+) -> Result<String, anyhow::Error> {
     loop {
         let theme = ColorfulTheme::default();
         let diag = dialoguer::Input::with_theme(&theme)
@@ -124,7 +127,9 @@ pub async fn prompt_for_package(
                         let mut ident = ident;
                         if let Some(v) = &pkg.last_version {
                             ident.tag =
-                                Some(wasmer_config::package::Tag::VersionReq(v.version.parse()?));
+                                Some(wasmer_config::package::Tag::VersionReq(
+                                    v.version.parse()?,
+                                ));
                         }
                         break Ok((ident, Some(pkg)));
                     } else {
@@ -184,7 +189,9 @@ pub fn prompt_for_namespace(
             let theme = ColorfulTheme::default();
             let value = dialoguer::Input::<String>::with_theme(&theme)
                 .with_prompt(message)
-                .with_initial_text(default.map(|x| x.trim().to_string()).unwrap_or_default())
+                .with_initial_text(
+                    default.map(|x| x.trim().to_string()).unwrap_or_default(),
+                )
                 .interact_text()
                 .context("could not read user input")?
                 .trim()
@@ -215,8 +222,12 @@ pub async fn prompt_new_app_name(
                 "WARN".bold().yellow()
             )
         } else if let Some(api) = &api {
-            let app = wasmer_backend_api::query::get_app(api, namespace.to_string(), ident.clone())
-                .await?;
+            let app = wasmer_backend_api::query::get_app(
+                api,
+                namespace.to_string(),
+                ident.clone(),
+            )
+            .await?;
             eprint!("Checking name availability... ");
             if app.is_some() {
                 eprintln!(
@@ -248,7 +259,9 @@ pub async fn prompt_new_app_alias(
         let ident = prompt_for_ident(message, default)?;
 
         if let Some(api) = &api {
-            let app = wasmer_backend_api::query::get_app_by_alias(api, ident.clone()).await?;
+            let app =
+                wasmer_backend_api::query::get_app_by_alias(api, ident.clone())
+                    .await?;
             eprintln!("Checking name availability...");
             if app.is_some() {
                 eprintln!(

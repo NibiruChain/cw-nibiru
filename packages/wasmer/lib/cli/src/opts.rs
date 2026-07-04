@@ -22,7 +22,10 @@ impl ItemFormatOpts {
     }
 
     /// Get the output format, defaulting to the given value if not specified.
-    pub fn get_with_default(&self, default: ItemFormat) -> crate::utils::render::ItemFormat {
+    pub fn get_with_default(
+        &self,
+        default: ItemFormat,
+    ) -> crate::utils::render::ItemFormat {
         self.format.unwrap_or(default)
     }
 }

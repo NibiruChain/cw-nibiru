@@ -7,7 +7,9 @@ use crate::{
     types::{
         function::FunctionBodyLike,
         section::CustomSectionLike,
-        unwind::{CompiledFunctionUnwindInfoLike, CompiledFunctionUnwindInfoReference},
+        unwind::{
+            CompiledFunctionUnwindInfoLike, CompiledFunctionUnwindInfoReference,
+        },
     },
     GlobalFrameInfoRegistration,
 };
@@ -116,7 +118,8 @@ impl CodeMemory {
             buf = next_buf;
             bytes += len;
 
-            let vmfunc = Self::copy_function(&mut self.unwind_registry, *func, func_buf);
+            let vmfunc =
+                Self::copy_function(&mut self.unwind_registry, *func, func_buf);
             assert_eq!(vmfunc.as_ptr() as usize % ARCH_FUNCTION_ALIGNMENT, 0);
             function_result.push(vmfunc);
         }
@@ -141,7 +144,10 @@ impl CodeMemory {
 
             for section in data_sections {
                 let section = section.bytes();
-                assert_eq!(buf.as_mut_ptr() as usize % DATA_SECTION_ALIGNMENT, 0);
+                assert_eq!(
+                    buf.as_mut_ptr() as usize % DATA_SECTION_ALIGNMENT,
+                    0
+                );
                 let len = round_up(section.len(), DATA_SECTION_ALIGNMENT);
                 let (s, next_buf) = buf.split_at_mut(len);
                 buf = next_buf;
@@ -174,7 +180,9 @@ impl CodeMemory {
     }
 
     /// Calculates the allocation size of the given compiled function.
-    fn function_allocation_size<'a>(func: &'a impl FunctionBodyLike<'a>) -> usize {
+    fn function_allocation_size<'a>(
+        func: &'a impl FunctionBodyLike<'a>,
+    ) -> usize {
         match &func.unwind_info().map(|o| o.get()) {
             Some(CompiledFunctionUnwindInfoReference::WindowsX64(info)) => {
                 // Windows unwind information is required to be emitted into code memory
@@ -203,7 +211,9 @@ impl CodeMemory {
         let vmfunc = Self::view_as_mut_vmfunc_slice(body);
 
         let unwind_info = func.unwind_info().map(|o| o.get());
-        if let Some(CompiledFunctionUnwindInfoReference::WindowsX64(info)) = unwind_info {
+        if let Some(CompiledFunctionUnwindInfoReference::WindowsX64(info)) =
+            unwind_info
+        {
             // Windows unwind information is written following the function body
             // Keep unwind information 32-bit aligned (round up to the nearest 4 byte boundary)
             let unwind_start = (func_len + 3) & !3;
@@ -231,7 +241,10 @@ impl CodeMemory {
     }
 
     /// Register the frame info, so it's free when the mememory gets freed
-    pub fn register_frame_info(&mut self, frame_info: GlobalFrameInfoRegistration) {
+    pub fn register_frame_info(
+        &mut self,
+        frame_info: GlobalFrameInfoRegistration,
+    ) {
         self.frame_info_registration = Some(frame_info);
     }
 }

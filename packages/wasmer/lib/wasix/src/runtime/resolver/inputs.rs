@@ -9,9 +9,13 @@ use anyhow::Error;
 use semver::VersionReq;
 use sha2::{Digest, Sha256};
 use url::Url;
-use wasmer_config::package::{NamedPackageId, PackageHash, PackageId, PackageSource};
+use wasmer_config::package::{
+    NamedPackageId, PackageHash, PackageId, PackageSource,
+};
 use wasmer_package::utils::from_disk;
-use webc::metadata::{annotations::Wapm as WapmAnnotations, Manifest, UrlOrManifest};
+use webc::metadata::{
+    annotations::Wapm as WapmAnnotations, Manifest, UrlOrManifest,
+};
 
 /// A dependency constraint.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,17 +53,25 @@ impl PackageSummary {
         self.pkg.id.clone()
     }
 
-    pub fn from_webc_file(path: impl AsRef<Path>) -> Result<PackageSummary, Error> {
+    pub fn from_webc_file(
+        path: impl AsRef<Path>,
+    ) -> Result<PackageSummary, Error> {
         let path = path.as_ref().canonicalize()?;
         let container = from_disk(&path)?;
         let webc_sha256 = WebcHash::for_file(&path)?;
-        let url = crate::runtime::resolver::utils::url_from_file_path(&path).ok_or_else(|| {
-            anyhow::anyhow!("Unable to turn \"{}\" into a file:// URL", path.display())
-        })?;
+        let url = crate::runtime::resolver::utils::url_from_file_path(&path)
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Unable to turn \"{}\" into a file:// URL",
+                    path.display()
+                )
+            })?;
 
         let manifest = container.manifest();
         let id = PackageInfo::package_id_from_manifest(manifest)?
-            .unwrap_or_else(|| PackageId::Hash(PackageHash::from_sha256_bytes(webc_sha256.0)));
+            .unwrap_or_else(|| {
+                PackageId::Hash(PackageHash::from_sha256_bytes(webc_sha256.0))
+            });
 
         let pkg = PackageInfo::from_manifest(id, manifest, container.version())?;
         let dist = DistributionInfo {
@@ -163,7 +175,8 @@ impl PackageInfo {
             })
             .collect();
 
-        let filesystem = filesystem_mapping_from_manifest(manifest, webc_version)?;
+        let filesystem =
+            filesystem_mapping_from_manifest(manifest, webc_version)?;
 
         Ok(PackageInfo {
             id,
@@ -198,7 +211,9 @@ fn filesystem_mapping_from_manifest(
             Ok(mappings)
         }
         None => {
-            if webc_version == webc::Version::V2 || webc_version == webc::Version::V1 {
+            if webc_version == webc::Version::V2
+                || webc_version == webc::Version::V1
+            {
                 tracing::debug!(
                     "No \"fs\" package annotations found. Mounting the \"atom\" volume to \"/\" for compatibility."
                 );
@@ -229,7 +244,9 @@ pub struct FileSystemMapping {
     pub dependency_name: Option<String>,
 }
 
-fn url_or_manifest_to_specifier(value: &UrlOrManifest) -> Result<PackageSource, Error> {
+fn url_or_manifest_to_specifier(
+    value: &UrlOrManifest,
+) -> Result<PackageSource, Error> {
     match value {
         UrlOrManifest::Url(url) => Ok(PackageSource::Url(url.clone())),
         UrlOrManifest::Manifest(manifest) => {
@@ -296,7 +313,9 @@ impl WebcHash {
             let mut hash = Vec::new();
             if let Ok(amt) = file.read_to_end(&mut hash) {
                 if amt == 32 {
-                    return Ok(WebcHash::from_bytes(hash[0..32].try_into().unwrap()));
+                    return Ok(WebcHash::from_bytes(
+                        hash[0..32].try_into().unwrap(),
+                    ));
                 }
             }
         }

@@ -15,7 +15,8 @@ use std::{
 };
 use wasmer_backend_api::WasmerClient;
 use wasmer_config::package::{
-    Manifest, NamedPackageId, NamedPackageIdent, PackageBuilder, PackageHash, PackageIdent,
+    Manifest, NamedPackageId, NamedPackageIdent, PackageBuilder, PackageHash,
+    PackageIdent,
 };
 
 use super::PublishWait;
@@ -186,11 +187,12 @@ impl PackageTag {
             .and_then(|m| m.package.as_ref())
             .and_then(|p| p.repository.clone());
 
-        let private = if let Some(pkg) = &manifest.and_then(|m| m.package.as_ref()) {
-            Some(pkg.private)
-        } else {
-            Some(false)
-        };
+        let private =
+            if let Some(pkg) = &manifest.and_then(|m| m.package.as_ref()) {
+                Some(pkg.private)
+            } else {
+                Some(false)
+            };
 
         let version = version.to_string();
 
@@ -231,14 +233,25 @@ impl PackageTag {
         match r.await? {
             Some(r) => {
                 if r.success {
-                    spinner_ok!(pb, format!("Successfully tagged package {id}",));
+                    spinner_ok!(
+                        pb,
+                        format!("Successfully tagged package {id}",)
+                    );
                     if let Some(package_version) = r.package_version {
-                        wait_package(client, self.wait, package_version.id, self.timeout).await?;
+                        wait_package(
+                            client,
+                            self.wait,
+                            package_version.id,
+                            self.timeout,
+                        )
+                        .await?;
                     }
                     Ok(())
                 } else {
                     spinner_err!(pb, "Could not tag package!");
-                    anyhow::bail!("An unknown error occurred and the tagging failed.")
+                    anyhow::bail!(
+                        "An unknown error occurred and the tagging failed."
+                    )
                 }
             }
             None => {
@@ -261,8 +274,11 @@ impl PackageTag {
 
         tracing::debug!("Searching for package with hash: {hash}");
 
-        let pkg = match wasmer_backend_api::query::get_package_release(client, &hash.to_string())
-            .await?
+        let pkg = match wasmer_backend_api::query::get_package_release(
+            client,
+            &hash.to_string(),
+        )
+        .await?
         {
             Some(p) => p,
             None => {
@@ -293,7 +309,9 @@ impl PackageTag {
                         );
                     }
                 }
-                anyhow::bail!("Can't tag, no matching package found in the registry.")
+                anyhow::bail!(
+                    "Can't tag, no matching package found in the registry."
+                )
             }
         };
 
@@ -340,7 +358,9 @@ impl PackageTag {
 
         if self.non_interactive {
             // if not interactive we can't prompt the user to choose the owner of the app.
-            anyhow::bail!("No package name specified: use --name <package_name>");
+            anyhow::bail!(
+                "No package name specified: use --name <package_name>"
+            );
         }
 
         let default_name = std::env::current_dir().ok().and_then(|dir| {
@@ -349,8 +369,11 @@ impl PackageTag {
                 .map(|s| s.to_owned())
         });
 
-        crate::utils::prompts::prompt_for_ident("Choose a package name", default_name.as_deref())
-            .map(Some)
+        crate::utils::prompts::prompt_for_ident(
+            "Choose a package name",
+            default_name.as_deref(),
+        )
+        .map(Some)
     }
 
     async fn get_namespace(
@@ -358,7 +381,9 @@ impl PackageTag {
         client: &WasmerClient,
         manifest: Option<&Manifest>,
     ) -> anyhow::Result<String> {
-        if let Some(namespace) = self.package_id.as_ref().and_then(|id| id.namespace.clone()) {
+        if let Some(namespace) =
+            self.package_id.as_ref().and_then(|id| id.namespace.clone())
+        {
             return Ok(namespace);
         }
 
@@ -380,8 +405,15 @@ impl PackageTag {
             anyhow::bail!("No package namespace specified: use --namespace <package_namespace>");
         }
 
-        let user = wasmer_backend_api::query::current_user_with_namespaces(client, None).await?;
-        crate::utils::prompts::prompt_for_namespace("Choose a namespace", None, Some(&user))
+        let user = wasmer_backend_api::query::current_user_with_namespaces(
+            client, None,
+        )
+        .await?;
+        crate::utils::prompts::prompt_for_namespace(
+            "Choose a namespace",
+            None,
+            Some(&user),
+        )
     }
 
     async fn get_version(
@@ -406,25 +438,27 @@ impl PackageTag {
             return Ok(version.clone());
         }
 
-        let user_version = if let Some(pkg) = manifest.and_then(|m| m.package.as_ref()) {
-            pkg.version.clone()
-        } else {
-            None
-        };
+        let user_version =
+            if let Some(pkg) = manifest.and_then(|m| m.package.as_ref()) {
+                pkg.version.clone()
+            } else {
+                None
+            };
 
         let pb = make_spinner!(
             self.quiet,
             format!("Checking if a version of {full_pkg_name} already exists..")
         );
 
-        if let Some(registry_version) = wasmer_backend_api::query::get_package_version(
-            client,
-            full_pkg_name.to_string(),
-            String::from("latest"),
-        )
-        .await?
-        .map(|p| p.version)
-        .and_then(|v| semver::Version::from_str(&v).ok())
+        if let Some(registry_version) =
+            wasmer_backend_api::query::get_package_version(
+                client,
+                full_pkg_name.to_string(),
+                String::from("latest"),
+            )
+            .await?
+            .map(|p| p.version)
+            .and_then(|v| semver::Version::from_str(&v).ok())
         {
             spinner_ok!(
                 pb,
@@ -450,7 +484,8 @@ impl PackageTag {
                     .and_then(|p| p.distribution_v3.pirita_sha256_hash.clone());
 
                 if let Some(hash) = maybe_hash {
-                    let registry_package_hash = PackageHash::from_str(&format!("sha256:{hash}"))?;
+                    let registry_package_hash =
+                        PackageHash::from_str(&format!("sha256:{hash}"))?;
                     registry_package_hash != self.package_hash
                 } else {
                     false
@@ -472,12 +507,18 @@ impl PackageTag {
                             "Warn".bold().yellow()
                         );
                         let res = Confirm::with_theme(&theme)
-                            .with_prompt(format!("Continue ({user_version} -> {new_version})?"))
+                            .with_prompt(format!(
+                                "Continue ({user_version} -> {new_version})?"
+                            ))
                             .interact()?;
                         if res {
                             user_version = new_version.clone();
-                            self.update_manifest_version(manifest_path, manifest, &user_version)
-                                .await?;
+                            self.update_manifest_version(
+                                manifest_path,
+                                manifest,
+                                &user_version,
+                            )
+                            .await?;
                         } else {
                             anyhow::bail!(
                                 "Refusing to map two different releases of {full_pkg_name} to the same version."
@@ -489,8 +530,12 @@ impl PackageTag {
                             .interact()?;
                         if res {
                             user_version = new_version.clone();
-                            self.update_manifest_version(manifest_path, manifest, &user_version)
-                                .await?;
+                            self.update_manifest_version(
+                                manifest_path,
+                                manifest,
+                                &user_version,
+                            )
+                            .await?;
                         }
                     }
                 }
@@ -508,13 +553,18 @@ impl PackageTag {
                             "No package version specified: use --version <package_version>"
                         )
                     } else {
-                        let version = crate::utils::prompts::prompt_for_package_version(
-                            "Enter the package version",
-                            Some("0.1.0"),
-                        )?;
+                        let version =
+                            crate::utils::prompts::prompt_for_package_version(
+                                "Enter the package version",
+                                Some("0.1.0"),
+                            )?;
 
-                        self.update_manifest_version(manifest_path, manifest, &version)
-                            .await?;
+                        self.update_manifest_version(
+                            manifest_path,
+                            manifest,
+                            &version,
+                        )
+                        .await?;
 
                         Ok(version)
                     }
@@ -537,7 +587,8 @@ impl PackageTag {
 
         let namespace = self.get_namespace(client, manifest).await?;
         let full_name = format!("{namespace}/{name}");
-        let should_update_name = match &manifest.and_then(|m| m.package.as_ref()) {
+        let should_update_name = match &manifest.and_then(|m| m.package.as_ref())
+        {
             Some(pkg) => match &pkg.name {
                 Some(n) => n.as_str() != full_name.as_str(),
                 None => true,
@@ -596,7 +647,11 @@ impl PackageTag {
     // Check if a package with the same hash, namespace, name and version already exists. In such a
     // case, don't tag the package again.
     #[tracing::instrument]
-    async fn should_tag(&self, client: &WasmerClient, id: &NamedPackageId) -> anyhow::Result<bool> {
+    async fn should_tag(
+        &self,
+        client: &WasmerClient,
+        id: &NamedPackageId,
+    ) -> anyhow::Result<bool> {
         if self.dry_run {
             if !self.quiet {
                 eprintln!("Skipping tagging {id} as `--dry-run` was set");
@@ -615,9 +670,12 @@ impl PackageTag {
             .as_ref()
             .and_then(|p| p.distribution_v3.pirita_sha256_hash.as_ref())
         {
-            let registry_package_hash = PackageHash::from_str(&format!("sha256:{hash}"))?;
+            let registry_package_hash =
+                PackageHash::from_str(&format!("sha256:{hash}"))?;
             if registry_package_hash == self.package_hash {
-                tracing::info!("decided not to tag as package {pkg:?} already exists");
+                tracing::info!(
+                    "decided not to tag as package {pkg:?} already exists"
+                );
                 return Ok(false);
             }
         }
@@ -632,11 +690,16 @@ impl AsyncCliCommand for PackageTag {
 
     async fn run_async(mut self) -> Result<Self::Output, anyhow::Error> {
         tracing::info!("Checking if user is logged in");
-        let client = login_user(&self.env, !self.non_interactive, "tag a package").await?;
+        let client =
+            login_user(&self.env, !self.non_interactive, "tag a package")
+                .await?;
 
         let (manifest_path, manifest) = match get_manifest(&self.package_path) {
             Ok((manifest_path, manifest)) => {
-                tracing::info!("Got manifest at path {}", manifest_path.display());
+                tracing::info!(
+                    "Got manifest at path {}",
+                    manifest_path.display()
+                );
                 (Some(manifest_path), Some(manifest))
             }
             Err(_) => (None, None),
@@ -658,7 +721,10 @@ impl AsyncCliCommand for PackageTag {
                 eprintln!("{} Package URL: {url}", "𖥔".yellow().bold());
             }
             PackageIdent::Hash(ref h) => {
-                eprintln!("{} Succesfully tagged package ({h})", "✔".green().bold());
+                eprintln!(
+                    "{} Succesfully tagged package ({h})",
+                    "✔".green().bold()
+                );
             }
         }
 

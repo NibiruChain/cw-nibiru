@@ -9,9 +9,9 @@ use wasmer::{MemoryView, WasmPtr};
 use wasmer_types::MemorySize;
 use wasmer_wasix_types::{
     types::{
-        OptionTag, OptionTimestamp, Route, __wasi_addr_ip4_t, __wasi_addr_ip6_t,
-        __wasi_addr_port_t, __wasi_addr_port_u, __wasi_addr_t, __wasi_addr_u, __wasi_cidr_t,
-        __wasi_cidr_u,
+        __wasi_addr_ip4_t, __wasi_addr_ip6_t, __wasi_addr_port_t,
+        __wasi_addr_port_u, __wasi_addr_t, __wasi_addr_u, __wasi_cidr_t,
+        __wasi_cidr_u, OptionTag, OptionTimestamp, Route,
     },
     wasi::{Addressfamily, Errno},
 };
@@ -28,9 +28,12 @@ pub(crate) fn read_ip<M: MemorySize>(
 
     let o = addr.u.octs;
     Ok(match addr.tag {
-        Addressfamily::Inet4 => IpAddr::V4(Ipv4Addr::new(o[0], o[1], o[2], o[3])),
+        Addressfamily::Inet4 => {
+            IpAddr::V4(Ipv4Addr::new(o[0], o[1], o[2], o[3]))
+        }
         Addressfamily::Inet6 => {
-            let [a, b, c, d, e, f, g, h] = unsafe { transmute::<[u8; 16], [u16; 8]>(o) };
+            let [a, b, c, d, e, f, g, h] =
+                unsafe { transmute::<[u8; 16], [u16; 8]>(o) };
             IpAddr::V6(Ipv6Addr::new(a, b, c, d, e, f, g, h))
         }
         _ => return Err(Errno::Inval),
@@ -55,7 +58,8 @@ pub(crate) fn read_ip_v6<M: MemorySize>(
     let addr_ptr = ptr.deref(memory);
     let addr = addr_ptr.read().map_err(crate::mem_error_to_wasi)?;
 
-    let [a, b, c, d, e, f, g, h] = unsafe { transmute::<[u8; 16], [u16; 8]>(addr.segs) };
+    let [a, b, c, d, e, f, g, h] =
+        unsafe { transmute::<[u8; 16], [u16; 8]>(addr.segs) };
     Ok(Ipv6Addr::new(a, b, c, d, e, f, g, h))
 }
 
@@ -71,7 +75,10 @@ pub fn write_ip<M: MemorySize>(
                 tag: Addressfamily::Inet4,
                 _padding: 0,
                 u: __wasi_addr_u {
-                    octs: [o[0], o[1], o[2], o[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    octs: [
+                        o[0], o[1], o[2], o[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0,
+                    ],
                 },
             }
         }
@@ -107,8 +114,8 @@ pub(crate) fn read_cidr<M: MemorySize>(
         Addressfamily::Inet6 => {
             let [a, b, c, d, e, f, g, h] = {
                 let o = [
-                    o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9], o[10], o[11],
-                    o[12], o[13], o[14], o[15],
+                    o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9],
+                    o[10], o[11], o[12], o[13], o[14], o[15],
                 ];
                 unsafe { transmute::<[u8; 16], [u16; 8]>(o) }
             };
@@ -136,7 +143,8 @@ pub(crate) fn write_cidr<M: MemorySize>(
                 _padding: 0,
                 u: __wasi_cidr_u {
                     octs: [
-                        o[0], o[1], o[2], o[3], p, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        o[0], o[1], o[2], o[3], p, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0,
                     ],
                 },
             }
@@ -148,8 +156,8 @@ pub(crate) fn write_cidr<M: MemorySize>(
                 _padding: 0,
                 u: __wasi_cidr_u {
                     octs: [
-                        o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9], o[10], o[11],
-                        o[12], o[13], o[14], o[15], p,
+                        o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8],
+                        o[9], o[10], o[11], o[12], o[13], o[14], o[15], p,
                     ],
                 },
             }
@@ -203,7 +211,8 @@ pub(crate) fn write_ip_port<M: MemorySize>(
                 _padding: 0,
                 u: __wasi_addr_port_u {
                     octs: [
-                        p[0], p[1], o[0], o[1], o[2], o[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        p[0], p[1], o[0], o[1], o[2], o[3], 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0,
                     ],
                 },
             }
@@ -215,8 +224,9 @@ pub(crate) fn write_ip_port<M: MemorySize>(
                 _padding: 0,
                 u: __wasi_addr_port_u {
                     octs: [
-                        p[0], p[1], o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9],
-                        o[10], o[11], o[12], o[13], o[14], o[15],
+                        p[0], p[1], o[0], o[1], o[2], o[3], o[4], o[5], o[6],
+                        o[7], o[8], o[9], o[10], o[11], o[12], o[13], o[14],
+                        o[15],
                     ],
                 },
             }
@@ -247,8 +257,9 @@ pub(crate) fn read_route<M: MemorySize>(
                 Addressfamily::Inet6 => {
                     let [a, b, c, d, e, f, g, h] = {
                         let o = [
-                            o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9], o[10],
-                            o[11], o[12], o[13], o[14], o[15],
+                            o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7],
+                            o[8], o[9], o[10], o[11], o[12], o[13], o[14],
+                            o[15],
                         ];
                         unsafe { transmute::<[u8; 16], [u16; 8]>(o) }
                     };
@@ -263,9 +274,12 @@ pub(crate) fn read_route<M: MemorySize>(
         via_router: {
             let o = route.via_router.u.octs;
             match route.via_router.tag {
-                Addressfamily::Inet4 => IpAddr::V4(Ipv4Addr::new(o[0], o[1], o[2], o[3])),
+                Addressfamily::Inet4 => {
+                    IpAddr::V4(Ipv4Addr::new(o[0], o[1], o[2], o[3]))
+                }
                 Addressfamily::Inet6 => {
-                    let [a, b, c, d, e, f, g, h] = unsafe { transmute::<[u8; 16], [u16; 8]>(o) };
+                    let [a, b, c, d, e, f, g, h] =
+                        unsafe { transmute::<[u8; 16], [u16; 8]>(o) };
                     IpAddr::V6(Ipv6Addr::new(a, b, c, d, e, f, g, h))
                 }
                 _ => return Err(Errno::Inval),
@@ -273,7 +287,9 @@ pub(crate) fn read_route<M: MemorySize>(
         },
         preferred_until: match route.preferred_until.tag {
             OptionTag::None => None,
-            OptionTag::Some => Some(Duration::from_nanos(route.preferred_until.u)),
+            OptionTag::Some => {
+                Some(Duration::from_nanos(route.preferred_until.u))
+            }
         },
         expires_at: match route.expires_at.tag {
             OptionTag::None => None,
@@ -297,7 +313,8 @@ pub(crate) fn write_route<M: MemorySize>(
                     _padding: 0,
                     u: __wasi_cidr_u {
                         octs: [
-                            o[0], o[1], o[2], o[3], p, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                            o[0], o[1], o[2], o[3], p, 0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0,
                         ],
                     },
                 }
@@ -309,8 +326,9 @@ pub(crate) fn write_route<M: MemorySize>(
                     _padding: 0,
                     u: __wasi_cidr_u {
                         octs: [
-                            o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9], o[10],
-                            o[11], o[12], o[13], o[14], o[15], p,
+                            o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7],
+                            o[8], o[9], o[10], o[11], o[12], o[13], o[14],
+                            o[15], p,
                         ],
                     },
                 }
@@ -324,7 +342,10 @@ pub(crate) fn write_route<M: MemorySize>(
                 tag: Addressfamily::Inet4,
                 _padding: 0,
                 u: __wasi_addr_u {
-                    octs: [o[0], o[1], o[2], o[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    octs: [
+                        o[0], o[1], o[2], o[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0,
+                    ],
                 },
             }
         }

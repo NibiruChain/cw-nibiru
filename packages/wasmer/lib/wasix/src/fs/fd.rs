@@ -12,13 +12,15 @@ use serde_derive::{Deserialize, Serialize};
 use std::sync::Mutex as StdMutex;
 use tokio::sync::{watch, Mutex as AsyncMutex};
 use virtual_fs::{Pipe, VirtualFile};
-use wasmer_wasix_types::wasi::{EpollType, Fd as WasiFd, Fdflags, Filestat, Rights};
+use wasmer_wasix_types::wasi::{
+    EpollType, Fd as WasiFd, Fdflags, Filestat, Rights,
+};
 
 use crate::{net::socket::InodeSocket, syscalls::EpollJoinWaker};
 
 use super::{
-    InodeGuard, InodeValFilePollGuard, InodeValFilePollGuardJoin, InodeValFilePollGuardMode,
-    InodeWeakGuard, NotificationInner,
+    InodeGuard, InodeValFilePollGuard, InodeValFilePollGuardJoin,
+    InodeValFilePollGuardMode, InodeWeakGuard, NotificationInner,
 };
 
 #[derive(Debug, Clone)]
@@ -112,7 +114,9 @@ pub enum EpollJoinGuard {
 impl Drop for EpollJoinGuard {
     fn drop(&mut self) {
         if let Self::Handler { fd_guard, .. } = self {
-            if let InodeValFilePollGuardMode::Socket { inner } = &mut fd_guard.mode {
+            if let InodeValFilePollGuardMode::Socket { inner } =
+                &mut fd_guard.mode
+            {
                 let mut inner = inner.protected.write().unwrap();
                 inner.remove_handler();
             }
@@ -157,7 +161,8 @@ pub enum Kind {
     File {
         /// The open file, if it's open
         #[cfg_attr(feature = "enable-serde", serde(skip))]
-        handle: Option<Arc<RwLock<Box<dyn VirtualFile + Send + Sync + 'static>>>>,
+        handle:
+            Option<Arc<RwLock<Box<dyn VirtualFile + Send + Sync + 'static>>>>,
         /// The path on the host system where the file is located
         /// This is deprecated and will be removed soon
         path: PathBuf,

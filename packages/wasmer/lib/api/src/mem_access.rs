@@ -103,8 +103,12 @@ impl<'a, T: ValueType> WasmRef<'a, T> {
     #[inline]
     pub fn read(self) -> Result<T, MemoryAccessError> {
         let mut out = MaybeUninit::uninit();
-        let buf =
-            unsafe { slice::from_raw_parts_mut(out.as_mut_ptr() as *mut u8, mem::size_of::<T>()) };
+        let buf = unsafe {
+            slice::from_raw_parts_mut(
+                out.as_mut_ptr() as *mut u8,
+                mem::size_of::<T>(),
+            )
+        };
         self.buffer.read(self.offset, buf)?;
         Ok(unsafe { out.assume_init() })
         // Ok(self.access()?.read())
@@ -159,7 +163,11 @@ impl<'a, T: ValueType> WasmSlice<'a, T> {
     ///
     /// Returns a `MemoryAccessError` if the slice length overflows.
     #[inline]
-    pub fn new(view: &'a MemoryView, offset: u64, len: u64) -> Result<Self, MemoryAccessError> {
+    pub fn new(
+        view: &'a MemoryView,
+        offset: u64,
+        len: u64,
+    ) -> Result<Self, MemoryAccessError> {
         let total_len = len
             .checked_mul(mem::size_of::<T>() as u64)
             .ok_or(MemoryAccessError::Overflow)?;
@@ -268,8 +276,12 @@ impl<'a, T: ValueType> WasmSlice<'a, T> {
             "slice length doesn't match WasmSlice length"
         );
         let size = std::mem::size_of_val(buf);
-        let bytes =
-            unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr() as *mut MaybeUninit<u8>, size) };
+        let bytes = unsafe {
+            slice::from_raw_parts_mut(
+                buf.as_mut_ptr() as *mut MaybeUninit<u8>,
+                size,
+            )
+        };
         self.buffer.read_uninit(self.offset, bytes)?;
         Ok(())
     }
@@ -296,7 +308,9 @@ impl<'a, T: ValueType> WasmSlice<'a, T> {
             )
         };
         self.buffer.read_uninit(self.offset, bytes)?;
-        Ok(unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr() as *mut T, buf.len()) })
+        Ok(unsafe {
+            slice::from_raw_parts_mut(buf.as_mut_ptr() as *mut T, buf.len())
+        })
     }
 
     /// Write the given slice into this `WasmSlice`.
@@ -310,13 +324,17 @@ impl<'a, T: ValueType> WasmSlice<'a, T> {
             "slice length doesn't match WasmSlice length"
         );
         let size = std::mem::size_of_val(data);
-        let bytes = unsafe { slice::from_raw_parts(data.as_ptr() as *const u8, size) };
+        let bytes =
+            unsafe { slice::from_raw_parts(data.as_ptr() as *const u8, size) };
         self.buffer.write(self.offset, bytes)
     }
 
     /// Reads this `WasmSlice` into a `slice`.
     #[inline]
-    pub fn read_to_slice(self, buf: &mut [MaybeUninit<u8>]) -> Result<usize, MemoryAccessError> {
+    pub fn read_to_slice(
+        self,
+        buf: &mut [MaybeUninit<u8>],
+    ) -> Result<usize, MemoryAccessError> {
         let len = self.len.try_into().expect("WasmSlice length overflow");
         self.buffer.read_uninit(self.offset, buf)?;
         Ok(len)

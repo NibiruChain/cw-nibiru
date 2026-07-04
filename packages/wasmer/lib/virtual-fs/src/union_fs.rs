@@ -119,12 +119,14 @@ impl FileSystem for UnionFileSystem {
                 .collect::<Vec<_>>();
 
             Ok(ReadDir::new(entries))
-        } else if let Some((prefix, path, fs)) = self.find_mount(path.to_owned()) {
+        } else if let Some((prefix, path, fs)) = self.find_mount(path.to_owned())
+        {
             let mut entries = fs.read_dir(&path)?;
 
             for entry in &mut entries.data {
                 let path: PathBuf = entry.path.components().skip(1).collect();
-                entry.path = PathBuf::from("/").join(PathBuf::from(&prefix).join(path));
+                entry.path =
+                    PathBuf::from("/").join(PathBuf::from(&prefix).join(path));
             }
 
             Ok(entries)
@@ -163,15 +165,23 @@ impl FileSystem for UnionFileSystem {
             Err(FsError::EntryNotFound)
         }
     }
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<()>> {
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<()>> {
         Box::pin(async move {
             let from = self.prepare_path(from);
             let to = self.prepare_path(to);
 
             if from.as_os_str().is_empty() {
                 Err(FsError::PermissionDenied)
-            } else if let Some((prefix, path, fs)) = self.find_mount(from.to_owned()) {
-                let to = to.strip_prefix(prefix).map_err(|_| FsError::InvalidInput)?;
+            } else if let Some((prefix, path, fs)) =
+                self.find_mount(from.to_owned())
+            {
+                let to = to
+                    .strip_prefix(prefix)
+                    .map_err(|_| FsError::InvalidInput)?;
 
                 let to = PathBuf::from("/").join(to);
 
@@ -312,7 +322,9 @@ mod tests {
 
     use tokio::io::AsyncWriteExt;
 
-    use crate::{mem_fs, FileSystem as FileSystemTrait, FsError, UnionFileSystem};
+    use crate::{
+        mem_fs, FileSystem as FileSystemTrait, FsError, UnionFileSystem,
+    };
 
     use super::{FileOpener, OpenOptionsConfig};
 
@@ -452,7 +464,9 @@ mod tests {
             .collect();
         assert_eq!(
             app_contents,
-            HashSet::from_iter([PathBuf::from("/app/a"), PathBuf::from("/app/b")].into_iter())
+            HashSet::from_iter(
+                [PathBuf::from("/app/a"), PathBuf::from("/app/b")].into_iter()
+            )
         );
 
         let a_contents: Vec<PathBuf> = fs
@@ -594,7 +608,8 @@ mod tests {
         );
 
         assert!(
-            read_dir_names(&fs, "/test_remove_dir/foo").contains(&"bar".to_string()),
+            read_dir_names(&fs, "/test_remove_dir/foo")
+                .contains(&"bar".to_string()),
             "./foo/bar exists"
         );
 
@@ -617,7 +632,8 @@ mod tests {
         );
 
         assert!(
-            !read_dir_names(&fs, "/test_remove_dir").contains(&"foo".to_string()),
+            !read_dir_names(&fs, "/test_remove_dir")
+                .contains(&"foo".to_string()),
             "the foo directory still exists"
         );
     }
@@ -625,7 +641,9 @@ mod tests {
     fn read_dir_names(fs: &dyn crate::FileSystem, path: &str) -> Vec<String> {
         fs.read_dir(Path::new(path))
             .unwrap()
-            .filter_map(|entry| Some(entry.ok()?.file_name().to_str()?.to_string()))
+            .filter_map(|entry| {
+                Some(entry.ok()?.file_name().to_str()?.to_string())
+            })
             .collect::<Vec<_>>()
     }
 
@@ -661,8 +679,11 @@ mod tests {
         assert_eq!(fs.create_dir(Path::new("/test_rename/bar")), Ok(()));
 
         assert_eq!(
-            fs.rename(Path::new("/test_rename/foo"), Path::new("/test_rename/bar"))
-                .await,
+            fs.rename(
+                Path::new("/test_rename/foo"),
+                Path::new("/test_rename/bar")
+            )
+            .await,
             Ok(()),
             "renaming to a directory that has parent that exists",
         );
@@ -707,12 +728,14 @@ mod tests {
         assert!(qux_dir.is_empty(), "the qux directory is empty");
 
         assert!(
-            read_dir_names(&fs, "/test_rename/bar").contains(&"hello1.txt".to_string()),
+            read_dir_names(&fs, "/test_rename/bar")
+                .contains(&"hello1.txt".to_string()),
             "the /bar/hello1.txt file exists"
         );
 
         assert!(
-            read_dir_names(&fs, "/test_rename/bar").contains(&"hello2.txt".to_string()),
+            read_dir_names(&fs, "/test_rename/bar")
+                .contains(&"hello2.txt".to_string()),
             "the /bar/hello2.txt file exists"
         );
 
@@ -766,23 +789,28 @@ mod tests {
             "foo does not exist anymore"
         );
         assert!(
-            read_dir_names(&fs, "/test_rename/bar/baz").contains(&"world2.txt".to_string()),
+            read_dir_names(&fs, "/test_rename/bar/baz")
+                .contains(&"world2.txt".to_string()),
             "/bar/baz/world2.txt exists"
         );
         assert!(
-            read_dir_names(&fs, "/test_rename/bar").contains(&"world1.txt".to_string()),
+            read_dir_names(&fs, "/test_rename/bar")
+                .contains(&"world1.txt".to_string()),
             "/bar/world1.txt (ex hello1.txt) exists"
         );
         assert!(
-            !read_dir_names(&fs, "/test_rename/bar").contains(&"hello1.txt".to_string()),
+            !read_dir_names(&fs, "/test_rename/bar")
+                .contains(&"hello1.txt".to_string()),
             "hello1.txt was moved"
         );
         assert!(
-            !read_dir_names(&fs, "/test_rename/bar").contains(&"hello2.txt".to_string()),
+            !read_dir_names(&fs, "/test_rename/bar")
+                .contains(&"hello2.txt".to_string()),
             "hello2.txt was moved"
         );
         assert!(
-            read_dir_names(&fs, "/test_rename/bar/baz").contains(&"world2.txt".to_string()),
+            read_dir_names(&fs, "/test_rename/bar/baz")
+                .contains(&"world2.txt".to_string()),
             "world2.txt was moved to the correct place"
         );
 
@@ -831,7 +859,8 @@ mod tests {
         assert!(bar_metadata.created == foo_metadata.created);
         assert!(bar_metadata.modified > foo_metadata.modified);
 
-        let root_metadata = fs.metadata(Path::new("/test_metadata/bar")).unwrap();
+        let root_metadata =
+            fs.metadata(Path::new("/test_metadata/bar")).unwrap();
         assert!(
             root_metadata.modified > foo_metadata.modified,
             "the parent modified time was updated"
@@ -853,7 +882,8 @@ mod tests {
             "creating a new file",
         );
 
-        assert!(read_dir_names(&fs, "/test_remove_file").contains(&"foo.txt".to_string()));
+        assert!(read_dir_names(&fs, "/test_remove_file")
+            .contains(&"foo.txt".to_string()));
 
         assert_eq!(
             fs.remove_file(Path::new("/test_remove_file/foo.txt")),
@@ -861,7 +891,8 @@ mod tests {
             "removing a file that exists",
         );
 
-        assert!(!read_dir_names(&fs, "/test_remove_file").contains(&"foo.txt".to_string()));
+        assert!(!read_dir_names(&fs, "/test_remove_file")
+            .contains(&"foo.txt".to_string()));
 
         assert_eq!(
             fs.remove_file(Path::new("/test_remove_file/foo.txt")),

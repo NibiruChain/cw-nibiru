@@ -38,11 +38,17 @@ impl MultiSource {
         }
     }
 
-    pub fn add_source(&mut self, source: impl Source + Send + 'static) -> &mut Self {
+    pub fn add_source(
+        &mut self,
+        source: impl Source + Send + 'static,
+    ) -> &mut Self {
         self.add_shared_source(Arc::new(source))
     }
 
-    pub fn add_shared_source(&mut self, source: Arc<dyn Source + Send + Sync>) -> &mut Self {
+    pub fn add_shared_source(
+        &mut self,
+        source: Arc<dyn Source + Send + Sync>,
+    ) -> &mut Self {
         self.sources.push(source);
         self
     }
@@ -56,7 +62,10 @@ impl MultiSource {
 #[async_trait::async_trait]
 impl Source for MultiSource {
     #[tracing::instrument(level = "debug", skip_all, fields(%package))]
-    async fn query(&self, package: &PackageSource) -> Result<Vec<PackageSummary>, QueryError> {
+    async fn query(
+        &self,
+        package: &PackageSource,
+    ) -> Result<Vec<PackageSummary>, QueryError> {
         let mut output = Vec::<PackageSummary>::new();
 
         for source in &self.sources {
@@ -65,7 +74,9 @@ impl Source for MultiSource {
                     if self.strategy.merge_results {
                         // Extend matches, but skip already found versions.
                         summaries.retain(|new| {
-                            !output.iter().any(|existing| new.pkg.id == existing.pkg.id)
+                            !output
+                                .iter()
+                                .any(|existing| new.pkg.id == existing.pkg.id)
                         });
                         output.extend(summaries);
                     } else {
@@ -73,17 +84,20 @@ impl Source for MultiSource {
                     }
                 }
                 Err(QueryError::Unsupported { .. })
-                    if self.strategy.continue_if_unsupported || self.strategy.merge_results =>
+                    if self.strategy.continue_if_unsupported
+                        || self.strategy.merge_results =>
                 {
                     continue
                 }
                 Err(QueryError::NotFound { .. })
-                    if self.strategy.continue_if_not_found || self.strategy.merge_results =>
+                    if self.strategy.continue_if_not_found
+                        || self.strategy.merge_results =>
                 {
                     continue
                 }
                 Err(QueryError::NoMatches { .. })
-                    if self.strategy.continue_if_no_matches || self.strategy.merge_results =>
+                    if self.strategy.continue_if_no_matches
+                        || self.strategy.merge_results =>
                 {
                     continue
                 }
@@ -147,7 +161,9 @@ impl Default for MultiSourceStrategy {
 mod tests {
     use wasmer_config::package::PackageId;
 
-    use super::super::{DistributionInfo, InMemorySource, PackageInfo, WebcHash};
+    use super::super::{
+        DistributionInfo, InMemorySource, PackageInfo, WebcHash,
+    };
     use super::*;
 
     /// Test that the `MultiSource` can merge results from multiple sources.

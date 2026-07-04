@@ -57,10 +57,13 @@ impl Handler {
         // anything specified by WASI annotations so users get a chance to
         // override things like $DOCUMENT_ROOT and $SCRIPT_FILENAME.
         let mut request_specific_env = HashMap::new();
-        request_specific_env.insert("REQUEST_METHOD".to_string(), parts.method.to_string());
-        request_specific_env.insert("SCRIPT_NAME".to_string(), parts.uri.path().to_string());
+        request_specific_env
+            .insert("REQUEST_METHOD".to_string(), parts.method.to_string());
+        request_specific_env
+            .insert("SCRIPT_NAME".to_string(), parts.uri.path().to_string());
         if let Some(query) = parts.uri.query() {
-            request_specific_env.insert("QUERY_STRING".to_string(), query.to_string());
+            request_specific_env
+                .insert("QUERY_STRING".to_string(), query.to_string());
         }
         self.dialect
             .prepare_environment_variables(parts, &mut request_specific_env);
@@ -135,14 +138,18 @@ impl Handler {
                 err
             })?;
 
-        let mut res_body_receiver = tokio::io::BufReader::new(create.body_receiver);
+        let mut res_body_receiver =
+            tokio::io::BufReader::new(create.body_receiver);
 
         let stderr_receiver = create.stderr_receiver;
         let propagate_stderr = self.propagate_stderr;
         let work_consume_stderr = {
             let callbacks = callbacks.clone();
-            async move { consume_stderr(stderr_receiver, callbacks, propagate_stderr).await }
-                .in_current_span()
+            async move {
+                consume_stderr(stderr_receiver, callbacks, propagate_stderr)
+                    .await
+            }
+            .in_current_span()
         };
 
         tracing::trace!(
@@ -151,7 +158,8 @@ impl Handler {
         );
 
         let req_body_sender = create.body_sender;
-        let ret = drive_request_to_completion(finished, body, req_body_sender).await;
+        let ret =
+            drive_request_to_completion(finished, body, req_body_sender).await;
 
         // When set this will cause any stderr responses to
         // take precedence over nominal responses but it
@@ -179,7 +187,10 @@ impl Handler {
             Ok(_) => {}
             Err(e) => {
                 let e = e.to_string();
-                tracing::error!(error = e, "Unable to drive the request to completion");
+                tracing::error!(
+                    error = e,
+                    "Unable to drive the request to completion"
+                );
                 return Ok(Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
                     .body(body_from_data(Bytes::from(e)))?);
@@ -203,17 +214,18 @@ impl Handler {
             "received response parts",
         );
 
-        let chunks = futures::stream::try_unfold(res_body_receiver, |mut r| async move {
-            match r.fill_buf().await {
-                Ok([]) => Ok(None),
-                Ok(chunk) => {
-                    let chunk: bytes::Bytes = chunk.to_vec().into();
-                    r.consume(chunk.len());
-                    Ok(Some((Frame::data(chunk), r)))
+        let chunks =
+            futures::stream::try_unfold(res_body_receiver, |mut r| async move {
+                match r.fill_buf().await {
+                    Ok([]) => Ok(None),
+                    Ok(chunk) => {
+                        let chunk: bytes::Bytes = chunk.to_vec().into();
+                        r.consume(chunk.len());
+                        Ok(Some((Frame::data(chunk), r)))
+                    }
+                    Err(e) => Err(anyhow::Error::from(e)),
                 }
-                Err(e) => Err(anyhow::Error::from(e)),
-            }
-        });
+            });
         let body = body_from_stream(chunks);
 
         tracing::trace!(
@@ -268,7 +280,10 @@ async fn drive_request_to_completion(
     }
     .in_current_span();
 
-    let (ret, _) = futures::try_join!(finished.await_termination_anyhow(), request_body_send)?;
+    let (ret, _) = futures::try_join!(
+        finished.await_termination_anyhow(),
+        request_body_send
+    )?;
     Ok(ret)
 }
 
@@ -316,7 +331,8 @@ async fn consume_stderr(
     propagate
 }
 
-pub type SetupBuilder = Arc<dyn Fn(&mut WasiEnvBuilder) -> Result<(), anyhow::Error> + Send + Sync>;
+pub type SetupBuilder =
+    Arc<dyn Fn(&mut WasiEnvBuilder) -> Result<(), anyhow::Error> + Send + Sync>;
 
 #[derive(derive_more::Debug)]
 pub(crate) struct SharedState {
@@ -334,7 +350,8 @@ pub(crate) struct SharedState {
 impl tower::Service<Request<hyper::body::Incoming>> for Handler {
     type Response = Response<Body>;
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Response<Body>, Error>> + Send>>;
+    type Future =
+        Pin<Box<dyn Future<Output = Result<Response<Body>, Error>> + Send>>;
 
     fn poll_ready(
         &mut self,

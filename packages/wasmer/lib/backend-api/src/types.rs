@@ -26,7 +26,10 @@ mod queries {
         type Error = time::error::Parse;
 
         fn try_from(value: DateTime) -> Result<Self, Self::Error> {
-            OffsetDateTime::parse(&value.0, &time::format_description::well_known::Rfc3339)
+            OffsetDateTime::parse(
+                &value.0,
+                &time::format_description::well_known::Rfc3339,
+            )
         }
     }
 
@@ -120,7 +123,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Query", variables = "GetCurrentUserWithNamespacesVars")]
+    #[cynic(
+        graphql_type = "Query",
+        variables = "GetCurrentUserWithNamespacesVars"
+    )]
     pub struct GetCurrentUserWithNamespaces {
         pub viewer: Option<UserWithNamespaces>,
     }
@@ -212,7 +218,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Query", variables = "GetAppTemplateFromSlugVariables")]
+    #[cynic(
+        graphql_type = "Query",
+        variables = "GetAppTemplateFromSlugVariables"
+    )]
     pub struct GetAppTemplateFromSlug {
         #[arguments(slug: $slug)]
         pub get_app_template: Option<AppTemplate>,
@@ -234,7 +243,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Query", variables = "GetAppTemplatesFromFrameworkVars")]
+    #[cynic(
+        graphql_type = "Query",
+        variables = "GetAppTemplatesFromFrameworkVars"
+    )]
     pub struct GetAppTemplatesFromFramework {
         #[arguments(
             frameworkSlug: $framework_slug,
@@ -254,7 +266,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Query", variables = "GetAppTemplatesFromLanguageVars")]
+    #[cynic(
+        graphql_type = "Query",
+        variables = "GetAppTemplatesFromLanguageVars"
+    )]
     pub struct GetAppTemplatesFromLanguage {
         #[arguments(
             languageSlug: $language_slug,
@@ -452,7 +467,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Mutation", variables = "PushPackageReleaseVariables")]
+    #[cynic(
+        graphql_type = "Mutation",
+        variables = "PushPackageReleaseVariables"
+    )]
     pub struct PushPackageRelease {
         #[arguments(input: { name: $name, namespace: $namespace, private: $private, signedUrl: $signed_url })]
         pub push_package_release: Option<PushPackageReleasePayload>,
@@ -658,7 +676,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug, Clone, Serialize)]
-    #[cynic(graphql_type = "User", variables = "GetCurrentUserWithNamespacesVars")]
+    #[cynic(
+        graphql_type = "User",
+        variables = "GetCurrentUserWithNamespacesVars"
+    )]
     pub struct UserWithNamespaces {
         pub id: cynic::Id,
         pub username: String,
@@ -875,10 +896,14 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Mutation", variables = "UpsertDomainFromZoneFileVars")]
+    #[cynic(
+        graphql_type = "Mutation",
+        variables = "UpsertDomainFromZoneFileVars"
+    )]
     pub struct UpsertDomainFromZoneFile {
         #[arguments(input: {zoneFile: $zone_file, deleteMissingRecords: $delete_missing_records})]
-        pub upsert_domain_from_zone_file: Option<UpsertDomainFromZoneFilePayload>,
+        pub upsert_domain_from_zone_file:
+            Option<UpsertDomainFromZoneFilePayload>,
     }
 
     #[derive(cynic::QueryFragment, Debug)]
@@ -1035,7 +1060,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug, Clone, Serialize)]
-    #[cynic(graphql_type = "DeployApp", variables = "GetDeployAppVersionsByIdVars")]
+    #[cynic(
+        graphql_type = "DeployApp",
+        variables = "GetDeployAppVersionsByIdVars"
+    )]
     pub struct DeployAppVersionsById {
         #[arguments(
             first: $first,
@@ -1201,7 +1229,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "DeployApp", variables = "GetAppDeploymentsVariables")]
+    #[cynic(
+        graphql_type = "DeployApp",
+        variables = "GetAppDeploymentsVariables"
+    )]
     pub struct DeployAppDeployments {
         // FIXME: add $offset, $after, currently causes an error from the backend
         // #[arguments(first: $first, after: $after, offset: $offset)]
@@ -1352,7 +1383,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "DeployAppVersion", variables = "GetDeployAppLogsVars")]
+    #[cynic(
+        graphql_type = "DeployAppVersion",
+        variables = "GetDeployAppLogsVars"
+    )]
     pub struct DeployAppVersionLogs {
         #[arguments(startingFrom: $starting_from, until: $until, first: $first, instanceIds: $instance_ids, requestId: $request_id, streams: $streams)]
         pub logs: LogConnection,
@@ -1382,10 +1416,14 @@ mod queries {
         pub input: String,
     }
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Mutation", variables = "GenerateDeployConfigTokenVars")]
+    #[cynic(
+        graphql_type = "Mutation",
+        variables = "GenerateDeployConfigTokenVars"
+    )]
     pub struct GenerateDeployConfigToken {
         #[arguments(input: { config: $input })]
-        pub generate_deploy_config_token: Option<GenerateDeployConfigTokenPayload>,
+        pub generate_deploy_config_token:
+            Option<GenerateDeployConfigTokenPayload>,
     }
 
     #[derive(cynic::QueryFragment, Debug)]
@@ -1425,7 +1463,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Query", variables = "GetDeployAppAndVersionByIdVars")]
+    #[cynic(
+        graphql_type = "Query",
+        variables = "GetDeployAppAndVersionByIdVars"
+    )]
     pub struct GetDeployAppAndVersionById {
         #[arguments(id: $app_id)]
         #[cynic(rename = "node")]
@@ -2158,7 +2199,10 @@ mod queries {
     }
 
     #[derive(cynic::QueryFragment, Debug)]
-    #[cynic(graphql_type = "Mutation", variables = "PurgeCacheForAppVersionVars")]
+    #[cynic(
+        graphql_type = "Mutation",
+        variables = "PurgeCacheForAppVersionVars"
+    )]
     pub struct PurgeCacheForAppVersion {
         #[arguments(input: {id: $id})]
         pub purge_cache_for_app_version: Option<PurgeCacheForAppVersionPayload>,

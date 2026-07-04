@@ -92,7 +92,9 @@ fn test_trap_trace_cb(config: crate::Config) -> Result<()> {
     "#;
 
     let fn_type = FunctionType::new(vec![], vec![]);
-    let fn_func = Function::new(&mut store, &fn_type, |_| Err(RuntimeError::new("cb throw")));
+    let fn_func = Function::new(&mut store, &fn_type, |_| {
+        Err(RuntimeError::new("cb throw"))
+    });
 
     let module = Module::new(&store, wat)?;
     let instance = Instance::new(
@@ -258,7 +260,8 @@ fn trap_start_function_import(config: crate::Config) -> Result<()> {
 
     let module = Module::new(&store, binary)?;
     let sig = FunctionType::new(vec![], vec![]);
-    let func = Function::new(&mut store, &sig, |_| Err(RuntimeError::new("user trap")));
+    let func =
+        Function::new(&mut store, &sig, |_| Err(RuntimeError::new("user trap")));
     let err = Instance::new(
         &mut store,
         &module,
@@ -359,7 +362,8 @@ fn rust_panic_start_function(config: crate::Config) -> Result<()> {
     .unwrap_err();
     assert_eq!(err.downcast_ref::<&'static str>(), Some(&"this is a panic"));
 
-    let func = Function::new_typed(&mut store, || panic!("this is another panic"));
+    let func =
+        Function::new_typed(&mut store, || panic!("this is another panic"));
     let err = panic::catch_unwind(AssertUnwindSafe(|| {
         drop(Instance::new(
             &mut store,
@@ -428,7 +432,8 @@ fn call_signature_mismatch(config: crate::Config) -> Result<()> {
     "#;
 
     let module = Module::new(&store, binary)?;
-    let err = Instance::new(&mut store, &module, &imports! {}).expect_err("expected error");
+    let err = Instance::new(&mut store, &module, &imports! {})
+        .expect_err("expected error");
     assert_eq!(
         format!("{}", err),
         "\
@@ -454,7 +459,8 @@ fn start_trap_pretty(config: crate::Config) -> Result<()> {
     "#;
 
     let module = Module::new(&store, wat)?;
-    let err = Instance::new(&mut store, &module, &imports! {}).expect_err("expected error");
+    let err = Instance::new(&mut store, &module, &imports! {})
+        .expect_err("expected error");
 
     assert_eq!(
         format!("{}", err),

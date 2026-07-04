@@ -29,7 +29,8 @@ fn pass_i64_between_host_and_plugin() -> Result<(), String> {
         }
     };
 
-    let instance = Instance::new(&mut store, &module, &imports).map_err(|e| format!("{e:?}"))?;
+    let instance = Instance::new(&mut store, &module, &imports)
+        .map_err(|e| format!("{e:?}"))?;
     let add_three_i64 = instance
         .exports
         .get_typed_function::<i64, i64>(&store, "add_three_i64")
@@ -75,7 +76,8 @@ fn pass_u64_between_host_and_plugin() -> Result<(), String> {
         }
     };
 
-    let instance = Instance::new(&mut store, &module, &imports).map_err(|e| format!("{e:?}"))?;
+    let instance = Instance::new(&mut store, &module, &imports)
+        .map_err(|e| format!("{e:?}"))?;
     let add_three_u64 = instance
         .exports
         .get_typed_function::<u64, u64>(&store, "add_three_u64")
@@ -117,7 +119,8 @@ fn calling_function_exports() -> Result<()> {
     };
     let instance = Instance::new(&mut store, &module, &imports)?;
 
-    let add: TypedFunction<(i32, i32), i32> = instance.exports.get_typed_function(&store, "add")?;
+    let add: TypedFunction<(i32, i32), i32> =
+        instance.exports.get_typed_function(&store, "add")?;
 
     let result = add.call(&mut store, 10, 20)?;
     assert_eq!(result, 30);

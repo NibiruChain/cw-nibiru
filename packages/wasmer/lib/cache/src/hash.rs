@@ -52,11 +52,15 @@ impl FromStr for Hash {
         })?;
         if bytes.len() != 32 {
             return Err(DeserializeError::Generic(
-                "Prehashed keys must deserialze into exactly 32 bytes".to_string(),
+                "Prehashed keys must deserialze into exactly 32 bytes"
+                    .to_string(),
             ));
         }
         Ok(Self(bytes[0..32].try_into().map_err(|e| {
-            DeserializeError::Generic(format!("Could not get first 32 bytes: {}", e))
+            DeserializeError::Generic(format!(
+                "Could not get first 32 bytes: {}",
+                e
+            ))
         })?))
     }
 }
@@ -68,9 +72,9 @@ mod tests {
     #[test]
     fn hash_is_displayed_as_hex() {
         let original = [
-            0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x12, 0x65, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
-            0x12, 0x65, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x12, 0x65, 0xAA, 0xBB, 0xCC, 0xDD,
-            0xEE, 0xFF, 0x12, 0x65,
+            0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x12, 0x65, 0xAA, 0xBB, 0xCC,
+            0xDD, 0xEE, 0xFF, 0x12, 0x65, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
+            0x12, 0x65, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x12, 0x65,
         ];
         let hash = Hash::new(original);
         assert_eq!(

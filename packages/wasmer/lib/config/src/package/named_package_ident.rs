@@ -120,7 +120,8 @@ impl NamedPackageIdent {
             return Ok(None);
         };
 
-        let reg = if !reg.starts_with("http://") && !reg.starts_with("https://") {
+        let reg = if !reg.starts_with("http://") && !reg.starts_with("https://")
+        {
             format!("https://{}", reg)
         } else {
             reg.clone()
@@ -240,7 +241,10 @@ impl std::str::FromStr for NamedPackageIdent {
 
         let name = name.trim();
         if name.is_empty() {
-            return Err(PackageParseError::new(value, "package name is required"));
+            return Err(PackageParseError::new(
+                value,
+                "package name is required",
+            ));
         }
 
         let (rest, namespace) = if rest.is_empty() {
@@ -251,7 +255,10 @@ impl std::str::FromStr for NamedPackageIdent {
             let ns = ns.trim();
 
             if ns.is_empty() {
-                return Err(PackageParseError::new(value, "namespace can not be empty"));
+                return Err(PackageParseError::new(
+                    value,
+                    "namespace can not be empty",
+                ));
             }
             (rest, Some(ns.to_string()))
         };
@@ -302,7 +309,9 @@ impl schemars::JsonSchema for NamedPackageIdent {
         "NamedPackageIdent".to_string()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(
+        gen: &mut schemars::gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
         String::json_schema(gen)
     }
 }

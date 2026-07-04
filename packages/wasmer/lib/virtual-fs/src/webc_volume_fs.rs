@@ -10,13 +10,13 @@ use std::{
 use futures::future::BoxFuture;
 use tokio::io::{AsyncRead, AsyncSeek, AsyncWrite};
 use webc::{
-    compat::SharedBytes, Container, Metadata as WebcMetadata, PathSegmentError, PathSegments,
-    ToPathSegments, Volume,
+    compat::SharedBytes, Container, Metadata as WebcMetadata, PathSegmentError,
+    PathSegments, ToPathSegments, Volume,
 };
 
 use crate::{
-    DirEntry, EmptyFileSystem, FileOpener, FileSystem, FileType, FsError, Metadata,
-    OpenOptionsConfig, OverlayFileSystem, ReadDir, VirtualFile,
+    DirEntry, EmptyFileSystem, FileOpener, FileSystem, FileType, FsError,
+    Metadata, OpenOptionsConfig, OverlayFileSystem, ReadDir, VirtualFile,
 };
 
 #[derive(Debug, Clone)]
@@ -94,7 +94,9 @@ impl FileSystem for WebcVolumeFileSystem {
                 // filesystem
                 Err(FsError::PermissionDenied)
             }
-            Ok(_) | Err(FsError::EntryNotFound) => Err(FsError::BaseNotDirectory),
+            Ok(_) | Err(FsError::EntryNotFound) => {
+                Err(FsError::BaseNotDirectory)
+            }
             Err(other) => Err(other),
         }
     }
@@ -112,7 +114,11 @@ impl FileSystem for WebcVolumeFileSystem {
         Err(FsError::PermissionDenied)
     }
 
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<(), FsError>> {
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<(), FsError>> {
         Box::pin(async {
             // The original file should exist
             let _ = self.metadata(from)?;
@@ -240,8 +246,8 @@ impl VirtualFile for File {
         self: Pin<&mut Self>,
         _cx: &mut std::task::Context<'_>,
     ) -> Poll<std::io::Result<usize>> {
-        let bytes_remaining =
-            self.content.get_ref().len() - usize::try_from(self.content.position()).unwrap();
+        let bytes_remaining = self.content.get_ref().len()
+            - usize::try_from(self.content.position()).unwrap();
         Poll::Ready(Ok(bytes_remaining))
     }
 
@@ -264,7 +270,10 @@ impl AsyncRead for File {
 }
 
 impl AsyncSeek for File {
-    fn start_seek(mut self: Pin<&mut Self>, position: std::io::SeekFrom) -> std::io::Result<()> {
+    fn start_seek(
+        mut self: Pin<&mut Self>,
+        position: std::io::SeekFrom,
+    ) -> std::io::Result<()> {
         AsyncSeek::start_seek(Pin::new(&mut self.content), position)
     }
 
@@ -357,7 +366,8 @@ mod tests {
     use tokio::io::AsyncReadExt;
     use wasmer_package::utils::from_bytes;
 
-    const PYTHON_WEBC: &[u8] = include_bytes!("../../c-api/examples/assets/python-0.1.0.wasmer");
+    const PYTHON_WEBC: &[u8] =
+        include_bytes!("../../c-api/examples/assets/python-0.1.0.wasmer");
 
     #[test]
     fn normalize_paths() {
@@ -404,7 +414,12 @@ mod tests {
 
         for (path, expected) in inputs {
             let normalized = normalize(path.as_ref()).unwrap();
-            assert_eq!(normalized, expected.to_path_segments().unwrap(), "{}", path);
+            assert_eq!(
+                normalized,
+                expected.to_path_segments().unwrap(),
+                "{}",
+                path
+            );
         }
     }
 

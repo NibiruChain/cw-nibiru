@@ -69,12 +69,18 @@ where
     }
 
     #[tracing::instrument(level = "trace", skip(self), err)]
-    fn metadata(&self, path: &std::path::Path) -> crate::Result<crate::Metadata> {
+    fn metadata(
+        &self,
+        path: &std::path::Path,
+    ) -> crate::Result<crate::Metadata> {
         self.0.metadata(path)
     }
 
     #[tracing::instrument(level = "trace", skip(self), err)]
-    fn symlink_metadata(&self, path: &std::path::Path) -> crate::Result<crate::Metadata> {
+    fn symlink_metadata(
+        &self,
+        path: &std::path::Path,
+    ) -> crate::Result<crate::Metadata> {
         self.0.symlink_metadata(path)
     }
 
@@ -140,7 +146,11 @@ impl VirtualFile for TraceFile {
     }
 
     #[tracing::instrument(level = "trace", skip(self), fields(path=%self.path.display()))]
-    fn set_times(&mut self, atime: Option<u64>, mtime: Option<u64>) -> crate::Result<()> {
+    fn set_times(
+        &mut self,
+        atime: Option<u64>,
+        mtime: Option<u64>,
+    ) -> crate::Result<()> {
         self.file.set_times(atime, mtime)
     }
 
@@ -251,12 +261,18 @@ impl AsyncWrite for TraceFile {
 
 impl AsyncSeek for TraceFile {
     #[tracing::instrument(level = "trace", skip_all, fields(path=%self.path.display()), err)]
-    fn start_seek(mut self: Pin<&mut Self>, position: std::io::SeekFrom) -> std::io::Result<()> {
+    fn start_seek(
+        mut self: Pin<&mut Self>,
+        position: std::io::SeekFrom,
+    ) -> std::io::Result<()> {
         Pin::new(&mut *self.file).start_seek(position)
     }
 
     #[tracing::instrument(level = "trace", skip_all, fields(path=%self.path.display()))]
-    fn poll_complete(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<u64>> {
+    fn poll_complete(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<u64>> {
         let result = Pin::new(&mut *self.file).poll_complete(cx);
 
         if let Poll::Ready(Err(e)) = &result {

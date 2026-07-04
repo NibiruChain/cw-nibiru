@@ -99,7 +99,9 @@ impl schemars::JsonSchema for PackageIdent {
         "PackageIdent".to_string()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(
+        gen: &mut schemars::gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
         String::json_schema(gen)
     }
 }
@@ -110,16 +112,16 @@ mod tests {
 
     #[test]
     fn test_package_ident_matches_id() {
-        assert!(PackageIdent::from_str("ns/pkg")
-            .unwrap()
-            .matches_id(&PackageId::new_named("ns/pkg", "1.0.0".parse().unwrap())));
+        assert!(PackageIdent::from_str("ns/pkg").unwrap().matches_id(
+            &PackageId::new_named("ns/pkg", "1.0.0".parse().unwrap())
+        ));
 
-        assert!(PackageIdent::from_str("ns/pkg@2")
-            .unwrap()
-            .matches_id(&PackageId::new_named("ns/pkg", "2.3.7".parse().unwrap())));
+        assert!(PackageIdent::from_str("ns/pkg@2").unwrap().matches_id(
+            &PackageId::new_named("ns/pkg", "2.3.7".parse().unwrap())
+        ));
 
-        assert!(!PackageIdent::from_str("ns/pkg@3")
-            .unwrap()
-            .matches_id(&PackageId::new_named("ns/pkg", "2.3.7".parse().unwrap())));
+        assert!(!PackageIdent::from_str("ns/pkg@3").unwrap().matches_id(
+            &PackageId::new_named("ns/pkg", "2.3.7".parse().unwrap())
+        ));
     }
 }

@@ -3,7 +3,10 @@ use virtual_mio::InlineWaker;
 use super::*;
 
 impl JournalEffector {
-    pub fn save_process_exit(env: &WasiEnv, exit_code: Option<ExitCode>) -> anyhow::Result<()> {
+    pub fn save_process_exit(
+        env: &WasiEnv,
+        exit_code: Option<ExitCode>,
+    ) -> anyhow::Result<()> {
         env.active_journal()?
             .write(JournalEntry::ProcessExitV1 { exit_code })
             .map_err(map_snapshot_err)?;

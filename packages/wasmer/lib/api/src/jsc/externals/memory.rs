@@ -37,8 +37,12 @@ unsafe impl Send for Memory {}
 unsafe impl Sync for Memory {}
 
 impl Memory {
-    pub fn new(store: &mut impl AsStoreMut, ty: MemoryType) -> Result<Self, MemoryError> {
-        let vm_memory = VMMemory::new(Self::js_memory_from_type(store, &ty)?, ty);
+    pub fn new(
+        store: &mut impl AsStoreMut,
+        ty: MemoryType,
+    ) -> Result<Self, MemoryError> {
+        let vm_memory =
+            VMMemory::new(Self::js_memory_from_type(store, &ty)?, ty);
         Ok(Self::from_vm_extern(store, vm_memory))
     }
 
@@ -76,7 +80,10 @@ impl Memory {
             .map_err(|e| MemoryError::Generic(format!("{:?}", e)))
     }
 
-    pub fn new_from_existing(new_store: &mut impl AsStoreMut, memory: VMMemory) -> Self {
+    pub fn new_from_existing(
+        new_store: &mut impl AsStoreMut,
+        memory: VMMemory,
+    ) -> Self {
         Self::from_vm_extern(new_store, memory)
     }
 
@@ -155,7 +162,10 @@ impl Memory {
         Ok(())
     }
 
-    pub fn reset(&self, _store: &mut impl AsStoreMut) -> Result<(), MemoryError> {
+    pub fn reset(
+        &self,
+        _store: &mut impl AsStoreMut,
+    ) -> Result<(), MemoryError> {
         Ok(())
     }
 
@@ -185,19 +195,28 @@ impl Memory {
         Ok(new_memory)
     }
 
-    pub(crate) fn from_vm_extern(_store: &mut impl AsStoreMut, internal: VMMemory) -> Self {
+    pub(crate) fn from_vm_extern(
+        _store: &mut impl AsStoreMut,
+        internal: VMMemory,
+    ) -> Self {
         Self { handle: internal }
     }
 
     /// Cloning memory will create another reference to the same memory that
     /// can be put into a new store
-    pub fn try_clone(&self, _store: &impl AsStoreRef) -> Result<VMMemory, MemoryError> {
+    pub fn try_clone(
+        &self,
+        _store: &impl AsStoreRef,
+    ) -> Result<VMMemory, MemoryError> {
         self.handle.try_clone()
     }
 
     /// Copying the memory will actually copy all the bytes in the memory to
     /// a identical byte copy of the original that can be put into a new store
-    pub fn try_copy(&self, store: &impl AsStoreRef) -> Result<VMMemory, MemoryError> {
+    pub fn try_copy(
+        &self,
+        store: &impl AsStoreRef,
+    ) -> Result<VMMemory, MemoryError> {
         let mut cloned = self.try_clone(store)?;
         cloned.copy(store)
     }
@@ -207,11 +226,17 @@ impl Memory {
     }
 
     #[allow(unused)]
-    pub fn duplicate(&mut self, store: &impl AsStoreRef) -> Result<VMMemory, MemoryError> {
+    pub fn duplicate(
+        &mut self,
+        store: &impl AsStoreRef,
+    ) -> Result<VMMemory, MemoryError> {
         self.handle.copy(store)
     }
 
-    pub fn as_shared(&self, _store: &impl AsStoreRef) -> Option<crate::SharedMemory> {
+    pub fn as_shared(
+        &self,
+        _store: &impl AsStoreRef,
+    ) -> Option<crate::SharedMemory> {
         // Not supported.
         None
     }
@@ -234,7 +259,11 @@ pub(crate) struct MemoryBuffer<'a> {
 }
 
 impl<'a> MemoryBuffer<'a> {
-    pub(crate) fn read(&self, offset: u64, buf: &mut [u8]) -> Result<(), MemoryAccessError> {
+    pub(crate) fn read(
+        &self,
+        offset: u64,
+        buf: &mut [u8],
+    ) -> Result<(), MemoryAccessError> {
         let end = offset
             .checked_add(buf.len() as u64)
             .ok_or(MemoryAccessError::Overflow)?;
@@ -248,7 +277,11 @@ impl<'a> MemoryBuffer<'a> {
             return Err(MemoryAccessError::HeapOutOfBounds);
         }
         unsafe {
-            volatile_memcpy_read(self.base.add(offset as usize), buf.as_mut_ptr(), buf.len());
+            volatile_memcpy_read(
+                self.base.add(offset as usize),
+                buf.as_mut_ptr(),
+                buf.len(),
+            );
         }
         Ok(())
     }
@@ -272,13 +305,21 @@ impl<'a> MemoryBuffer<'a> {
         }
         let buf_ptr = buf.as_mut_ptr() as *mut u8;
         unsafe {
-            volatile_memcpy_read(self.base.add(offset as usize), buf_ptr, buf.len());
+            volatile_memcpy_read(
+                self.base.add(offset as usize),
+                buf_ptr,
+                buf.len(),
+            );
         }
 
         Ok(unsafe { slice::from_raw_parts_mut(buf_ptr, buf.len()) })
     }
 
-    pub(crate) fn write(&self, offset: u64, data: &[u8]) -> Result<(), MemoryAccessError> {
+    pub(crate) fn write(
+        &self,
+        offset: u64,
+        data: &[u8],
+    ) -> Result<(), MemoryAccessError> {
         let end = offset
             .checked_add(data.len() as u64)
             .ok_or(MemoryAccessError::Overflow)?;
@@ -292,7 +333,11 @@ impl<'a> MemoryBuffer<'a> {
             return Err(MemoryAccessError::HeapOutOfBounds);
         }
         unsafe {
-            volatile_memcpy_write(data.as_ptr(), self.base.add(offset as usize), data.len());
+            volatile_memcpy_write(
+                data.as_ptr(),
+                self.base.add(offset as usize),
+                data.len(),
+            );
         }
         Ok(())
     }
@@ -306,9 +351,17 @@ impl<'a> MemoryBuffer<'a> {
 // with a fixed length: they should compile down to a single load/store
 // instruction for small (8/16/32/64-bit) copies.
 #[inline]
-unsafe fn volatile_memcpy_read(mut src: *const u8, mut dst: *mut u8, mut len: usize) {
+unsafe fn volatile_memcpy_read(
+    mut src: *const u8,
+    mut dst: *mut u8,
+    mut len: usize,
+) {
     #[inline]
-    unsafe fn copy_one<T>(src: &mut *const u8, dst: &mut *mut u8, len: &mut usize) {
+    unsafe fn copy_one<T>(
+        src: &mut *const u8,
+        dst: &mut *mut u8,
+        len: &mut usize,
+    ) {
         #[repr(packed)]
         struct Unaligned<T>(T);
         let val = (*src as *const Unaligned<T>).read_volatile();
@@ -332,9 +385,17 @@ unsafe fn volatile_memcpy_read(mut src: *const u8, mut dst: *mut u8, mut len: us
     }
 }
 #[inline]
-unsafe fn volatile_memcpy_write(mut src: *const u8, mut dst: *mut u8, mut len: usize) {
+unsafe fn volatile_memcpy_write(
+    mut src: *const u8,
+    mut dst: *mut u8,
+    mut len: usize,
+) {
     #[inline]
-    unsafe fn copy_one<T>(src: &mut *const u8, dst: &mut *mut u8, len: &mut usize) {
+    unsafe fn copy_one<T>(
+        src: &mut *const u8,
+        dst: &mut *mut u8,
+        len: &mut usize,
+    ) {
         #[repr(packed)]
         struct Unaligned<T>(T);
         let val = (*src as *const Unaligned<T>).read();

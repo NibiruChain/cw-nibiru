@@ -66,7 +66,10 @@ pub struct HttpRequest {
 }
 
 impl HttpRequest {
-    fn from_http_parts(parts: http::request::Parts, body: impl Into<Option<Vec<u8>>>) -> Self {
+    fn from_http_parts(
+        parts: http::request::Parts,
+        body: impl Into<Option<Vec<u8>>>,
+    ) -> Self {
         let http::request::Parts {
             method,
             uri,
@@ -173,7 +176,10 @@ impl std::fmt::Debug for HttpResponse {
 
 pub trait HttpClient: std::fmt::Debug {
     // TODO: use custom error type!
-    fn request(&self, request: HttpRequest) -> BoxFuture<'_, Result<HttpResponse, anyhow::Error>>;
+    fn request(
+        &self,
+        request: HttpRequest,
+    ) -> BoxFuture<'_, Result<HttpResponse, anyhow::Error>>;
 }
 
 impl<D, C> HttpClient for D
@@ -181,7 +187,10 @@ where
     D: Deref<Target = C> + std::fmt::Debug,
     C: HttpClient + ?Sized + 'static,
 {
-    fn request(&self, request: HttpRequest) -> BoxFuture<'_, Result<HttpResponse, anyhow::Error>> {
+    fn request(
+        &self,
+        request: HttpRequest,
+    ) -> BoxFuture<'_, Result<HttpResponse, anyhow::Error>> {
         let client = &**self;
         client.request(request)
     }

@@ -1,14 +1,17 @@
 use crate::as_c::{param_from_c, result_to_value, type_to_c, valtype_to_type};
 use crate::bindings::{
-    wasm_byte_vec_new, wasm_byte_vec_new_empty, wasm_byte_vec_new_uninitialized, wasm_byte_vec_t,
-    wasm_extern_as_func, wasm_func_call, wasm_func_new, wasm_func_new_with_env,
-    wasm_func_param_arity, wasm_func_result_arity, wasm_func_t, wasm_func_type, wasm_functype_copy,
-    wasm_functype_new, wasm_functype_params, wasm_functype_results, wasm_functype_t,
-    wasm_trap_message, wasm_trap_new, wasm_trap_t, wasm_val_t, wasm_val_t__bindgen_ty_1,
-    wasm_val_vec_copy, wasm_val_vec_new, wasm_val_vec_new_empty, wasm_val_vec_new_uninitialized,
-    wasm_val_vec_t, wasm_valkind_enum_WASM_F32, wasm_valkind_enum_WASM_F64,
-    wasm_valkind_enum_WASM_I32, wasm_valkind_enum_WASM_I64, wasm_valtype_new, wasm_valtype_t,
-    wasm_valtype_vec_new, wasm_valtype_vec_new_empty, wasm_valtype_vec_t,
+    wasm_byte_vec_new, wasm_byte_vec_new_empty, wasm_byte_vec_new_uninitialized,
+    wasm_byte_vec_t, wasm_extern_as_func, wasm_func_call, wasm_func_new,
+    wasm_func_new_with_env, wasm_func_param_arity, wasm_func_result_arity,
+    wasm_func_t, wasm_func_type, wasm_functype_copy, wasm_functype_new,
+    wasm_functype_params, wasm_functype_results, wasm_functype_t,
+    wasm_trap_message, wasm_trap_new, wasm_trap_t, wasm_val_t,
+    wasm_val_t__bindgen_ty_1, wasm_val_vec_copy, wasm_val_vec_new,
+    wasm_val_vec_new_empty, wasm_val_vec_new_uninitialized, wasm_val_vec_t,
+    wasm_valkind_enum_WASM_F32, wasm_valkind_enum_WASM_F64,
+    wasm_valkind_enum_WASM_I32, wasm_valkind_enum_WASM_I64, wasm_valtype_new,
+    wasm_valtype_t, wasm_valtype_vec_new, wasm_valtype_vec_new_empty,
+    wasm_valtype_vec_t,
 };
 use crate::c_api::store::{InternalStoreHandle, StoreHandle};
 use crate::StoreRef;
@@ -21,9 +24,13 @@ use crate::c_api::vm::{
     VMExtern, VMFuncRef, VMFunction, VMFunctionCallback, VMFunctionEnvironment,
 };
 use crate::errors::RuntimeError;
-use crate::externals::function::{HostFunction, HostFunctionKind, WithEnv, WithoutEnv};
+use crate::externals::function::{
+    HostFunction, HostFunctionKind, WithEnv, WithoutEnv,
+};
 use crate::function_env::{FunctionEnv, FunctionEnvMut};
-use crate::native_type::{FromToNativeWasmType, IntoResult, NativeWasmTypeInto, WasmTypeList};
+use crate::native_type::{
+    FromToNativeWasmType, IntoResult, NativeWasmTypeInto, WasmTypeList,
+};
 use crate::store::{AsStoreMut, AsStoreRef, StoreInner, StoreMut};
 use crate::trap::Trap;
 use crate::value::Value;
@@ -45,8 +52,11 @@ type CCallback = unsafe extern "C" fn(
 ) -> *mut wasm_trap_t;
 
 #[cfg(feature = "v8")]
-type CCallback =
-    unsafe extern "C" fn(*mut c_void, *const wasm_val_t, *mut wasm_val_t) -> *mut wasm_trap_t;
+type CCallback = unsafe extern "C" fn(
+    *mut c_void,
+    *const wasm_val_t,
+    *mut wasm_val_t,
+) -> *mut wasm_trap_t;
 
 #[derive(Clone, PartialEq)]
 pub struct Function {
@@ -96,7 +106,10 @@ impl Function {
     ) -> Self
     where
         FT: Into<FunctionType>,
-        F: Fn(FunctionEnvMut<'_, T>, &[Value]) -> Result<Vec<Value>, RuntimeError>
+        F: Fn(
+                FunctionEnvMut<'_, T>,
+                &[Value],
+            ) -> Result<Vec<Value>, RuntimeError>
             + 'static
             + Send
             + Sync,
@@ -114,7 +127,11 @@ impl Function {
 
         let mut wasm_param_types = unsafe {
             let mut vec = Default::default();
-            wasm_valtype_vec_new(&mut vec, param_types.len(), param_types.as_ptr());
+            wasm_valtype_vec_new(
+                &mut vec,
+                param_types.len(),
+                param_types.as_ptr(),
+            );
             vec
         };
 
@@ -129,7 +146,11 @@ impl Function {
 
         let mut wasm_result_types = unsafe {
             let mut vec = Default::default();
-            wasm_valtype_vec_new(&mut vec, result_types.len(), result_types.as_ptr());
+            wasm_valtype_vec_new(
+                &mut vec,
+                result_types.len(),
+                result_types.as_ptr(),
+            );
             vec
         };
 
@@ -188,7 +209,11 @@ impl Function {
 
         let mut wasm_param_types = unsafe {
             let mut vec = Default::default();
-            wasm_valtype_vec_new(&mut vec, param_types.len(), param_types.as_ptr());
+            wasm_valtype_vec_new(
+                &mut vec,
+                param_types.len(),
+                param_types.as_ptr(),
+            );
             vec
         };
 
@@ -202,17 +227,23 @@ impl Function {
 
         let mut wasm_result_types = unsafe {
             let mut vec = Default::default();
-            wasm_valtype_vec_new(&mut vec, result_types.len(), result_types.as_ptr());
+            wasm_valtype_vec_new(
+                &mut vec,
+                result_types.len(),
+                result_types.as_ptr(),
+            );
             vec
         };
 
-        let wasm_functype =
-            unsafe { wasm_functype_new(&mut wasm_param_types, &mut wasm_result_types) };
+        let wasm_functype = unsafe {
+            wasm_functype_new(&mut wasm_param_types, &mut wasm_result_types)
+        };
 
         let mut store = store.as_store_mut();
         let inner = store.inner.store.inner;
 
-        let callback: CCallback = unsafe { std::mem::transmute(func.function_callback()) };
+        let callback: CCallback =
+            unsafe { std::mem::transmute(func.function_callback()) };
 
         let mut callback_env: *mut FunctionCallbackEnv<'_, F> =
             Box::into_raw(Box::new(FunctionCallbackEnv {
@@ -261,7 +292,11 @@ impl Function {
 
         let mut wasm_param_types = unsafe {
             let mut vec = wasm_valtype_vec_t::default();
-            wasm_valtype_vec_new(&mut vec, param_types.len(), param_types.as_ptr());
+            wasm_valtype_vec_new(
+                &mut vec,
+                param_types.len(),
+                param_types.as_ptr(),
+            );
             vec
         };
 
@@ -275,7 +310,11 @@ impl Function {
 
         let mut wasm_result_types = unsafe {
             let mut vec: wasm_valtype_vec_t = Default::default();
-            wasm_valtype_vec_new(&mut vec, result_types.len(), result_types.as_ptr());
+            wasm_valtype_vec_new(
+                &mut vec,
+                result_types.len(),
+                result_types.as_ptr(),
+            );
             vec
         };
 
@@ -289,7 +328,8 @@ impl Function {
         let mut store = store.as_store_mut();
         let inner = store.inner.store.inner;
 
-        let callback: CCallback = unsafe { std::mem::transmute(func.function_callback()) };
+        let callback: CCallback =
+            unsafe { std::mem::transmute(func.function_callback()) };
 
         let mut callback_env: *mut FunctionCallbackEnv<'_, F> =
             Box::into_raw(Box::new(FunctionCallbackEnv {
@@ -319,8 +359,10 @@ impl Function {
 
     pub fn ty(&self, _store: &impl AsStoreRef) -> FunctionType {
         let type_ = unsafe { wasm_func_type(self.handle) };
-        let params: *const wasm_valtype_vec_t = unsafe { wasm_functype_params(type_) };
-        let returns: *const wasm_valtype_vec_t = unsafe { wasm_functype_results(type_) };
+        let params: *const wasm_valtype_vec_t =
+            unsafe { wasm_functype_params(type_) };
+        let returns: *const wasm_valtype_vec_t =
+            unsafe { wasm_functype_results(type_) };
 
         let params: Vec<wasmer_types::Type> = unsafe {
             let mut res = vec![];
@@ -370,12 +412,17 @@ impl Function {
                     .collect::<Vec<_>>()
                     .into_boxed_slice();
                 let mut vec = Default::default();
-                wasm_val_vec_new(&mut vec, wasm_params.len(), wasm_params.as_ptr());
+                wasm_val_vec_new(
+                    &mut vec,
+                    wasm_params.len(),
+                    wasm_params.as_ptr(),
+                );
                 vec
             }
             #[cfg(feature = "v8")]
             {
-                let params = params.iter().map(result_to_value).collect::<Vec<_>>();
+                let params =
+                    params.iter().map(result_to_value).collect::<Vec<_>>();
 
                 let ptr = params.as_ptr();
 
@@ -407,10 +454,14 @@ impl Function {
         };
 
         #[cfg(any(feature = "wamr", feature = "wasmi"))]
-        let trap = unsafe { wasm_func_call(self.handle, &mut args as _, &mut results as *mut _) };
+        let trap = unsafe {
+            wasm_func_call(self.handle, &mut args as _, &mut results as *mut _)
+        };
 
         #[cfg(feature = "v8")]
-        let trap = unsafe { wasm_func_call(self.handle, args as *const _, results as *mut _) };
+        let trap = unsafe {
+            wasm_func_call(self.handle, args as *const _, results as *mut _)
+        };
 
         if !trap.is_null() {
             return Err(Into::<Trap>::into(trap).into());
@@ -418,7 +469,8 @@ impl Function {
 
         #[cfg(any(feature = "wamr", feature = "wasmi"))]
         unsafe {
-            let results = std::ptr::slice_from_raw_parts(results.data, results.size);
+            let results =
+                std::ptr::slice_from_raw_parts(results.data, results.size);
             return Ok((*results)
                 .into_iter()
                 .map(param_from_c)
@@ -438,7 +490,10 @@ impl Function {
         }
     }
 
-    pub(crate) fn from_vm_extern(_store: &mut impl AsStoreMut, internal: VMFunction) -> Self {
+    pub(crate) fn from_vm_extern(
+        _store: &mut impl AsStoreMut,
+        internal: VMFunction,
+    ) -> Self {
         Self { handle: internal }
     }
 
@@ -468,7 +523,10 @@ macro_rules! gen_v8_callback {
             rets: *mut wasm_val_t,
         ) -> *mut wasm_trap_t
         where
-            F: Fn(FunctionEnvMut<'_, T>, &[Value]) -> Result<Vec<Value>, RuntimeError>
+            F: Fn(
+                    FunctionEnvMut<'_, T>,
+                    &[Value],
+                ) -> Result<Vec<Value>, RuntimeError>
                 + 'static
                 + Send
                 + Sync,
@@ -477,13 +535,15 @@ macro_rules! gen_v8_callback {
 
             let mut store = (*r).store.as_store_mut();
             let env_handle = (*r).env_handle.as_ref().unwrap().clone();
-            let mut fn_env = FunctionEnv::from_handle(env_handle).into_mut(&mut store);
+            let mut fn_env =
+                FunctionEnv::from_handle(env_handle).into_mut(&mut store);
             let func: &F = &(*r).func;
 
             let mut wasmer_args = vec![];
 
             for i in 0..$args {
-                wasmer_args.push(param_from_c(&(*(args).wrapping_add(i)).clone()));
+                wasmer_args
+                    .push(param_from_c(&(*(args).wrapping_add(i)).clone()));
             }
 
             let result = panic::catch_unwind(AssertUnwindSafe(|| unsafe {
@@ -536,7 +596,10 @@ where
             rets: *mut wasm_val_vec_t,
         ) -> *mut wasm_trap_t
         where
-            F: Fn(FunctionEnvMut<'_, T>, &[Value]) -> Result<Vec<Value>, RuntimeError>
+            F: Fn(
+                    FunctionEnvMut<'_, T>,
+                    &[Value],
+                ) -> Result<Vec<Value>, RuntimeError>
                 + 'static
                 + Send
                 + Sync,
@@ -545,13 +608,16 @@ where
 
             let mut store = (*r).store.as_store_mut();
             let env_handle = (*r).env_handle.as_ref().unwrap().clone();
-            let mut fn_env = FunctionEnv::from_handle(env_handle).into_mut(&mut store);
+            let mut fn_env =
+                FunctionEnv::from_handle(env_handle).into_mut(&mut store);
             let func: &F = &(*r).func;
 
             let mut wasmer_args = vec![];
 
             for i in 0..(*args).size {
-                wasmer_args.push(param_from_c(&(*(*args).data.wrapping_add(i)).clone()));
+                wasmer_args.push(param_from_c(
+                    &(*(*args).data.wrapping_add(i)).clone(),
+                ));
             }
 
             let result = panic::catch_unwind(AssertUnwindSafe(|| unsafe {

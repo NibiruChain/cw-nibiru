@@ -29,7 +29,8 @@ impl WasmerClient {
     ///
     /// This is somewhat dangerous since it can log sensitive information, hence
     /// it is gated by a custom env var.
-    const ENV_VAR_LOG_VARIABLES: &'static str = "WASMER_API_INSECURE_LOG_VARIABLES";
+    const ENV_VAR_LOG_VARIABLES: &'static str =
+        "WASMER_API_INSECURE_LOG_VARIABLES";
 
     pub fn graphql_endpoint(&self) -> &Url {
         &self.graphql_endpoint
@@ -39,7 +40,9 @@ impl WasmerClient {
         self.auth_token.as_deref()
     }
 
-    fn parse_user_agent(user_agent: &str) -> Result<reqwest::header::HeaderValue, anyhow::Error> {
+    fn parse_user_agent(
+        user_agent: &str,
+    ) -> Result<reqwest::header::HeaderValue, anyhow::Error> {
         if user_agent.is_empty() {
             bail!("user agent must not be empty");
         }
@@ -54,7 +57,8 @@ impl WasmerClient {
         user_agent: &str,
     ) -> Result<Self, anyhow::Error> {
         let log_variables = {
-            let v = std::env::var(Self::ENV_VAR_LOG_VARIABLES).unwrap_or_default();
+            let v =
+                std::env::var(Self::ENV_VAR_LOG_VARIABLES).unwrap_or_default();
             match v.as_str() {
                 "1" | "true" => true,
                 "0" | "false" => false,
@@ -79,7 +83,10 @@ impl WasmerClient {
         })
     }
 
-    pub fn new(graphql_endpoint: Url, user_agent: &str) -> Result<Self, anyhow::Error> {
+    pub fn new(
+        graphql_endpoint: Url,
+        user_agent: &str,
+    ) -> Result<Self, anyhow::Error> {
         Self::new_with_proxy(graphql_endpoint, user_agent, None)
     }
 
@@ -107,7 +114,8 @@ impl WasmerClient {
             builder
         };
 
-        let client = builder.build().context("failed to create reqwest client")?;
+        let client =
+            builder.build().context("failed to create reqwest client")?;
 
         Self::new_with_client(client, graphql_endpoint, user_agent)
     }
@@ -161,14 +169,21 @@ impl WasmerClient {
                     let body_string = match response.text().await {
                         Ok(b) => b,
                         Err(err) => {
-                            tracing::error!("could not load response body: {err}");
+                            tracing::error!(
+                                "could not load response body: {err}"
+                            );
                             "<could not retrieve body>".to_string()
                         }
                     };
 
-                    match serde_json::from_str::<GraphQlResponse<ResponseData>>(&body_string) {
+                    match serde_json::from_str::<GraphQlResponse<ResponseData>>(
+                        &body_string,
+                    ) {
                         Ok(response) => Ok(response),
-                        Err(_) => Err(CynicReqwestError::ErrorResponse(status, body_string)),
+                        Err(_) => Err(CynicReqwestError::ErrorResponse(
+                            status,
+                            body_string,
+                        )),
                     }
                 } else {
                     let body = response.bytes().await?;

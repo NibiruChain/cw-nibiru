@@ -28,10 +28,12 @@ pub fn sock_shutdown(
 
     #[cfg(feature = "journal")]
     if ctx.data().enable_journal {
-        JournalEffector::save_sock_shutdown(&mut ctx, sock, shutdown).map_err(|err| {
-            tracing::error!("failed to save sock_shutdown event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_sock_shutdown(&mut ctx, sock, shutdown).map_err(
+            |err| {
+                tracing::error!("failed to save sock_shutdown event - {}", err);
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            },
+        )?;
     }
 
     Ok(Errno::Success)

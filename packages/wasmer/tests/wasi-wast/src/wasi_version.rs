@@ -1,4 +1,5 @@
-pub static ALL_WASI_VERSIONS: &[WasiVersion] = &[WasiVersion::Unstable, WasiVersion::Snapshot1];
+pub static ALL_WASI_VERSIONS: &[WasiVersion] =
+    &[WasiVersion::Unstable, WasiVersion::Snapshot1];
 pub static LATEST_WASI_VERSION: &[WasiVersion] = &[WasiVersion::get_latest()];
 pub static NIGHTLY_VERSION: &[WasiVersion] = &[WasiVersion::current_nightly()];
 

@@ -16,7 +16,9 @@ use inkwell::{
     AddressSpace, DLLStorageClass,
 };
 use std::{cmp, convert::TryInto};
-use wasmer_compiler::types::{function::FunctionBody, relocation::RelocationTarget};
+use wasmer_compiler::types::{
+    function::FunctionBody, relocation::RelocationTarget,
+};
 use wasmer_types::{CompileError, FunctionType as FuncType, LocalFunctionIndex};
 
 pub struct FuncTrampoline {
@@ -65,7 +67,8 @@ impl FuncTrampoline {
             false,
         );
 
-        let trampoline_func = module.add_function(name, trampoline_ty, Some(Linkage::External));
+        let trampoline_func =
+            module.add_function(name, trampoline_ty, Some(Linkage::External));
         trampoline_func
             .as_global_value()
             .set_section(Some(FUNCTION_SECTION));
@@ -150,7 +153,8 @@ impl FuncTrampoline {
         } else {
             let mut eh_frame_section_indices = eh_frame_section_indices;
             eh_frame_section_indices.sort_unstable();
-            for (idx, section_idx) in eh_frame_section_indices.iter().enumerate() {
+            for (idx, section_idx) in eh_frame_section_indices.iter().enumerate()
+            {
                 if idx as u32 != section_idx.as_u32() {
                     all_sections_are_eh_sections = false;
                     break;
@@ -194,7 +198,8 @@ impl FuncTrampoline {
         let (trampoline_ty, trampoline_attrs) =
             self.abi
                 .func_type_to_llvm(&self.ctx, &intrinsics, None, ty)?;
-        let trampoline_func = module.add_function(name, trampoline_ty, Some(Linkage::External));
+        let trampoline_func =
+            module.add_function(name, trampoline_ty, Some(Linkage::External));
         for (attr, attr_loc) in trampoline_attrs {
             trampoline_func.add_attribute(attr_loc, attr);
         }
@@ -207,7 +212,12 @@ impl FuncTrampoline {
         trampoline_func
             .as_global_value()
             .set_dll_storage_class(DLLStorageClass::Export);
-        self.generate_dynamic_trampoline(trampoline_func, ty, &self.ctx, &intrinsics)?;
+        self.generate_dynamic_trampoline(
+            trampoline_func,
+            ty,
+            &self.ctx,
+            &intrinsics,
+        )?;
 
         if let Some(ref callbacks) = config.callbacks {
             callbacks.preopt_ir(&function, &module);
@@ -275,7 +285,8 @@ impl FuncTrampoline {
         } else {
             let mut eh_frame_section_indices = eh_frame_section_indices;
             eh_frame_section_indices.sort_unstable();
-            for (idx, section_idx) in eh_frame_section_indices.iter().enumerate() {
+            for (idx, section_idx) in eh_frame_section_indices.iter().enumerate()
+            {
                 if idx as u32 != section_idx.as_u32() {
                     all_sections_are_eh_sections = false;
                     break;
@@ -363,7 +374,8 @@ impl FuncTrampoline {
                 "typed_arg_pointer"
             ));
 
-            let arg = err!(builder.build_load(casted_type, typed_item_pointer, "arg"));
+            let arg =
+                err!(builder.build_load(casted_type, typed_item_pointer, "arg"));
             args_vec.push(arg.into());
         }
 
@@ -454,13 +466,20 @@ impl FuncTrampoline {
             false,
         );
         let vmctx = self.abi.get_vmctx_ptr_param(&trampoline_func);
-        let callee_ty =
-            err!(builder.build_bit_cast(vmctx, self.ctx.ptr_type(AddressSpace::default()), ""));
-        let callee =
-            err!(builder.build_load(intrinsics.ptr_ty, callee_ty.into_pointer_value(), ""))
-                .into_pointer_value();
+        let callee_ty = err!(builder.build_bit_cast(
+            vmctx,
+            self.ctx.ptr_type(AddressSpace::default()),
+            ""
+        ));
+        let callee = err!(builder.build_load(
+            intrinsics.ptr_ty,
+            callee_ty.into_pointer_value(),
+            ""
+        ))
+        .into_pointer_value();
 
-        let values_ptr = err!(builder.build_pointer_cast(values, intrinsics.ptr_ty, ""));
+        let values_ptr =
+            err!(builder.build_pointer_cast(values, intrinsics.ptr_ty, ""));
         err!(builder.build_indirect_call(
             callee_ptr_ty,
             callee,
@@ -480,7 +499,9 @@ impl FuncTrampoline {
                         err!(builder.build_gep(
                             intrinsics.i128_ty,
                             values,
-                            &[intrinsics.i32_ty.const_int(idx.try_into().unwrap(), false)],
+                            &[intrinsics
+                                .i32_ty
+                                .const_int(idx.try_into().unwrap(), false)],
                             "",
                         ))
                     };
@@ -489,7 +510,11 @@ impl FuncTrampoline {
                         type_to_llvm_ptr(intrinsics, *ty)?,
                         ""
                     ));
-                    err_nt!(builder.build_load(type_to_llvm(intrinsics, *ty)?, ptr, ""))
+                    err_nt!(builder.build_load(
+                        type_to_llvm(intrinsics, *ty)?,
+                        ptr,
+                        ""
+                    ))
                 })
                 .collect::<Result<Vec<_>, CompileError>>()?;
 
@@ -504,7 +529,8 @@ impl FuncTrampoline {
                     .iter()
                     .map(|&ty| type_to_llvm(intrinsics, ty))
                     .collect::<Result<_, _>>()?;
-                let mut struct_value = context.struct_type(&basic_types, false).get_undef();
+                let mut struct_value =
+                    context.struct_type(&basic_types, false).get_undef();
 
                 for (idx, value) in results.iter().enumerate() {
                     let value = err!(builder.build_bit_cast(
@@ -512,21 +538,25 @@ impl FuncTrampoline {
                         type_to_llvm(intrinsics, func_sig.results()[idx])?,
                         "",
                     ));
-                    struct_value =
-                        err!(builder.build_insert_value(struct_value, value, idx as u32, ""))
-                            .into_struct_value();
+                    struct_value = err!(builder.build_insert_value(
+                        struct_value,
+                        value,
+                        idx as u32,
+                        ""
+                    ))
+                    .into_struct_value();
                 }
                 err!(builder.build_store(sret, struct_value));
                 err!(builder.build_return(None));
             } else {
-                err!(
-                    builder.build_return(Some(&self.abi.pack_values_for_register_return(
+                err!(builder.build_return(Some(
+                    &self.abi.pack_values_for_register_return(
                         intrinsics,
                         &builder,
                         results.as_slice(),
                         &trampoline_func.get_type(),
-                    )?))
-                );
+                    )?
+                )));
             }
         }
 

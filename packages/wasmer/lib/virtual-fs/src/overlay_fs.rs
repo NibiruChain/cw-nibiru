@@ -13,8 +13,8 @@ use replace_with::replace_with_or_abort;
 use tokio::io::{AsyncRead, AsyncSeek, AsyncWrite, ReadBuf};
 
 use crate::{
-    ops, FileOpener, FileSystem, FileSystems, FsError, Metadata, OpenOptions, OpenOptionsConfig,
-    ReadDir, VirtualFile,
+    ops, FileOpener, FileSystem, FileSystems, FsError, Metadata, OpenOptions,
+    OpenOptionsConfig, ReadDir, VirtualFile,
 };
 
 /// A primary filesystem and chain of secondary filesystems that are overlayed
@@ -147,8 +147,9 @@ where
         let mut had_at_least_one_success = false;
         let mut white_outs = HashSet::new();
 
-        let filesystems = std::iter::once(&self.primary as &(dyn FileSystem + Send))
-            .chain(self.secondaries().filesystems());
+        let filesystems =
+            std::iter::once(&self.primary as &(dyn FileSystem + Send))
+                .chain(self.secondaries().filesystems());
 
         for fs in filesystems {
             match fs.read_dir(path) {
@@ -239,9 +240,11 @@ where
         // If the directory is contained in a secondary file system then we need to create a
         // whiteout file so that it is suppressed and is no longer returned in `readdir` calls.
 
-        let had_at_least_one_success = self.secondaries.filesystems().into_iter().any(|fs| {
-            fs.read_dir(path).is_ok() && ops::create_white_out(&self.primary, path).is_ok()
-        });
+        let had_at_least_one_success =
+            self.secondaries.filesystems().into_iter().any(|fs| {
+                fs.read_dir(path).is_ok()
+                    && ops::create_white_out(&self.primary, path).is_ok()
+            });
 
         // Attempt to remove it from the primary, if this succeeds then we may have also
         // added the whiteout file in the earlier step, but are required in this case to
@@ -257,7 +260,11 @@ where
         self.permission_error_or_not_found(path)
     }
 
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<(), FsError>> {
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<(), FsError>> {
         let from = from.to_owned();
         let to = to.to_owned();
         Box::pin(async move {
@@ -299,7 +306,8 @@ where
             if !had_at_least_one_success {
                 for fs in self.secondaries.filesystems() {
                     if fs.metadata(&from).is_ok() {
-                        ops::copy_reference_ext(fs, &self.primary, &from, &to).await?;
+                        ops::copy_reference_ext(fs, &self.primary, &from, &to)
+                            .await?;
                         had_at_least_one_success = true;
                         break;
                     }
@@ -395,9 +403,11 @@ where
 
         // If the file is contained in a secondary then then we need to create a
         // whiteout file so that it is suppressed.
-        let had_at_least_one_success = self.secondaries.filesystems().into_iter().any(|fs| {
-            fs.metadata(path).is_ok() && ops::create_white_out(&self.primary, path).is_ok()
-        });
+        let had_at_least_one_success =
+            self.secondaries.filesystems().into_iter().any(|fs| {
+                fs.metadata(path).is_ok()
+                    && ops::create_white_out(&self.primary, path).is_ok()
+            });
 
         // Attempt to remove it from the primary
         match self.primary.remove_file(path) {
@@ -499,7 +509,8 @@ where
         }
 
         // Determine if a mutation will be possible with the opened file
-        let require_mutations = conf.append || conf.write || conf.create_new | conf.truncate;
+        let require_mutations =
+            conf.append || conf.write || conf.create_new | conf.truncate;
 
         // If the file is on a secondary then we should open it
         if !ops::has_white_out(&self.primary, path) {
@@ -509,14 +520,20 @@ where
                 sub_conf.create_new = false;
                 sub_conf.append = false;
                 sub_conf.truncate = false;
-                match fs.new_open_options().options(sub_conf.clone()).open(path) {
+                match fs.new_open_options().options(sub_conf.clone()).open(path)
+                {
                     Err(e) if should_continue(e) => continue,
                     Ok(file) if require_mutations => {
                         // If the file was opened with the ability to mutate then we need
                         // to return a copy on write emulation so that the file can be
                         // copied from the secondary to the primary in the scenario that
                         // it is edited
-                        return open_copy_on_write(path, conf, &self.primary, file);
+                        return open_copy_on_write(
+                            path,
+                            conf,
+                            &self.primary,
+                            file,
+                        );
                     }
                     other => return other,
                 }
@@ -630,7 +647,10 @@ where
     where
         P: FileSystem + 'static,
     {
-        fn poll_copy_progress(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
+        fn poll_copy_progress(
+            &mut self,
+            cx: &mut Context,
+        ) -> Poll<io::Result<()>> {
             // Enter a loop until we go pending
             let mut again = true;
             while again {
@@ -643,8 +663,8 @@ where
                     CowState::SeekingGet(mut src) => {
                         match Pin::new(src.as_mut()).poll_complete(cx) {
                             Poll::Ready(Ok(offset)) => {
-                                if let Err(err) =
-                                    Pin::new(src.as_mut()).start_seek(SeekFrom::Start(0))
+                                if let Err(err) = Pin::new(src.as_mut())
+                                    .start_seek(SeekFrom::Start(0))
                                 {
                                     return CowState::Error { err, src };
                                 }
@@ -654,7 +674,9 @@ where
                                     src,
                                 }
                             }
-                            Poll::Ready(Err(err)) => CowState::Error { err, src },
+                            Poll::Ready(Err(err)) => {
+                                CowState::Error { err, src }
+                            }
                             Poll::Pending => CowState::SeekingGet(src),
                         }
                     }
@@ -664,16 +686,24 @@ where
                         original_offset,
                         mut src,
                     } => {
-                        match Pin::new(src.as_mut()).poll_complete(cx).map_ok(|_| ()) {
+                        match Pin::new(src.as_mut())
+                            .poll_complete(cx)
+                            .map_ok(|_| ())
+                        {
                             Poll::Ready(Ok(())) => {
                                 // Remove the whiteout, create the parent structure and open
                                 // the new file on the primary
                                 if let Some(parent) = self.path.parent() {
-                                    ops::create_dir_all(&self.primary, parent).ok();
+                                    ops::create_dir_all(&self.primary, parent)
+                                        .ok();
                                 }
                                 let mut had_white_out = false;
-                                if ops::has_white_out(&self.primary, &self.path) {
-                                    ops::remove_white_out(&self.primary, &self.path);
+                                if ops::has_white_out(&self.primary, &self.path)
+                                {
+                                    ops::remove_white_out(
+                                        &self.primary,
+                                        &self.path,
+                                    );
                                     had_white_out = true;
                                 }
                                 let dst = self
@@ -705,7 +735,9 @@ where
                                     },
                                 }
                             }
-                            Poll::Ready(Err(err)) => CowState::Error { err, src },
+                            Poll::Ready(Err(err)) => {
+                                CowState::Error { err, src }
+                            }
                             Poll::Pending => CowState::SeekingSet {
                                 original_offset,
                                 src,
@@ -725,7 +757,8 @@ where
                             // or we are copying the data to the destination
                             if buf_pos < buf.len() {
                                 let dst_pinned = Pin::new(dst.as_mut());
-                                match dst_pinned.poll_write(cx, &buf[buf_pos..]) {
+                                match dst_pinned.poll_write(cx, &buf[buf_pos..])
+                                {
                                     Poll::Ready(Ok(0)) => {}
                                     Poll::Ready(Ok(amt)) => {
                                         buf_pos += amt;
@@ -740,8 +773,12 @@ where
                                 buf.resize_with(8192, || 0);
                                 buf_pos = 8192;
                                 let mut read_buf = ReadBuf::new(&mut buf);
-                                match Pin::new(src.as_mut()).poll_read(cx, &mut read_buf) {
-                                    Poll::Ready(Ok(())) if read_buf.filled().is_empty() => {
+                                match Pin::new(src.as_mut())
+                                    .poll_read(cx, &mut read_buf)
+                                {
+                                    Poll::Ready(Ok(()))
+                                        if read_buf.filled().is_empty() =>
+                                    {
                                         again = true;
 
                                         if self.append {
@@ -751,12 +788,20 @@ where
                                         } else {
                                             // No more data exists to be read so we now move on to
                                             // restoring the cursor back to the original position
-                                            if let Err(err) = Pin::new(dst.as_mut())
-                                                .start_seek(SeekFrom::Start(original_offset))
+                                            if let Err(err) =
+                                                Pin::new(dst.as_mut())
+                                                    .start_seek(SeekFrom::Start(
+                                                        original_offset,
+                                                    ))
                                             {
-                                                return CowState::Error { err, src };
+                                                return CowState::Error {
+                                                    err,
+                                                    src,
+                                                };
                                             }
-                                            return CowState::SeekingRestore { dst };
+                                            return CowState::SeekingRestore {
+                                                dst,
+                                            };
                                         }
                                     }
                                     Poll::Ready(Ok(())) => {
@@ -766,7 +811,9 @@ where
                                         buf_pos = 0;
                                         continue;
                                     }
-                                    Poll::Ready(Err(err)) => return CowState::Error { err, src },
+                                    Poll::Ready(Err(err)) => {
+                                        return CowState::Error { err, src }
+                                    }
                                     Poll::Pending => {}
                                 }
                             }
@@ -820,7 +867,10 @@ where
             ret
         }
 
-        fn poll_copy_start_and_progress(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
+        fn poll_copy_start_and_progress(
+            &mut self,
+            cx: &mut Context,
+        ) -> Poll<io::Result<()>> {
             replace_with_or_abort(&mut self.state, |state| match state {
                 CowState::ReadOnly(inner) => {
                     tracing::trace!("COW file touched, starting file clone",);
@@ -1111,7 +1161,9 @@ fn should_continue(e: FsError) -> bool {
     // (i.e. the "/path/to" in "/path/to/file.txt").
     matches!(
         e,
-        FsError::EntryNotFound | FsError::InvalidInput | FsError::BaseNotDirectory
+        FsError::EntryNotFound
+            | FsError::InvalidInput
+            | FsError::BaseNotDirectory
     )
 }
 
@@ -1207,12 +1259,14 @@ mod tests {
             .unwrap();
 
         // Files on the primary should always shadow the secondary
-        let content = ops::read_to_string(&fs, "/primary/read.txt").await.unwrap();
+        let content =
+            ops::read_to_string(&fs, "/primary/read.txt").await.unwrap();
         assert_ne!(content, "This is shadowed");
     }
 
     #[tokio::test]
-    async fn create_file_that_looks_like_it_is_in_a_secondary_filesystem_folder() {
+    async fn create_file_that_looks_like_it_is_in_a_secondary_filesystem_folder()
+    {
         let primary = MemFS::default();
         let secondary = MemFS::default();
         ops::create_dir_all(&secondary, "/path/to/").unwrap();
@@ -1242,9 +1296,11 @@ mod tests {
         ops::create_dir_all(&secondary_overlayed, "/secondary").unwrap();
         ops::touch(&secondary_overlayed, "/secondary/overlayed.txt").unwrap();
 
-        let fs = OverlayFileSystem::new(primary, [secondary, secondary_overlayed]);
+        let fs =
+            OverlayFileSystem::new(primary, [secondary, secondary_overlayed]);
 
-        let paths: Vec<_> = ops::walk(&fs, "/").map(|entry| entry.path()).collect();
+        let paths: Vec<_> =
+            ops::walk(&fs, "/").map(|entry| entry.path()).collect();
         assert_eq!(
             paths,
             vec![

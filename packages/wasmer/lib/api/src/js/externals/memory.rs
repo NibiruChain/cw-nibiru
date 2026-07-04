@@ -69,7 +69,10 @@ unsafe impl Send for Memory {}
 unsafe impl Sync for Memory {}
 
 impl Memory {
-    pub fn new(store: &mut impl AsStoreMut, ty: MemoryType) -> Result<Self, MemoryError> {
+    pub fn new(
+        store: &mut impl AsStoreMut,
+        ty: MemoryType,
+    ) -> Result<Self, MemoryError> {
         let vm_memory = VMMemory::new(Self::js_memory_from_type(&ty)?, ty);
         Ok(Self::from_vm_extern(store, vm_memory))
     }
@@ -81,28 +84,47 @@ impl Memory {
         // Annotation is here to prevent spurious IDE warnings.
         #[allow(unused_unsafe)]
         unsafe {
-            js_sys::Reflect::set(&descriptor, &"initial".into(), &ty.minimum.0.into()).unwrap();
+            js_sys::Reflect::set(
+                &descriptor,
+                &"initial".into(),
+                &ty.minimum.0.into(),
+            )
+            .unwrap();
             if let Some(max) = ty.maximum {
-                js_sys::Reflect::set(&descriptor, &"maximum".into(), &max.0.into()).unwrap();
+                js_sys::Reflect::set(
+                    &descriptor,
+                    &"maximum".into(),
+                    &max.0.into(),
+                )
+                .unwrap();
             }
-            js_sys::Reflect::set(&descriptor, &"shared".into(), &ty.shared.into()).unwrap();
+            js_sys::Reflect::set(
+                &descriptor,
+                &"shared".into(),
+                &ty.shared.into(),
+            )
+            .unwrap();
         }
 
-        let js_memory = js_sys::WebAssembly::Memory::new(&descriptor).map_err(|e| {
-            let error_message = if let Some(s) = e.as_string() {
-                s
-            } else if let Some(obj) = e.dyn_ref::<js_sys::Object>() {
-                obj.to_string().into()
-            } else {
-                "Error while creating the memory".to_string()
-            };
-            MemoryError::Generic(error_message)
-        })?;
+        let js_memory =
+            js_sys::WebAssembly::Memory::new(&descriptor).map_err(|e| {
+                let error_message = if let Some(s) = e.as_string() {
+                    s
+                } else if let Some(obj) = e.dyn_ref::<js_sys::Object>() {
+                    obj.to_string().into()
+                } else {
+                    "Error while creating the memory".to_string()
+                };
+                MemoryError::Generic(error_message)
+            })?;
 
         Ok(js_memory)
     }
 
-    pub fn new_from_existing(new_store: &mut impl AsStoreMut, memory: VMMemory) -> Self {
+    pub fn new_from_existing(
+        new_store: &mut impl AsStoreMut,
+        memory: VMMemory,
+    ) -> Self {
         Self::from_vm_extern(new_store, memory)
     }
 
@@ -159,23 +181,35 @@ impl Memory {
         Ok(())
     }
 
-    pub fn reset(&self, _store: &mut impl AsStoreMut) -> Result<(), MemoryError> {
+    pub fn reset(
+        &self,
+        _store: &mut impl AsStoreMut,
+    ) -> Result<(), MemoryError> {
         Ok(())
     }
 
-    pub(crate) fn from_vm_extern(_store: &mut impl AsStoreMut, internal: VMMemory) -> Self {
+    pub(crate) fn from_vm_extern(
+        _store: &mut impl AsStoreMut,
+        internal: VMMemory,
+    ) -> Self {
         Self { handle: internal }
     }
 
     /// Cloning memory will create another reference to the same memory that
     /// can be put into a new store
-    pub fn try_clone(&self, _store: &impl AsStoreRef) -> Result<VMMemory, MemoryError> {
+    pub fn try_clone(
+        &self,
+        _store: &impl AsStoreRef,
+    ) -> Result<VMMemory, MemoryError> {
         self.handle.try_clone()
     }
 
     /// Copying the memory will actually copy all the bytes in the memory to
     /// a identical byte copy of the original that can be put into a new store
-    pub fn try_copy(&self, store: &impl AsStoreRef) -> Result<VMMemory, MemoryError> {
+    pub fn try_copy(
+        &self,
+        store: &impl AsStoreRef,
+    ) -> Result<VMMemory, MemoryError> {
         let mut cloned = self.try_clone(store)?;
         cloned.copy()
     }
@@ -184,7 +218,10 @@ impl Memory {
         true
     }
 
-    pub fn as_shared(&self, _store: &impl AsStoreRef) -> Option<crate::SharedMemory> {
+    pub fn as_shared(
+        &self,
+        _store: &impl AsStoreRef,
+    ) -> Option<crate::SharedMemory> {
         // Not supported.
         None
     }
@@ -216,7 +253,11 @@ pub(crate) struct MemoryBuffer<'a> {
 }
 
 impl<'a> MemoryBuffer<'a> {
-    pub(crate) fn read(&self, offset: u64, buf: &mut [u8]) -> Result<(), MemoryAccessError> {
+    pub(crate) fn read(
+        &self,
+        offset: u64,
+        buf: &mut [u8],
+    ) -> Result<(), MemoryAccessError> {
         let end = offset
             .checked_add(buf.len() as u64)
             .ok_or(MemoryAccessError::Overflow)?;
@@ -230,8 +271,9 @@ impl<'a> MemoryBuffer<'a> {
             );
             return Err(MemoryAccessError::HeapOutOfBounds);
         }
-        view.subarray(offset as _, end as _)
-            .copy_to(unsafe { &mut slice::from_raw_parts_mut(buf.as_mut_ptr(), buf.len()) });
+        view.subarray(offset as _, end as _).copy_to(unsafe {
+            &mut slice::from_raw_parts_mut(buf.as_mut_ptr(), buf.len())
+        });
         Ok(())
     }
 
@@ -254,13 +296,18 @@ impl<'a> MemoryBuffer<'a> {
             return Err(MemoryAccessError::HeapOutOfBounds);
         }
         let buf_ptr = buf.as_mut_ptr() as *mut u8;
-        view.subarray(offset as _, end as _)
-            .copy_to(unsafe { &mut slice::from_raw_parts_mut(buf_ptr, buf.len()) });
+        view.subarray(offset as _, end as _).copy_to(unsafe {
+            &mut slice::from_raw_parts_mut(buf_ptr, buf.len())
+        });
 
         Ok(unsafe { slice::from_raw_parts_mut(buf_ptr, buf.len()) })
     }
 
-    pub(crate) fn write(&self, offset: u64, data: &[u8]) -> Result<(), MemoryAccessError> {
+    pub(crate) fn write(
+        &self,
+        offset: u64,
+        data: &[u8],
+    ) -> Result<(), MemoryAccessError> {
         let end = offset
             .checked_add(data.len() as u64)
             .ok_or(MemoryAccessError::Overflow)?;

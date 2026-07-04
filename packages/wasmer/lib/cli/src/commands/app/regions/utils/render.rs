@@ -17,12 +17,16 @@ impl CliRender for AppRegion {
 
         table.add_rows([
             vec![
-                Cell::new("Name".to_string()).add_attribute(comfy_table::Attribute::Bold),
-                Cell::new("City".to_string()).add_attribute(comfy_table::Attribute::Bold),
-                Cell::new("Country code".to_string()).add_attribute(comfy_table::Attribute::Bold),
+                Cell::new("Name".to_string())
+                    .add_attribute(comfy_table::Attribute::Bold),
+                Cell::new("City".to_string())
+                    .add_attribute(comfy_table::Attribute::Bold),
+                Cell::new("Country code".to_string())
+                    .add_attribute(comfy_table::Attribute::Bold),
             ],
             vec![
-                Cell::new(name.to_string()).add_attribute(comfy_table::Attribute::Bold),
+                Cell::new(name.to_string())
+                    .add_attribute(comfy_table::Attribute::Bold),
                 Cell::new(city.to_string()),
                 Cell::new(country.to_string()),
             ],
@@ -39,13 +43,17 @@ impl CliRender for AppRegion {
         //table.set_content_arrangement(comfy_table::ContentArrangement::Dynamic);
 
         table.set_header(vec![
-            Cell::new("Name".to_string()).add_attribute(comfy_table::Attribute::Bold),
-            Cell::new("City".to_string()).add_attribute(comfy_table::Attribute::Bold),
-            Cell::new("Country code".to_string()).add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("Name".to_string())
+                .add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("City".to_string())
+                .add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("Country code".to_string())
+                .add_attribute(comfy_table::Attribute::Bold),
         ]);
         table.add_rows(items.iter().map(|s| {
             vec![
-                Cell::new(s.name.to_string()).add_attribute(comfy_table::Attribute::Bold),
+                Cell::new(s.name.to_string())
+                    .add_attribute(comfy_table::Attribute::Bold),
                 Cell::new(s.city.to_string()),
                 Cell::new(s.country.to_string()),
             ]

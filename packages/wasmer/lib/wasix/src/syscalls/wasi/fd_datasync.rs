@@ -7,7 +7,10 @@ use crate::syscalls::*;
 /// - `Fd fd`
 ///     The file descriptor to sync
 #[instrument(level = "trace", skip_all, fields(%fd), ret)]
-pub fn fd_datasync(mut ctx: FunctionEnvMut<'_, WasiEnv>, fd: WasiFd) -> Result<Errno, WasiError> {
+pub fn fd_datasync(
+    mut ctx: FunctionEnvMut<'_, WasiEnv>,
+    fd: WasiFd,
+) -> Result<Errno, WasiError> {
     wasi_try_ok!(WasiEnv::process_signals_and_exit(&mut ctx)?);
 
     let env = ctx.data();

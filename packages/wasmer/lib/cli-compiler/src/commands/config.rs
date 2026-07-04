@@ -52,7 +52,8 @@ impl Config {
                 // Allowing deprecated function home_dir since it works fine,
                 // and will never be removed from std.
                 #[allow(deprecated)]
-                let dir = std::env::home_dir()?.join(".wasmer").to_str()?.to_string();
+                let dir =
+                    std::env::home_dir()?.join(".wasmer").to_str()?.to_string();
 
                 Some(dir)
             })

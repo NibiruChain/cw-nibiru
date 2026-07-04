@@ -11,9 +11,14 @@ use bytes::Bytes;
 use clap::Parser;
 use tokio::runtime::Handle;
 use url::Url;
-use virtual_fs::{DeviceFile, FileSystem, PassthruFileSystem, RootFileSystemBuilder};
+use virtual_fs::{
+    DeviceFile, FileSystem, PassthruFileSystem, RootFileSystemBuilder,
+};
 use virtual_net::ruleset::Ruleset;
-use wasmer::{Engine, Function, Instance, Memory32, Memory64, Module, RuntimeError, Store, Value};
+use wasmer::{
+    Engine, Function, Instance, Memory32, Memory64, Module, RuntimeError, Store,
+    Value,
+};
 use wasmer_config::package::PackageSource as PackageSpecifier;
 use wasmer_types::ModuleHash;
 #[cfg(feature = "journal")]
@@ -32,7 +37,8 @@ use wasmer_wasix::{
         module_cache::{FileSystemCache, ModuleCache},
         package_loader::{BuiltinPackageLoader, PackageLoader},
         resolver::{
-            BackendSource, FileSystemSource, InMemorySource, MultiSource, Source, WebSource,
+            BackendSource, FileSystemSource, InMemorySource, MultiSource,
+            Source, WebSource,
         },
         task_manager::{
             tokio::{RuntimeOrHandle, TokioTaskManager},
@@ -41,8 +47,8 @@ use wasmer_wasix::{
     },
     types::__WASI_STDIN_FILENO,
     wasmer_wasix_types::wasi::Errno,
-    PluggableRuntime, RewindState, Runtime, WasiEnv, WasiEnvBuilder, WasiError, WasiFunctionEnv,
-    WasiVersion,
+    PluggableRuntime, RewindState, Runtime, WasiEnv, WasiEnvBuilder, WasiError,
+    WasiFunctionEnv, WasiVersion,
 };
 
 use crate::{
@@ -253,13 +259,16 @@ impl Wasi {
 
         let mut uses = Vec::new();
         for name in &self.uses {
-            let specifier = PackageSpecifier::from_str(name)
-                .with_context(|| format!("Unable to parse \"{name}\" as a package specifier"))?;
+            let specifier =
+                PackageSpecifier::from_str(name).with_context(|| {
+                    format!("Unable to parse \"{name}\" as a package specifier")
+                })?;
             let pkg = {
                 let inner_rt = rt.clone();
                 rt.task_manager()
                     .spawn_and_block_on(async move {
-                        BinaryPackage::from_registry(&specifier, &*inner_rt).await
+                        BinaryPackage::from_registry(&specifier, &*inner_rt)
+                            .await
                     })
                     .with_context(|| format!("Unable to load \"{name}\""))??
             };
@@ -290,8 +299,8 @@ impl Wasi {
                     }
                     have_current_dir = true;
 
-                    let current_dir =
-                        std::env::current_dir().context("could not determine current directory")?;
+                    let current_dir = std::env::current_dir()
+                        .context("could not determine current directory")?;
 
                     MappedDirectory {
                         host: current_dir,
@@ -394,7 +403,9 @@ impl Wasi {
                 builder.add_snapshot_trigger(trigger);
             }
             if let Some(interval) = self.snapshot_interval {
-                builder.with_snapshot_interval(std::time::Duration::from_millis(interval));
+                builder.with_snapshot_interval(
+                    std::time::Duration::from_millis(interval),
+                );
             }
             for journal in self.build_journals()? {
                 builder.add_journal(journal);
@@ -413,8 +424,12 @@ impl Wasi {
                 if !self.without_compact_on_drop {
                     journal = journal.with_compact_on_drop()
                 }
-                if self.with_compact_on_growth.is_normal() && self.with_compact_on_growth != 0f32 {
-                    journal = journal.with_compact_on_factor_size(self.with_compact_on_growth);
+                if self.with_compact_on_growth.is_normal()
+                    && self.with_compact_on_growth != 0f32
+                {
+                    journal = journal.with_compact_on_factor_size(
+                        self.with_compact_on_growth,
+                    );
                 }
                 ret.push(Arc::new(journal) as Arc<DynJournal>);
             } else {
@@ -443,8 +458,8 @@ impl Wasi {
                 }
                 have_current_dir = true;
 
-                let current_dir =
-                    std::env::current_dir().context("could not determine current directory")?;
+                let current_dir = std::env::current_dir()
+                    .context("could not determine current directory")?;
 
                 MappedDirectory {
                     host: current_dir,
@@ -517,7 +532,9 @@ impl Wasi {
         Ok((have_current_dir, is_tmp_mapped, mapped_dirs))
     }
 
-    pub fn build_mapped_commands(&self) -> Result<Vec<MappedCommand>, anyhow::Error> {
+    pub fn build_mapped_commands(
+        &self,
+    ) -> Result<Vec<MappedCommand>, anyhow::Error> {
         self.map_commands
             .iter()
             .map(|item| {
@@ -550,7 +567,8 @@ impl Wasi {
         let mut caps = Capabilities::default();
 
         if self.http_client {
-            caps.http_client = wasmer_wasix::http::HttpClientCapabilityV1::new_allow_all();
+            caps.http_client =
+                wasmer_wasix::http::HttpClientCapabilityV1::new_allow_all();
         }
 
         caps.threading.enable_asynchronous_threading = self.enable_async_threads;
@@ -571,7 +589,8 @@ impl Wasi {
     where
         I: Into<RuntimeOrHandle>,
     {
-        let tokio_task_manager = Arc::new(TokioTaskManager::new(rt_or_handle.into()));
+        let tokio_task_manager =
+            Arc::new(TokioTaskManager::new(rt_or_handle.into()));
         let mut rt = PluggableRuntime::new(tokio_task_manager.clone());
 
         let has_networking = self.networking.is_some()
@@ -614,15 +633,16 @@ impl Wasi {
             rt.set_tty(tty);
         }
 
-        let client =
-            wasmer_wasix::http::default_http_client().context("No HTTP client available")?;
+        let client = wasmer_wasix::http::default_http_client()
+            .context("No HTTP client available")?;
         let client = Arc::new(client);
 
         let package_loader = self
             .prepare_package_loader(env, client.clone())
             .context("Unable to prepare the package loader")?;
 
-        let registry = self.prepare_source(env, client, preferred_webc_version)?;
+        let registry =
+            self.prepare_source(env, client, preferred_webc_version)?;
 
         let cache_dir = env.cache_dir().join("compiled");
         let module_cache = wasmer_wasix::runtime::module_cache::in_memory()
@@ -647,7 +667,8 @@ impl Wasi {
         store: &mut Store,
     ) -> Result<(WasiFunctionEnv, Instance)> {
         let builder = self.prepare(module, program_name, args, runtime)?;
-        let (instance, wasi_env) = builder.instantiate_ext(module.clone(), module_hash, store)?;
+        let (instance, wasi_env) =
+            builder.instantiate_ext(module.clone(), module_hash, store)?;
 
         Ok((wasi_env, instance))
     }
@@ -692,22 +713,21 @@ impl Wasi {
         // override the main registry.
         let mut preloaded = InMemorySource::new();
         for path in &self.include_webcs {
-            preloaded
-                .add_webc(path)
-                .with_context(|| format!("Unable to load \"{}\"", path.display()))?;
+            preloaded.add_webc(path).with_context(|| {
+                format!("Unable to load \"{}\"", path.display())
+            })?;
         }
         source.add_source(preloaded);
 
         let graphql_endpoint = self.graphql_endpoint(env)?;
         let cache_dir = env.cache_dir().join("queries");
-        let mut wapm_source = BackendSource::new(graphql_endpoint, Arc::clone(&client))
-            .with_local_cache(cache_dir, WAPM_SOURCE_CACHE_TIMEOUT)
-            .with_preferred_webc_version(preferred_webc_version);
-        if let Some(token) = env
-            .config()?
-            .registry
-            .get_login_token_for_registry(wapm_source.registry_endpoint().as_str())
-        {
+        let mut wapm_source =
+            BackendSource::new(graphql_endpoint, Arc::clone(&client))
+                .with_local_cache(cache_dir, WAPM_SOURCE_CACHE_TIMEOUT)
+                .with_preferred_webc_version(preferred_webc_version);
+        if let Some(token) = env.config()?.registry.get_login_token_for_registry(
+            wapm_source.registry_endpoint().as_str(),
+        ) {
             wapm_source = wapm_source.with_auth_token(token);
         }
         source.add_source(wapm_source);
@@ -727,9 +747,9 @@ impl Wasi {
 
         let config = env.config()?;
         let graphql_endpoint = config.registry.get_graphql_url();
-        let graphql_endpoint = graphql_endpoint
-            .parse()
-            .with_context(|| format!("Unable to parse \"{graphql_endpoint}\" as a URL"))?;
+        let graphql_endpoint = graphql_endpoint.parse().with_context(|| {
+            format!("Unable to parse \"{graphql_endpoint}\" as a URL")
+        })?;
 
         Ok(graphql_endpoint)
     }
@@ -751,7 +771,9 @@ fn tokens_by_authority(env: &WasmerEnv) -> Result<HashMap<String, String>> {
         }
     }
 
-    if let (Ok(current_registry), Some(token)) = (env.registry_endpoint(), env.token()) {
+    if let (Ok(current_registry), Some(token)) =
+        (env.registry_endpoint(), env.token())
+    {
         if current_registry.has_authority() {
             tokens.insert(current_registry.authority().to_string(), token);
         }

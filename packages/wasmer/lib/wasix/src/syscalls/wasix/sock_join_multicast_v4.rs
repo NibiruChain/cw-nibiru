@@ -27,12 +27,16 @@ pub fn sock_join_multicast_v4<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if ctx.data().enable_journal {
-        JournalEffector::save_sock_join_ipv4_multicast(&mut ctx, sock, multiaddr, iface).map_err(
-            |err| {
-                tracing::error!("failed to save sock_join_ipv4_multicast event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            },
-        )?;
+        JournalEffector::save_sock_join_ipv4_multicast(
+            &mut ctx, sock, multiaddr, iface,
+        )
+        .map_err(|err| {
+            tracing::error!(
+                "failed to save sock_join_ipv4_multicast event - {}",
+                err
+            );
+            WasiError::Exit(ExitCode::from(Errno::Fault))
+        })?;
     }
 
     Ok(Errno::Success)
@@ -45,8 +49,11 @@ pub(crate) fn sock_join_multicast_v4_internal(
     iface: Ipv4Addr,
 ) -> Result<Result<(), Errno>, WasiError> {
     let env = ctx.data();
-    wasi_try_ok_ok!(__sock_actor_mut(ctx, sock, Rights::empty(), |socket, _| {
-        socket.join_multicast_v4(multiaddr, iface)
-    }));
+    wasi_try_ok_ok!(__sock_actor_mut(
+        ctx,
+        sock,
+        Rights::empty(),
+        |socket, _| { socket.join_multicast_v4(multiaddr, iface) }
+    ));
     Ok(Ok(()))
 }

@@ -1,7 +1,9 @@
 //! List volumes tied to an edge app.
 
 use super::super::util::AppIdentOpts;
-use crate::{commands::AsyncCliCommand, config::WasmerEnv, opts::ListFormatOpts};
+use crate::{
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ListFormatOpts,
+};
 
 /// List the volumes of an app.
 #[derive(clap::Parser, Debug)]
@@ -37,7 +39,8 @@ impl AsyncCliCommand for CmdAppDeploymentList {
             offset: self.offset.map(|x| x as i32),
             owner: app.owner.global_name,
         };
-        let items = wasmer_backend_api::query::app_deployments(&client, vars).await?;
+        let items =
+            wasmer_backend_api::query::app_deployments(&client, vars).await?;
 
         if items.is_empty() {
             eprintln!("App {} has no deployments!", app.name);

@@ -74,7 +74,11 @@ where
 {
     if let Some(filename) = path.as_ref().file_name() {
         let mut path = path.as_ref().to_owned();
-        path.set_file_name(format!("{}{}", WHITEOUT_PREFIX, filename.to_string_lossy()));
+        path.set_file_name(format!(
+            "{}{}",
+            WHITEOUT_PREFIX,
+            filename.to_string_lossy()
+        ));
 
         if let Some(parent) = path.parent() {
             create_dir_all(fs, parent).ok();
@@ -98,7 +102,11 @@ where
 {
     if let Some(filename) = path.as_ref().file_name() {
         let mut path = path.as_ref().to_owned();
-        path.set_file_name(format!("{}{}", WHITEOUT_PREFIX, filename.to_string_lossy()));
+        path.set_file_name(format!(
+            "{}{}",
+            WHITEOUT_PREFIX,
+            filename.to_string_lossy()
+        ));
         fs.remove_file(&path).ok();
     }
 }
@@ -110,7 +118,11 @@ where
 {
     if let Some(filename) = path.as_ref().file_name() {
         let mut path = path.as_ref().to_owned();
-        path.set_file_name(format!("{}{}", WHITEOUT_PREFIX, filename.to_string_lossy()));
+        path.set_file_name(format!(
+            "{}{}",
+            WHITEOUT_PREFIX,
+            filename.to_string_lossy()
+        ));
         fs.metadata(&path).is_ok()
     } else {
         false
@@ -120,7 +132,9 @@ where
 /// Returns true if the path is a whiteout file
 pub fn is_white_out(path: impl AsRef<Path>) -> Option<PathBuf> {
     if let Some(filename) = path.as_ref().file_name() {
-        if let Some(filename) = filename.to_string_lossy().strip_prefix(WHITEOUT_PREFIX) {
+        if let Some(filename) =
+            filename.to_string_lossy().strip_prefix(WHITEOUT_PREFIX)
+        {
             let mut path = path.as_ref().to_owned();
             path.set_file_name(filename);
             return Some(path);
@@ -191,7 +205,10 @@ where
 /// Asynchronously read a file's contents into memory.
 ///
 /// This is analogous to [`std::fs::read()`].
-pub async fn read<F>(fs: &F, path: impl AsRef<Path> + Send) -> Result<Vec<u8>, FsError>
+pub async fn read<F>(
+    fs: &F,
+    path: impl AsRef<Path> + Send,
+) -> Result<Vec<u8>, FsError>
 where
     F: FileSystem + ?Sized,
 {
@@ -205,7 +222,10 @@ where
 /// Asynchronously read a file's contents into memory as a string.
 ///
 /// This is analogous to [`std::fs::read_to_string()`].
-pub async fn read_to_string<F>(fs: &F, path: impl AsRef<Path> + Send) -> Result<String, FsError>
+pub async fn read_to_string<F>(
+    fs: &F,
+    path: impl AsRef<Path> + Send,
+) -> Result<String, FsError>
 where
     F: FileSystem + ?Sized,
 {
@@ -229,7 +249,10 @@ where
 
 /// Recursively iterate over all paths inside a directory, ignoring any
 /// errors that may occur along the way.
-pub fn walk<F>(fs: &F, path: impl AsRef<Path>) -> Box<dyn Iterator<Item = DirEntry> + '_>
+pub fn walk<F>(
+    fs: &F,
+    path: impl AsRef<Path>,
+) -> Box<dyn Iterator<Item = DirEntry> + '_>
 where
     F: FileSystem + ?Sized,
 {

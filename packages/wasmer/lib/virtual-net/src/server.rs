@@ -2,7 +2,8 @@ use crate::meta::{FrameSerializationFormat, ResponseType};
 use crate::rx_tx::{RemoteRx, RemoteTx, RemoteTxWakers};
 use crate::{
     meta::{MessageRequest, MessageResponse, RequestType, SocketId},
-    VirtualNetworking, VirtualRawSocket, VirtualTcpListener, VirtualTcpSocket, VirtualUdpSocket,
+    VirtualNetworking, VirtualRawSocket, VirtualTcpListener, VirtualTcpSocket,
+    VirtualUdpSocket,
 };
 use crate::{IpCidr, IpRoute, NetworkError, StreamSecurity, VirtualIcmpSocket};
 use futures_util::stream::FuturesOrdered;
@@ -112,46 +113,54 @@ impl RemoteNetworkingServer {
         RX: AsyncRead + Send + 'static,
     {
         let tx = FramedWrite::new(tx, LengthDelimitedCodec::new());
-        let tx: Pin<Box<dyn Sink<MessageResponse, Error = std::io::Error> + Send + 'static>> =
-            match format {
-                FrameSerializationFormat::Bincode => {
-                    Box::pin(SymmetricallyFramed::new(tx, SymmetricalBincode::default()))
-                }
-                #[cfg(feature = "json")]
-                FrameSerializationFormat::Json => {
-                    Box::pin(SymmetricallyFramed::new(tx, SymmetricalJson::default()))
-                }
-                #[cfg(feature = "messagepack")]
-                FrameSerializationFormat::MessagePack => Box::pin(SymmetricallyFramed::new(
-                    tx,
-                    SymmetricalMessagePack::default(),
-                )),
-                #[cfg(feature = "cbor")]
-                FrameSerializationFormat::Cbor => {
-                    Box::pin(SymmetricallyFramed::new(tx, SymmetricalCbor::default()))
-                }
-            };
+        let tx: Pin<
+            Box<
+                dyn Sink<MessageResponse, Error = std::io::Error>
+                    + Send
+                    + 'static,
+            >,
+        > = match format {
+            FrameSerializationFormat::Bincode => Box::pin(
+                SymmetricallyFramed::new(tx, SymmetricalBincode::default()),
+            ),
+            #[cfg(feature = "json")]
+            FrameSerializationFormat::Json => Box::pin(
+                SymmetricallyFramed::new(tx, SymmetricalJson::default()),
+            ),
+            #[cfg(feature = "messagepack")]
+            FrameSerializationFormat::MessagePack => Box::pin(
+                SymmetricallyFramed::new(tx, SymmetricalMessagePack::default()),
+            ),
+            #[cfg(feature = "cbor")]
+            FrameSerializationFormat::Cbor => Box::pin(
+                SymmetricallyFramed::new(tx, SymmetricalCbor::default()),
+            ),
+        };
 
         let rx = FramedRead::new(rx, LengthDelimitedCodec::new());
-        let rx: Pin<Box<dyn Stream<Item = std::io::Result<MessageRequest>> + Send + 'static>> =
-            match format {
-                FrameSerializationFormat::Bincode => {
-                    Box::pin(SymmetricallyFramed::new(rx, SymmetricalBincode::default()))
-                }
-                #[cfg(feature = "json")]
-                FrameSerializationFormat::Json => {
-                    Box::pin(SymmetricallyFramed::new(rx, SymmetricalJson::default()))
-                }
-                #[cfg(feature = "messagepack")]
-                FrameSerializationFormat::MessagePack => Box::pin(SymmetricallyFramed::new(
-                    rx,
-                    SymmetricalMessagePack::default(),
-                )),
-                #[cfg(feature = "cbor")]
-                FrameSerializationFormat::Cbor => {
-                    Box::pin(SymmetricallyFramed::new(rx, SymmetricalCbor::default()))
-                }
-            };
+        let rx: Pin<
+            Box<
+                dyn Stream<Item = std::io::Result<MessageRequest>>
+                    + Send
+                    + 'static,
+            >,
+        > = match format {
+            FrameSerializationFormat::Bincode => Box::pin(
+                SymmetricallyFramed::new(rx, SymmetricalBincode::default()),
+            ),
+            #[cfg(feature = "json")]
+            FrameSerializationFormat::Json => Box::pin(
+                SymmetricallyFramed::new(rx, SymmetricalJson::default()),
+            ),
+            #[cfg(feature = "messagepack")]
+            FrameSerializationFormat::MessagePack => Box::pin(
+                SymmetricallyFramed::new(rx, SymmetricalMessagePack::default()),
+            ),
+            #[cfg(feature = "cbor")]
+            FrameSerializationFormat::Cbor => Box::pin(
+                SymmetricallyFramed::new(rx, SymmetricalCbor::default()),
+            ),
+        };
 
         let (tx_work, rx_work) = mpsc::unbounded_channel();
 
@@ -169,10 +178,16 @@ impl RemoteNetworkingServer {
     #[cfg(feature = "hyper")]
     pub fn new_from_hyper_ws_io(
         tx: SplitSink<
-            hyper_tungstenite::WebSocketStream<TokioIo<hyper::upgrade::Upgraded>>,
+            hyper_tungstenite::WebSocketStream<
+                TokioIo<hyper::upgrade::Upgraded>,
+            >,
             hyper_tungstenite::tungstenite::Message,
         >,
-        rx: SplitStream<hyper_tungstenite::WebSocketStream<TokioIo<hyper::upgrade::Upgraded>>>,
+        rx: SplitStream<
+            hyper_tungstenite::WebSocketStream<
+                TokioIo<hyper::upgrade::Upgraded>,
+            >,
+        >,
         format: FrameSerializationFormat,
         inner: Arc<dyn VirtualNetworking + Send + Sync + 'static>,
     ) -> (Self, RemoteNetworkingServerDriver) {
@@ -256,7 +271,9 @@ impl VirtualNetworking for RemoteNetworkingServer {
         self.inner.route_list().await
     }
 
-    async fn bind_raw(&self) -> Result<Box<dyn VirtualRawSocket + Sync>, NetworkError> {
+    async fn bind_raw(
+        &self,
+    ) -> Result<Box<dyn VirtualRawSocket + Sync>, NetworkError> {
         self.inner.bind_raw().await
     }
 
@@ -319,7 +336,10 @@ pin_project_lite::pin_project! {
 impl Future for RemoteNetworkingServerDriver {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Self::Output> {
         // We register the waker into the interest of the sockets so
         // that it is woken when something is ready to read or write
         let readable = {
@@ -356,7 +376,9 @@ impl Future for RemoteNetworkingServerDriver {
         // and all the background tasks
         loop {
             // Background tasks are sent to this driver in certain circumstances
-            while let Poll::Ready(Some(work)) = Pin::new(&mut self.more_work).poll_recv(cx) {
+            while let Poll::Ready(Some(work)) =
+                Pin::new(&mut self.more_work).poll_recv(cx)
+            {
                 self.tasks.push_back(work);
             }
 
@@ -369,7 +391,9 @@ impl Future for RemoteNetworkingServerDriver {
                     not_stalled_guard.take();
                 }
                 Poll::Pending if not_stalled_guard.is_none() => {
-                    if let Ok(guard) = self.common.stall_rx.clone().try_lock_owned() {
+                    if let Ok(guard) =
+                        self.common.stall_rx.clone().try_lock_owned()
+                    {
                         not_stalled_guard.replace(guard);
                     } else {
                         return Poll::Pending;
@@ -413,7 +437,9 @@ impl RemoteNetworkingServerDriver {
                 addr,
                 req_id,
             } => self.process_send_to(socket, data, addr, req_id),
-            MessageRequest::Interface { req, req_id } => self.process_interface(req, req_id),
+            MessageRequest::Interface { req, req_id } => {
+                self.process_interface(req, req_id)
+            }
             MessageRequest::Socket {
                 socket,
                 req,
@@ -450,7 +476,9 @@ impl RemoteNetworkingServerDriver {
         guard
             .get_mut(&socket_id)
             .map(|s| {
-                req_id.and_then(|req_id| s.send_to(&self.common, socket_id, data, addr, req_id))
+                req_id.and_then(|req_id| {
+                    s.send_to(&self.common, socket_id, data, addr, req_id)
+                })
             })
             .unwrap_or(None)
     }
@@ -474,7 +502,9 @@ impl RemoteNetworkingServerDriver {
         req_id: Option<u64>,
     ) -> BackgroundTask
     where
-        F: FnOnce(Arc<dyn VirtualNetworking + Send + Sync>) -> Fut + Send + 'static,
+        F: FnOnce(Arc<dyn VirtualNetworking + Send + Sync>) -> Fut
+            + Send
+            + 'static,
         Fut: Future + Send + 'static,
         T: FnOnce(Fut::Output) -> ResponseType + Send + 'static,
     {
@@ -492,9 +522,15 @@ impl RemoteNetworkingServerDriver {
         })
     }
 
-    fn process_async_noop<F, Fut>(&self, work: F, req_id: Option<u64>) -> BackgroundTask
+    fn process_async_noop<F, Fut>(
+        &self,
+        work: F,
+        req_id: Option<u64>,
+    ) -> BackgroundTask
     where
-        F: FnOnce(Arc<dyn VirtualNetworking + Send + Sync>) -> Fut + Send + 'static,
+        F: FnOnce(Arc<dyn VirtualNetworking + Send + Sync>) -> Fut
+            + Send
+            + 'static,
         Fut: Future<Output = Result<(), NetworkError>> + Send + 'static,
     {
         self.process_async_inner(
@@ -514,15 +550,20 @@ impl RemoteNetworkingServerDriver {
         req_id: Option<u64>,
     ) -> BackgroundTask
     where
-        F: FnOnce(Arc<dyn VirtualNetworking + Send + Sync>) -> Fut + Send + 'static,
-        Fut: Future<Output = Result<RemoteAdapterSocket, NetworkError>> + Send + 'static,
+        F: FnOnce(Arc<dyn VirtualNetworking + Send + Sync>) -> Fut
+            + Send
+            + 'static,
+        Fut: Future<Output = Result<RemoteAdapterSocket, NetworkError>>
+            + Send
+            + 'static,
     {
         let common = self.common.clone();
         self.process_async_inner(
             work,
             move |ret| match ret {
                 Ok(mut socket) => {
-                    let handler = Box::new(common.handler.clone().for_socket(socket_id));
+                    let handler =
+                        Box::new(common.handler.clone().for_socket(socket_id));
 
                     let err = match &mut socket {
                         RemoteAdapterSocket::TcpListener { .. } => {
@@ -531,10 +572,18 @@ impl RemoteNetworkingServerDriver {
                             // a child ID we can actually use
                             Ok(())
                         }
-                        RemoteAdapterSocket::TcpSocket(s) => s.set_handler(handler),
-                        RemoteAdapterSocket::UdpSocket(s) => s.set_handler(handler),
-                        RemoteAdapterSocket::IcmpSocket(s) => s.set_handler(handler),
-                        RemoteAdapterSocket::RawSocket(s) => s.set_handler(handler),
+                        RemoteAdapterSocket::TcpSocket(s) => {
+                            s.set_handler(handler)
+                        }
+                        RemoteAdapterSocket::UdpSocket(s) => {
+                            s.set_handler(handler)
+                        }
+                        RemoteAdapterSocket::IcmpSocket(s) => {
+                            s.set_handler(handler)
+                        }
+                        RemoteAdapterSocket::RawSocket(s) => {
+                            s.set_handler(handler)
+                        }
                     };
                     if let Err(err) = err {
                         return ResponseType::Err(err);
@@ -592,7 +641,9 @@ impl RemoteNetworkingServerDriver {
         req_id: Option<u64>,
     ) -> BackgroundTask
     where
-        F: FnOnce(&mut RemoteAdapterSocket) -> Result<(), NetworkError> + Send + 'static,
+        F: FnOnce(&mut RemoteAdapterSocket) -> Result<(), NetworkError>
+            + Send
+            + 'static,
     {
         self.process_inner(
             work,
@@ -618,7 +669,8 @@ impl RemoteNetworkingServerDriver {
         }
 
         // Now we attach the handler to the main listening socket
-        let mut handler = Box::new(self.common.handler.clone().for_socket(socket_id));
+        let mut handler =
+            Box::new(self.common.handler.clone().for_socket(socket_id));
         handler.push_interest(virtual_mio::InterestType::Readable);
         self.process_inner_noop(
             move |socket| match socket {
@@ -644,7 +696,11 @@ impl RemoteNetworkingServerDriver {
         )
     }
 
-    fn process_interface(&mut self, req: RequestType, req_id: Option<u64>) -> BackgroundTask {
+    fn process_interface(
+        &mut self,
+        req: RequestType,
+        req_id: Option<u64>,
+    ) -> BackgroundTask {
         match req {
             RequestType::Bridge {
                 network,
@@ -860,7 +916,9 @@ impl RemoteNetworkingServerDriver {
             RequestType::GetAddrLocal => self.process_inner(
                 move |socket| match socket {
                     RemoteAdapterSocket::TcpSocket(s) => s.addr_local(),
-                    RemoteAdapterSocket::TcpListener { socket: s, .. } => s.addr_local(),
+                    RemoteAdapterSocket::TcpListener { socket: s, .. } => {
+                        s.addr_local()
+                    }
                     RemoteAdapterSocket::UdpSocket(s) => s.addr_local(),
                     RemoteAdapterSocket::IcmpSocket(s) => s.addr_local(),
                     RemoteAdapterSocket::RawSocket(s) => s.addr_local(),
@@ -875,10 +933,16 @@ impl RemoteNetworkingServerDriver {
             RequestType::GetAddrPeer => self.process_inner(
                 move |socket| match socket {
                     RemoteAdapterSocket::TcpSocket(s) => s.addr_peer().map(Some),
-                    RemoteAdapterSocket::TcpListener { .. } => Err(NetworkError::Unsupported),
+                    RemoteAdapterSocket::TcpListener { .. } => {
+                        Err(NetworkError::Unsupported)
+                    }
                     RemoteAdapterSocket::UdpSocket(s) => s.addr_peer(),
-                    RemoteAdapterSocket::IcmpSocket(_) => Err(NetworkError::Unsupported),
-                    RemoteAdapterSocket::RawSocket(_) => Err(NetworkError::Unsupported),
+                    RemoteAdapterSocket::IcmpSocket(_) => {
+                        Err(NetworkError::Unsupported)
+                    }
+                    RemoteAdapterSocket::RawSocket(_) => {
+                        Err(NetworkError::Unsupported)
+                    }
                 },
                 |ret| match ret {
                     Ok(Some(addr)) => ResponseType::SocketAddr(addr),
@@ -904,7 +968,9 @@ impl RemoteNetworkingServerDriver {
             RequestType::GetTtl => self.process_inner(
                 move |socket| match socket {
                     RemoteAdapterSocket::TcpSocket(s) => s.ttl(),
-                    RemoteAdapterSocket::TcpListener { socket: s, .. } => s.ttl().map(|t| t as u32),
+                    RemoteAdapterSocket::TcpListener { socket: s, .. } => {
+                        s.ttl().map(|t| t as u32)
+                    }
                     RemoteAdapterSocket::UdpSocket(s) => s.ttl(),
                     RemoteAdapterSocket::IcmpSocket(s) => s.ttl(),
                     RemoteAdapterSocket::RawSocket(s) => s.ttl(),
@@ -919,7 +985,9 @@ impl RemoteNetworkingServerDriver {
             RequestType::GetStatus => self.process_inner(
                 move |socket| match socket {
                     RemoteAdapterSocket::TcpSocket(s) => s.status(),
-                    RemoteAdapterSocket::TcpListener { .. } => Err(NetworkError::Unsupported),
+                    RemoteAdapterSocket::TcpListener { .. } => {
+                        Err(NetworkError::Unsupported)
+                    }
                     RemoteAdapterSocket::UdpSocket(s) => s.status(),
                     RemoteAdapterSocket::IcmpSocket(s) => s.status(),
                     RemoteAdapterSocket::RawSocket(s) => s.status(),
@@ -954,7 +1022,9 @@ impl RemoteNetworkingServerDriver {
             ),
             RequestType::SetPromiscuous(promiscuous) => self.process_inner_noop(
                 move |socket| match socket {
-                    RemoteAdapterSocket::RawSocket(s) => s.set_promiscuous(promiscuous),
+                    RemoteAdapterSocket::RawSocket(s) => {
+                        s.set_promiscuous(promiscuous)
+                    }
                     _ => Err(NetworkError::Unsupported),
                 },
                 socket_id,
@@ -1078,11 +1148,19 @@ impl RemoteNetworkingServerDriver {
             ),
             RequestType::Shutdown(shutdown) => self.process_inner_noop(
                 move |socket| match socket {
-                    RemoteAdapterSocket::TcpSocket(s) => s.shutdown(match shutdown {
-                        crate::meta::Shutdown::Read => std::net::Shutdown::Read,
-                        crate::meta::Shutdown::Write => std::net::Shutdown::Write,
-                        crate::meta::Shutdown::Both => std::net::Shutdown::Both,
-                    }),
+                    RemoteAdapterSocket::TcpSocket(s) => {
+                        s.shutdown(match shutdown {
+                            crate::meta::Shutdown::Read => {
+                                std::net::Shutdown::Read
+                            }
+                            crate::meta::Shutdown::Write => {
+                                std::net::Shutdown::Write
+                            }
+                            crate::meta::Shutdown::Both => {
+                                std::net::Shutdown::Both
+                            }
+                        })
+                    }
                     _ => Err(NetworkError::Unsupported),
                 },
                 socket_id,
@@ -1102,7 +1180,9 @@ impl RemoteNetworkingServerDriver {
             ),
             RequestType::SetBroadcast(broadcast) => self.process_inner_noop(
                 move |socket| match socket {
-                    RemoteAdapterSocket::UdpSocket(s) => s.set_broadcast(broadcast),
+                    RemoteAdapterSocket::UdpSocket(s) => {
+                        s.set_broadcast(broadcast)
+                    }
                     _ => Err(NetworkError::Unsupported),
                 },
                 socket_id,
@@ -1122,7 +1202,9 @@ impl RemoteNetworkingServerDriver {
             ),
             RequestType::SetMulticastLoopV4(val) => self.process_inner_noop(
                 move |socket| match socket {
-                    RemoteAdapterSocket::UdpSocket(s) => s.set_multicast_loop_v4(val),
+                    RemoteAdapterSocket::UdpSocket(s) => {
+                        s.set_multicast_loop_v4(val)
+                    }
                     _ => Err(NetworkError::Unsupported),
                 },
                 socket_id,
@@ -1142,7 +1224,9 @@ impl RemoteNetworkingServerDriver {
             ),
             RequestType::SetMulticastLoopV6(val) => self.process_inner_noop(
                 move |socket| match socket {
-                    RemoteAdapterSocket::UdpSocket(s) => s.set_multicast_loop_v6(val),
+                    RemoteAdapterSocket::UdpSocket(s) => {
+                        s.set_multicast_loop_v6(val)
+                    }
                     _ => Err(NetworkError::Unsupported),
                 },
                 socket_id,
@@ -1162,7 +1246,9 @@ impl RemoteNetworkingServerDriver {
             ),
             RequestType::SetMulticastTtlV4(ttl) => self.process_inner_noop(
                 move |socket| match socket {
-                    RemoteAdapterSocket::UdpSocket(s) => s.set_multicast_ttl_v4(ttl),
+                    RemoteAdapterSocket::UdpSocket(s) => {
+                        s.set_multicast_ttl_v4(ttl)
+                    }
                     _ => Err(NetworkError::Unsupported),
                 },
                 socket_id,
@@ -1180,38 +1266,50 @@ impl RemoteNetworkingServerDriver {
                 socket_id,
                 req_id,
             ),
-            RequestType::JoinMulticastV4 { multiaddr, iface } => self.process_inner_noop(
-                move |socket| match socket {
-                    RemoteAdapterSocket::UdpSocket(s) => s.join_multicast_v4(multiaddr, iface),
-                    _ => Err(NetworkError::Unsupported),
-                },
-                socket_id,
-                req_id,
-            ),
-            RequestType::LeaveMulticastV4 { multiaddr, iface } => self.process_inner_noop(
-                move |socket| match socket {
-                    RemoteAdapterSocket::UdpSocket(s) => s.leave_multicast_v4(multiaddr, iface),
-                    _ => Err(NetworkError::Unsupported),
-                },
-                socket_id,
-                req_id,
-            ),
-            RequestType::JoinMulticastV6 { multiaddr, iface } => self.process_inner_noop(
-                move |socket| match socket {
-                    RemoteAdapterSocket::UdpSocket(s) => s.join_multicast_v6(multiaddr, iface),
-                    _ => Err(NetworkError::Unsupported),
-                },
-                socket_id,
-                req_id,
-            ),
-            RequestType::LeaveMulticastV6 { multiaddr, iface } => self.process_inner_noop(
-                move |socket| match socket {
-                    RemoteAdapterSocket::UdpSocket(s) => s.leave_multicast_v6(multiaddr, iface),
-                    _ => Err(NetworkError::Unsupported),
-                },
-                socket_id,
-                req_id,
-            ),
+            RequestType::JoinMulticastV4 { multiaddr, iface } => self
+                .process_inner_noop(
+                    move |socket| match socket {
+                        RemoteAdapterSocket::UdpSocket(s) => {
+                            s.join_multicast_v4(multiaddr, iface)
+                        }
+                        _ => Err(NetworkError::Unsupported),
+                    },
+                    socket_id,
+                    req_id,
+                ),
+            RequestType::LeaveMulticastV4 { multiaddr, iface } => self
+                .process_inner_noop(
+                    move |socket| match socket {
+                        RemoteAdapterSocket::UdpSocket(s) => {
+                            s.leave_multicast_v4(multiaddr, iface)
+                        }
+                        _ => Err(NetworkError::Unsupported),
+                    },
+                    socket_id,
+                    req_id,
+                ),
+            RequestType::JoinMulticastV6 { multiaddr, iface } => self
+                .process_inner_noop(
+                    move |socket| match socket {
+                        RemoteAdapterSocket::UdpSocket(s) => {
+                            s.join_multicast_v6(multiaddr, iface)
+                        }
+                        _ => Err(NetworkError::Unsupported),
+                    },
+                    socket_id,
+                    req_id,
+                ),
+            RequestType::LeaveMulticastV6 { multiaddr, iface } => self
+                .process_inner_noop(
+                    move |socket| match socket {
+                        RemoteAdapterSocket::UdpSocket(s) => {
+                            s.leave_multicast_v6(multiaddr, iface)
+                        }
+                        _ => Err(NetworkError::Unsupported),
+                    },
+                    socket_id,
+                    req_id,
+                ),
             _ => req_id.and_then(|req_id| {
                 self.common.send(MessageResponse::ResponseToRequest {
                     req_id,
@@ -1260,7 +1358,8 @@ impl RemoteAdapterSocket {
                     Some(Box::pin(async move {
                         // We will stall the receiver so that back pressure is sent back to the
                         // sender and they don't overwhelm us with transmitting data.
-                        let _stall_rx = common.stall_rx.clone().lock_owned().await;
+                        let _stall_rx =
+                            common.stall_rx.clone().lock_owned().await;
 
                         // We use a poller here that uses the handler to wake itself up
                         struct Poller {
@@ -1277,31 +1376,44 @@ impl RemoteAdapterSocket {
                             ) -> Poll<Self::Output> {
                                 // We make sure the waker is registered with the interest driver which will
                                 // wake up this poller when there is writeability
-                                let mut guard = self.common.handler.state.lock().unwrap();
-                                if !guard.driver_wakers.iter().any(|w| w.will_wake(cx.waker())) {
+                                let mut guard =
+                                    self.common.handler.state.lock().unwrap();
+                                if !guard
+                                    .driver_wakers
+                                    .iter()
+                                    .any(|w| w.will_wake(cx.waker()))
+                                {
                                     guard.driver_wakers.push(cx.waker().clone());
                                 }
                                 drop(guard);
 
-                                let mut guard = self.common.sockets.lock().unwrap();
-                                if let Some(RemoteAdapterSocket::TcpSocket(socket)) =
-                                    guard.get_mut(&self.socket_id)
+                                let mut guard =
+                                    self.common.sockets.lock().unwrap();
+                                if let Some(RemoteAdapterSocket::TcpSocket(
+                                    socket,
+                                )) = guard.get_mut(&self.socket_id)
                                 {
                                     match socket.try_send(&self.data) {
                                         Ok(amount) => {
                                             if let Some(req_id) = self.req_id {
-                                                return Poll::Ready(self.common.send(
-                                                    MessageResponse::Sent {
-                                                        socket_id: self.socket_id,
-                                                        req_id,
-                                                        amount: amount as u64,
-                                                    },
-                                                ));
+                                                return Poll::Ready(
+                                                    self.common.send(
+                                                        MessageResponse::Sent {
+                                                            socket_id: self
+                                                                .socket_id,
+                                                            req_id,
+                                                            amount: amount
+                                                                as u64,
+                                                        },
+                                                    ),
+                                                );
                                             } else {
                                                 return Poll::Ready(None);
                                             }
                                         }
-                                        Err(NetworkError::WouldBlock) => return Poll::Pending,
+                                        Err(NetworkError::WouldBlock) => {
+                                            return Poll::Pending
+                                        }
                                         Err(error) => {
                                             if let Some(req_id) = self.req_id {
                                                 return Poll::Ready(self.common.send(
@@ -1421,7 +1533,9 @@ impl RemoteAdapterSocket {
                                 let child_id = next_accept.take().unwrap();
 
                                 // We set the handler on the socket so that it can
-                                let handler = Box::new(common.handler.clone().for_socket(child_id));
+                                let handler = Box::new(
+                                    common.handler.clone().for_socket(child_id),
+                                );
                                 child_socket.set_handler(handler).ok();
 
                                 // We will fix up the socket in the background then notify
@@ -1431,24 +1545,32 @@ impl RemoteAdapterSocket {
                                     // Next we record the socket so that it is active
                                     {
                                         let child_socket =
-                                            RemoteAdapterSocket::TcpSocket(child_socket);
-                                        let mut guard = common.sockets.lock().unwrap();
+                                            RemoteAdapterSocket::TcpSocket(
+                                                child_socket,
+                                            );
+                                        let mut guard =
+                                            common.sockets.lock().unwrap();
                                         guard.insert(child_id, child_socket);
                                     }
 
                                     // Lastly we tell the client about the new socket
-                                    if let Some(task) = common.send(MessageResponse::FinishAccept {
-                                        socket_id,
-                                        child_id,
-                                        addr,
-                                    }) {
+                                    if let Some(task) = common.send(
+                                        MessageResponse::FinishAccept {
+                                            socket_id,
+                                            child_id,
+                                            addr,
+                                        },
+                                    ) {
                                         task.await;
                                     }
                                 }));
                             }
                             Err(NetworkError::WouldBlock) => {}
                             Err(err) => {
-                                tracing::error!("failed to accept socket - {}", err);
+                                tracing::error!(
+                                    "failed to accept socket - {}",
+                                    err
+                                );
                             }
                         }
                     }
@@ -1459,13 +1581,16 @@ impl RemoteAdapterSocket {
                     match this.try_recv(&mut chunk) {
                         Ok(0) => {}
                         Ok(amt) => {
-                            let chunk_unsafe: &mut [MaybeUninit<u8>] = &mut chunk[..amt];
+                            let chunk_unsafe: &mut [MaybeUninit<u8>] =
+                                &mut chunk[..amt];
                             let chunk_unsafe: &mut [u8] =
                                 unsafe { std::mem::transmute(chunk_unsafe) };
-                            if let Some(task) = common.send(MessageResponse::Recv {
-                                socket_id,
-                                data: chunk_unsafe.to_vec(),
-                            }) {
+                            if let Some(task) =
+                                common.send(MessageResponse::Recv {
+                                    socket_id,
+                                    data: chunk_unsafe.to_vec(),
+                                })
+                            {
                                 ret.push_back(task);
                             }
                             continue;
@@ -1479,14 +1604,17 @@ impl RemoteAdapterSocket {
                     match this.try_recv_from(&mut chunk) {
                         Ok((0, _)) => {}
                         Ok((amt, addr)) => {
-                            let chunk_unsafe: &mut [MaybeUninit<u8>] = &mut chunk[..amt];
+                            let chunk_unsafe: &mut [MaybeUninit<u8>] =
+                                &mut chunk[..amt];
                             let chunk_unsafe: &mut [u8] =
                                 unsafe { std::mem::transmute(chunk_unsafe) };
-                            if let Some(task) = common.send(MessageResponse::RecvWithAddr {
-                                socket_id,
-                                data: chunk_unsafe.to_vec(),
-                                addr,
-                            }) {
+                            if let Some(task) =
+                                common.send(MessageResponse::RecvWithAddr {
+                                    socket_id,
+                                    data: chunk_unsafe.to_vec(),
+                                    addr,
+                                })
+                            {
                                 ret.push_back(task);
                             }
                             continue;
@@ -1500,14 +1628,17 @@ impl RemoteAdapterSocket {
                     match this.try_recv_from(&mut chunk) {
                         Ok((0, _)) => {}
                         Ok((amt, addr)) => {
-                            let chunk_unsafe: &mut [MaybeUninit<u8>] = &mut chunk[..amt];
+                            let chunk_unsafe: &mut [MaybeUninit<u8>] =
+                                &mut chunk[..amt];
                             let chunk_unsafe: &mut [u8] =
                                 unsafe { std::mem::transmute(chunk_unsafe) };
-                            if let Some(task) = common.send(MessageResponse::RecvWithAddr {
-                                socket_id,
-                                data: chunk_unsafe.to_vec(),
-                                addr,
-                            }) {
+                            if let Some(task) =
+                                common.send(MessageResponse::RecvWithAddr {
+                                    socket_id,
+                                    data: chunk_unsafe.to_vec(),
+                                    addr,
+                                })
+                            {
                                 ret.push_back(task);
                             }
                             continue;
@@ -1521,13 +1652,16 @@ impl RemoteAdapterSocket {
                     match this.try_recv(&mut chunk) {
                         Ok(0) => {}
                         Ok(amt) => {
-                            let chunk_unsafe: &mut [MaybeUninit<u8>] = &mut chunk[..amt];
+                            let chunk_unsafe: &mut [MaybeUninit<u8>] =
+                                &mut chunk[..amt];
                             let chunk_unsafe: &mut [u8] =
                                 unsafe { std::mem::transmute(chunk_unsafe) };
-                            if let Some(task) = common.send(MessageResponse::Recv {
-                                socket_id,
-                                data: chunk_unsafe.to_vec(),
-                            }) {
+                            if let Some(task) =
+                                common.send(MessageResponse::Recv {
+                                    socket_id,
+                                    data: chunk_unsafe.to_vec(),
+                                })
+                            {
                                 ret.push_back(task);
                             }
                             continue;

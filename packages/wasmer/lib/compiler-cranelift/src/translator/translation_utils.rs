@@ -30,13 +30,18 @@ pub fn signature_to_cranelift_ir(
     // The Vmctx signature
     sig.params.insert(
         0,
-        AbiParam::special(target_config.pointer_type(), ir::ArgumentPurpose::VMContext),
+        AbiParam::special(
+            target_config.pointer_type(),
+            ir::ArgumentPurpose::VMContext,
+        ),
     );
     sig
 }
 
 /// Helper function translating wasmparser types to Cranelift types when possible.
-pub fn reference_type(target_config: TargetFrontendConfig) -> WasmResult<ir::Type> {
+pub fn reference_type(
+    target_config: TargetFrontendConfig,
+) -> WasmResult<ir::Type> {
     match target_config.pointer_type() {
         ir::types::I32 => Ok(ir::types::R32),
         ir::types::I64 => Ok(ir::types::R64),
@@ -47,7 +52,10 @@ pub fn reference_type(target_config: TargetFrontendConfig) -> WasmResult<ir::Typ
 }
 
 /// Helper function translating wasmparser types to Cranelift types when possible.
-pub fn type_to_irtype(ty: Type, target_config: TargetFrontendConfig) -> WasmResult<ir::Type> {
+pub fn type_to_irtype(
+    ty: Type,
+    target_config: TargetFrontendConfig,
+) -> WasmResult<ir::Type> {
     match ty {
         Type::I32 => Ok(ir::types::I32),
         Type::I64 => Ok(ir::types::I64),

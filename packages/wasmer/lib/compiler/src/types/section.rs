@@ -13,7 +13,9 @@
 
 use super::relocation::{ArchivedRelocation, Relocation, RelocationLike};
 use crate::lib::std::vec::Vec;
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use wasmer_types::entity_impl;
@@ -45,7 +47,9 @@ entity_impl!(SectionIndex);
 /// Determines how a custom section may be used.
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq,
+)]
 #[rkyv(derive(Debug), compare(PartialEq, PartialOrd))]
 #[repr(u8)]
 pub enum CustomSectionProtection {
@@ -62,7 +66,9 @@ pub enum CustomSectionProtection {
 /// in the emitted module.
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq,
+)]
 #[rkyv(derive(Debug), compare(PartialEq))]
 pub struct CustomSection {
     /// Memory protection that applies to this section.
@@ -110,7 +116,8 @@ impl<'a> CustomSectionLike<'a> for ArchivedCustomSection {
     type Relocations = ArchivedRelocation;
 
     fn protection(&self) -> CustomSectionProtection {
-        let protection = rkyv::deserialize::<CustomSectionProtection, ()>(&self.protection);
+        let protection =
+            rkyv::deserialize::<CustomSectionProtection, ()>(&self.protection);
         protection.unwrap()
     }
 
@@ -126,9 +133,13 @@ impl<'a> CustomSectionLike<'a> for ArchivedCustomSection {
 /// The bytes in the section.
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq, Default)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq, Default,
+)]
 #[rkyv(derive(Debug), compare(PartialEq, PartialOrd))]
-pub struct SectionBody(#[cfg_attr(feature = "enable-serde", serde(with = "serde_bytes"))] Vec<u8>);
+pub struct SectionBody(
+    #[cfg_attr(feature = "enable-serde", serde(with = "serde_bytes"))] Vec<u8>,
+);
 
 impl SectionBody {
     /// Create a new section body with the given contents.

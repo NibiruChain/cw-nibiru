@@ -143,9 +143,12 @@ pub(crate) fn get_capability_cache_path(
         .join(package_cache_path))
 }
 
-pub(crate) fn get_cached_capability(path: &Path) -> anyhow::Result<PkgCapabilityCache> {
+pub(crate) fn get_cached_capability(
+    path: &Path,
+) -> anyhow::Result<PkgCapabilityCache> {
     let raw = std::fs::read_to_string(path)?;
     tracing::debug!("cache hit for package capability at {}", path.display());
-    serde_json::from_str::<PkgCapabilityCache>(&raw)
-        .map_err(|e| anyhow!("while deserializing package capability cache: {e:?}"))
+    serde_json::from_str::<PkgCapabilityCache>(&raw).map_err(|e| {
+        anyhow!("while deserializing package capability cache: {e:?}")
+    })
 }

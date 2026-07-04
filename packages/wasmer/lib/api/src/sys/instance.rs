@@ -32,8 +32,12 @@ impl From<wasmer_compiler::InstantiationError> for InstantiationError {
     fn from(other: wasmer_compiler::InstantiationError) -> Self {
         match other {
             wasmer_compiler::InstantiationError::Link(e) => Self::Link(e.into()),
-            wasmer_compiler::InstantiationError::Start(e) => Self::Start(e.into()),
-            wasmer_compiler::InstantiationError::CpuFeature(e) => Self::CpuFeature(e),
+            wasmer_compiler::InstantiationError::Start(e) => {
+                Self::Start(e.into())
+            }
+            wasmer_compiler::InstantiationError::CpuFeature(e) => {
+                Self::CpuFeature(e)
+            }
         }
     }
 }

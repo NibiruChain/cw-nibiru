@@ -86,9 +86,9 @@ impl crate::commands::AsyncCliCommand for CmdAppLogs {
 
         let (_ident, app) = self.ident.load_app(&client).await?;
 
-        let from = self
-            .from
-            .unwrap_or_else(|| OffsetDateTime::now_utc() - time::Duration::minutes(10));
+        let from = self.from.unwrap_or_else(|| {
+            OffsetDateTime::now_utc() - time::Duration::minutes(10)
+        });
 
         let version = app.active_version.as_ref().map_or("n/a", |v| &v.version);
 
@@ -120,7 +120,9 @@ impl crate::commands::AsyncCliCommand for CmdAppLogs {
             .unwrap_or_default();
 
         let streams = Vec::from(match (stdout, stderr) {
-            (true, true) | (false, false) => &[LogStream::Stdout, LogStream::Stderr][..],
+            (true, true) | (false, false) => {
+                &[LogStream::Stdout, LogStream::Stderr][..]
+            }
             (true, false) => &[LogStream::Stdout][..],
             (false, true) => &[LogStream::Stderr][..],
         });

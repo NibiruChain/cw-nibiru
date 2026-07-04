@@ -57,20 +57,25 @@ fn is_false(b: &bool) -> bool {
     !(*b)
 }
 
-static WEBC_BASH: &[u8] =
-    include_bytes!("./webc/bash-1.0.16-f097441a-a80b-4e0d-87d7-684918ef4bb6.webc");
-static WEBC_COREUTILS_16: &[u8] =
-    include_bytes!("./webc/coreutils-1.0.16-e27dbb4f-2ef2-4b44-b46a-ddd86497c6d7.webc");
-static WEBC_COREUTILS_11: &[u8] =
-    include_bytes!("./webc/coreutils-1.0.11-9d7746ca-694f-11ed-b932-dead3543c068.webc");
-static WEBC_DASH: &[u8] =
-    include_bytes!("./webc/dash-1.0.18-f0d13233-bcda-4cf1-9a23-3460bffaae2a.webc");
+static WEBC_BASH: &[u8] = include_bytes!(
+    "./webc/bash-1.0.16-f097441a-a80b-4e0d-87d7-684918ef4bb6.webc"
+);
+static WEBC_COREUTILS_16: &[u8] = include_bytes!(
+    "./webc/coreutils-1.0.16-e27dbb4f-2ef2-4b44-b46a-ddd86497c6d7.webc"
+);
+static WEBC_COREUTILS_11: &[u8] = include_bytes!(
+    "./webc/coreutils-1.0.11-9d7746ca-694f-11ed-b932-dead3543c068.webc"
+);
+static WEBC_DASH: &[u8] = include_bytes!(
+    "./webc/dash-1.0.18-f0d13233-bcda-4cf1-9a23-3460bffaae2a.webc"
+);
 static WEBC_PYTHON: &[u8] = include_bytes!("./webc/python-0.1.0.webc");
 static WEBC_WEB_SERVER: &[u8] = include_bytes!(
     "./webc/static-web-server-async-1.0.3-5d739d1a-20b7-4edf-8cf4-44e813f96b25.webc"
 );
-static WEBC_WASMER_SH: &[u8] =
-    include_bytes!("./webc/wasmer-sh-1.0.63-dd3d67d1-de94-458c-a9ee-caea3b230ccf.webc");
+static WEBC_WASMER_SH: &[u8] = include_bytes!(
+    "./webc/wasmer-sh-1.0.63-dd3d67d1-de94-458c-a9ee-caea3b230ccf.webc"
+);
 
 impl std::fmt::Debug for TestSpec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -154,7 +159,10 @@ impl TestBuilder {
         self
     }
 
-    pub fn args<I: IntoIterator<Item = S>, S: AsRef<str>>(mut self, args: I) -> Self {
+    pub fn args<I: IntoIterator<Item = S>, S: AsRef<str>>(
+        mut self,
+        args: I,
+    ) -> Self {
         let args = args.into_iter().map(|s| s.as_ref().to_string());
         self.spec.cli_args.extend(args);
         self
@@ -187,22 +195,30 @@ impl TestBuilder {
 
     pub fn use_coreutils(self) -> Self {
         // TODO: use custom compiled coreutils
-        self.use_pkg("sharrattj/coreutils")
-            .include_static_package("sharrattj/coreutils@1.0.16", WEBC_COREUTILS_16)
+        self.use_pkg("sharrattj/coreutils").include_static_package(
+            "sharrattj/coreutils@1.0.16",
+            WEBC_COREUTILS_16,
+        )
     }
 
     pub fn use_dash(self) -> Self {
         // TODO: use custom compiled dash
         self.use_pkg("sharrattj/dash")
             .include_static_package("sharrattj/dash@1.0.16", WEBC_DASH)
-            .include_static_package("sharrattj/coreutils@1.0.11", WEBC_COREUTILS_11)
+            .include_static_package(
+                "sharrattj/coreutils@1.0.11",
+                WEBC_COREUTILS_11,
+            )
     }
 
     pub fn use_bash(self) -> Self {
         // TODO: use custom compiled bash
         self.use_pkg("sharrattj/bash")
             .include_static_package("sharrattj/bash@1.0.12", WEBC_BASH)
-            .include_static_package("sharrattj/coreutils@1.0.11", WEBC_COREUTILS_11)
+            .include_static_package(
+                "sharrattj/coreutils@1.0.11",
+                WEBC_COREUTILS_11,
+            )
     }
 
     // Enable thread support.
@@ -332,23 +348,27 @@ pub fn run_test_with(spec: TestSpec, code: &[u8], with: RunWith) -> TestResult {
     let mut proc = match cmd.spawn() {
         Ok(p) => p,
         Err(err) => {
-            return TestResult::Error(format!("Could not spawn wasmer command: {err}"));
+            return TestResult::Error(format!(
+                "Could not spawn wasmer command: {err}"
+            ));
         }
     };
 
     let mut stdout_handle = proc.stdout.take().unwrap();
     let mut stderr_handle = proc.stderr.take().unwrap();
 
-    let stdout_thread = std::thread::spawn(move || -> Result<Vec<u8>, std::io::Error> {
-        let mut buffer = Vec::new();
-        stdout_handle.read_to_end(&mut buffer)?;
-        Ok(buffer)
-    });
-    let stderr_thread = std::thread::spawn(move || -> Result<Vec<u8>, std::io::Error> {
-        let mut buffer = Vec::new();
-        stderr_handle.read_to_end(&mut buffer)?;
-        Ok(buffer)
-    });
+    let stdout_thread =
+        std::thread::spawn(move || -> Result<Vec<u8>, std::io::Error> {
+            let mut buffer = Vec::new();
+            stdout_handle.read_to_end(&mut buffer)?;
+            Ok(buffer)
+        });
+    let stderr_thread =
+        std::thread::spawn(move || -> Result<Vec<u8>, std::io::Error> {
+            let mut buffer = Vec::new();
+            stderr_handle.read_to_end(&mut buffer)?;
+            Ok(buffer)
+        });
 
     if let Some(stdin) = &spec.stdin {
         proc.stdin.take().unwrap().write_all(stdin).unwrap();
@@ -418,7 +438,11 @@ pub fn build_snapshot(mut spec: TestSpec, code: &[u8]) -> TestSnapshot {
     TestSnapshot { spec, result }
 }
 
-pub fn build_snapshot_with(mut spec: TestSpec, code: &[u8], with: RunWith) -> TestSnapshot {
+pub fn build_snapshot_with(
+    mut spec: TestSpec,
+    code: &[u8],
+    with: RunWith,
+) -> TestSnapshot {
     spec.wasm_hash = format!("{:x}", md5::compute(code));
 
     let result = run_test_with(spec.clone(), code, with);
@@ -428,7 +452,9 @@ pub fn build_snapshot_with(mut spec: TestSpec, code: &[u8], with: RunWith) -> Te
 
 pub fn snapshot_file(path: &Path, spec: TestSpec) -> TestSnapshot {
     let code = std::fs::read(path)
-        .map_err(|err| format!("Could not read wasm file '{}': {err}", path.display()))
+        .map_err(|err| {
+            format!("Could not read wasm file '{}': {err}", path.display())
+        })
         .unwrap();
     build_snapshot(spec, &code)
 }
@@ -621,15 +647,19 @@ fn test_run_http_request(
                     .and_then(|r| futures::future::ready(r.error_for_status()))
                     .and_then(|r| r.bytes());
 
-                match tokio::time::timeout(Duration::from_secs(2), pending_request)
-                    .await
-                    .map_err(Error::from)
-                    .and_then(|result| result.map_err(Error::from))
+                match tokio::time::timeout(
+                    Duration::from_secs(2),
+                    pending_request,
+                )
+                .await
+                .map_err(Error::from)
+                .and_then(|result| result.map_err(Error::from))
                 {
                     Ok(body) => return Ok(body),
                     Err(e) if n <= max_retries => {
                         eprintln!("non-fatal error: {e}... Retrying");
-                        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                        tokio::time::sleep(std::time::Duration::from_secs(2))
+                            .await;
 
                         n += 1;
                         continue;
@@ -645,9 +675,10 @@ fn test_run_http_request(
     let expected_size = match expected_size {
         None => {
             let url = format!("http://localhost:{}/{}.size", port, what);
-            let expected_size = String::from_utf8_lossy(http_get(url, 50)?.as_ref())
-                .trim()
-                .parse()?;
+            let expected_size =
+                String::from_utf8_lossy(http_get(url, 50)?.as_ref())
+                    .trim()
+                    .parse()?;
             if expected_size == 0 {
                 return Err(anyhow::format_err!("There was no data returned"));
             }
@@ -675,7 +706,9 @@ fn test_run_http_request(
             .zip(reference_data.iter())
             .any(|(a, b)| a != b)
         {
-            return Err(anyhow::format_err!("The returned data is inconsistent"));
+            return Err(anyhow::format_err!(
+                "The returned data is inconsistent"
+            ));
         }
     }
     Ok(0)
@@ -731,13 +764,17 @@ cd /public
     let builder = TestBuilder::new()
         .with_name(name)
         .enable_network(true)
-        .include_static_package("sharrattj/static-web-server@1.0.92", WEBC_WEB_SERVER)
+        .include_static_package(
+            "sharrattj/static-web-server@1.0.92",
+            WEBC_WEB_SERVER,
+        )
         .include_static_package("sharrattj/wasmer-sh@1.0.63", WEBC_WASMER_SH)
         .use_coreutils()
         .use_pkg("sharrattj/wasmer-sh")
         .stdin_str(script);
 
-    let snapshot = builder.run_wasm_with(include_bytes!("./wasm/dash.wasm"), Box::new(with));
+    let snapshot = builder
+        .run_wasm_with(include_bytes!("./wasm/dash.wasm"), Box::new(with));
     assert_json_snapshot!(snapshot);
 }
 

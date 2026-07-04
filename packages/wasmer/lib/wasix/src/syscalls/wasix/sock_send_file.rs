@@ -32,11 +32,17 @@ pub fn sock_send_file<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if ctx.data().enable_journal {
-        JournalEffector::save_sock_send_file::<M>(&mut ctx, sock, in_fd, offset, total_written)
-            .map_err(|err| {
-                tracing::error!("failed to save sock_send_file event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            })?;
+        JournalEffector::save_sock_send_file::<M>(
+            &mut ctx,
+            sock,
+            in_fd,
+            offset,
+            total_written,
+        )
+        .map_err(|err| {
+            tracing::error!("failed to save sock_send_file event - {}", err);
+            WasiError::Exit(ExitCode::from(Errno::Fault))
+        })?;
     }
 
     Span::current().record("nsent", total_written);
@@ -80,40 +86,53 @@ pub(crate) fn sock_send_file_internal(
         let data = {
             match in_fd {
                 __WASI_STDIN_FILENO => {
-                    let mut stdin = wasi_try_ok_ok!(
-                        WasiInodes::stdin_mut(&state.fs.fd_map).map_err(fs_error_into_wasi_err)
-                    );
-                    let data = wasi_try_ok_ok!(__asyncify(ctx, None, async move {
-                        // TODO: optimize with MaybeUninit
-                        let mut buf = vec![0u8; sub_count as usize];
-                        let amt = stdin.read(&mut buf[..]).await.map_err(map_io_err)?;
-                        buf.truncate(amt);
-                        Ok(buf)
-                    })?);
+                    let mut stdin =
+                        wasi_try_ok_ok!(WasiInodes::stdin_mut(&state.fs.fd_map)
+                            .map_err(fs_error_into_wasi_err));
+                    let data =
+                        wasi_try_ok_ok!(__asyncify(ctx, None, async move {
+                            // TODO: optimize with MaybeUninit
+                            let mut buf = vec![0u8; sub_count as usize];
+                            let amt = stdin
+                                .read(&mut buf[..])
+                                .await
+                                .map_err(map_io_err)?;
+                            buf.truncate(amt);
+                            Ok(buf)
+                        })?);
                     env = ctx.data();
                     data
                 }
-                __WASI_STDOUT_FILENO | __WASI_STDERR_FILENO => return Ok(Err(Errno::Inval)),
+                __WASI_STDOUT_FILENO | __WASI_STDERR_FILENO => {
+                    return Ok(Err(Errno::Inval))
+                }
                 _ => {
                     if !fd_entry.rights.contains(Rights::FD_READ) {
                         // TODO: figure out the error to return when lacking rights
                         return Ok(Err(Errno::Access));
                     }
 
-                    let offset = fd_entry.offset.load(Ordering::Acquire) as usize;
+                    let offset =
+                        fd_entry.offset.load(Ordering::Acquire) as usize;
                     let inode = fd_entry.inode;
                     let data = {
                         let mut guard = inode.write();
                         match guard.deref_mut() {
                             Kind::File { handle, .. } => {
                                 if let Some(handle) = handle {
-                                    let data =
-                                        wasi_try_ok_ok!(__asyncify(ctx, None, async move {
-                                            let mut buf = vec![0u8; sub_count as usize];
+                                    let data = wasi_try_ok_ok!(__asyncify(
+                                        ctx,
+                                        None,
+                                        async move {
+                                            let mut buf =
+                                                vec![0u8; sub_count as usize];
 
-                                            let mut handle = handle.write().unwrap();
+                                            let mut handle =
+                                                handle.write().unwrap();
                                             handle
-                                                .seek(std::io::SeekFrom::Start(offset as u64))
+                                                .seek(std::io::SeekFrom::Start(
+                                                    offset as u64,
+                                                ))
                                                 .await
                                                 .map_err(map_io_err)?;
                                             let amt = handle
@@ -122,7 +141,8 @@ pub(crate) fn sock_send_file_internal(
                                                 .map_err(map_io_err)?;
                                             buf.truncate(amt);
                                             Ok(buf)
-                                        })?);
+                                        }
+                                    )?);
                                     env = ctx.data();
                                     data
                                 } else {
@@ -140,35 +160,57 @@ pub(crate) fn sock_send_file_internal(
                                     .flatten()
                                     .unwrap_or(Duration::from_secs(30));
 
-                                let data = wasi_try_ok_ok!(__asyncify(ctx, None, async {
-                                    let mut buf = Vec::with_capacity(sub_count as usize);
-                                    unsafe {
-                                        buf.set_len(sub_count as usize);
+                                let data = wasi_try_ok_ok!(__asyncify(
+                                    ctx,
+                                    None,
+                                    async {
+                                        let mut buf = Vec::with_capacity(
+                                            sub_count as usize,
+                                        );
+                                        unsafe {
+                                            buf.set_len(sub_count as usize);
+                                        }
+                                        socket
+                                            .recv(
+                                                tasks.deref(),
+                                                &mut buf,
+                                                Some(read_timeout),
+                                                false,
+                                            )
+                                            .await
+                                            .map(|amt| {
+                                                unsafe {
+                                                    buf.set_len(amt);
+                                                }
+                                                let buf: Vec<u8> = unsafe {
+                                                    std::mem::transmute(buf)
+                                                };
+                                                buf
+                                            })
                                     }
-                                    socket
-                                        .recv(tasks.deref(), &mut buf, Some(read_timeout), false)
-                                        .await
-                                        .map(|amt| {
-                                            unsafe {
-                                                buf.set_len(amt);
-                                            }
-                                            let buf: Vec<u8> = unsafe { std::mem::transmute(buf) };
-                                            buf
-                                        })
-                                })?);
+                                )?);
                                 env = ctx.data();
                                 data
                             }
                             Kind::Pipe { ref mut pipe, .. } => {
-                                let data = wasi_try_ok_ok!(__asyncify(ctx, None, async move {
-                                    // TODO: optimize with MaybeUninit
-                                    let mut buf = vec![0u8; sub_count as usize];
-                                    let amt = virtual_fs::AsyncReadExt::read(pipe, &mut buf[..])
-                                        .await
-                                        .map_err(map_io_err)?;
-                                    buf.truncate(amt);
-                                    Ok(buf)
-                                })?);
+                                let data = wasi_try_ok_ok!(__asyncify(
+                                    ctx,
+                                    None,
+                                    async move {
+                                        // TODO: optimize with MaybeUninit
+                                        let mut buf =
+                                            vec![0u8; sub_count as usize];
+                                        let amt =
+                                            virtual_fs::AsyncReadExt::read(
+                                                pipe,
+                                                &mut buf[..],
+                                            )
+                                            .await
+                                            .map_err(map_io_err)?;
+                                        buf.truncate(amt);
+                                        Ok(buf)
+                                    }
+                                )?);
                                 env = ctx.data();
                                 data
                             }
@@ -181,7 +223,9 @@ pub(crate) fn sock_send_file_internal(
                             Kind::EventNotifications { .. } => {
                                 return Ok(Err(Errno::Inval));
                             }
-                            Kind::Symlink { .. } => unimplemented!("Symlinks in wasi::fd_read"),
+                            Kind::Symlink { .. } => {
+                                unimplemented!("Symlinks in wasi::fd_read")
+                            }
                             Kind::Buffer { buffer } => {
                                 // TODO: optimize with MaybeUninit
                                 let mut buf = vec![0u8; sub_count as usize];
@@ -200,7 +244,9 @@ pub(crate) fn sock_send_file_internal(
 
                     // reborrow
                     let mut fd_map = state.fs.fd_map.write().unwrap();
-                    let fd_entry = wasi_try_ok_ok!(fd_map.get_mut(in_fd).ok_or(Errno::Badf));
+                    let fd_entry = wasi_try_ok_ok!(fd_map
+                        .get_mut(in_fd)
+                        .ok_or(Errno::Badf));
                     fd_entry
                         .offset
                         .fetch_add(data.len() as u64, Ordering::AcqRel);

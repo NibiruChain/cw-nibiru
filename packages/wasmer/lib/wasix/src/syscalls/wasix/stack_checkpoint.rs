@@ -45,9 +45,10 @@ pub fn stack_checkpoint<M: MemorySize>(
     // Perform the unwind action
     unwind::<M, _>(ctx, move |mut ctx, mut memory_stack, rewind_stack| {
         // Grab all the globals and serialize them
-        let store_data = crate::utils::store::capture_store_snapshot(&mut ctx.as_store_mut())
-            .serialize()
-            .unwrap();
+        let store_data =
+            crate::utils::store::capture_store_snapshot(&mut ctx.as_store_mut())
+                .serialize()
+                .unwrap();
         let env = ctx.data();
         let store_data = Bytes::from(store_data);
 
@@ -86,7 +87,8 @@ pub fn stack_checkpoint<M: MemorySize>(
         {
             let snapshot_offset: u64 = snapshot_offset.into();
             if snapshot_offset >= env.layout.stack_lower
-                && (snapshot_offset + val_bytes.len() as u64) <= env.layout.stack_upper
+                && (snapshot_offset + val_bytes.len() as u64)
+                    <= env.layout.stack_upper
             {
                 // Make sure its within the "active" part of the memory stack
                 // (note - the area being written to might not go past the memory pointer)
@@ -95,7 +97,8 @@ pub fn stack_checkpoint<M: MemorySize>(
                     let left = memory_stack_corrected.len() - (offset as usize);
                     let end = offset + (val_bytes.len().min(left) as u64);
                     if end as usize <= memory_stack_corrected.len() {
-                        let pstart = memory_stack_corrected.len() - offset as usize;
+                        let pstart =
+                            memory_stack_corrected.len() - offset as usize;
                         let pend = pstart + val_bytes.len();
                         let pbytes = &mut memory_stack_corrected[pstart..pend];
                         pbytes.clone_from_slice(val_bytes);
@@ -117,10 +120,13 @@ pub fn stack_checkpoint<M: MemorySize>(
         // Save the stack snapshot
         let env = ctx.data();
         let memory = unsafe { env.memory_view(&ctx) };
-        let snapshot_ptr: WasmPtr<StackSnapshot, M> = WasmPtr::new(snapshot_offset);
+        let snapshot_ptr: WasmPtr<StackSnapshot, M> =
+            WasmPtr::new(snapshot_offset);
         if let Err(err) = snapshot_ptr.write(&memory, snapshot) {
             warn!("could not save stack snapshot - {}", err);
-            return OnCalledAction::Trap(Box::new(WasiError::Exit(mem_error_to_wasi(err).into())));
+            return OnCalledAction::Trap(Box::new(WasiError::Exit(
+                mem_error_to_wasi(err).into(),
+            )));
         }
 
         // Rewind the stack and carry on

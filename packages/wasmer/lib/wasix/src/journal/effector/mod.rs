@@ -1,4 +1,6 @@
-pub(super) use std::{borrow::Cow, ops::Range, sync::MutexGuard, time::SystemTime};
+pub(super) use std::{
+    borrow::Cow, ops::Range, sync::MutexGuard, time::SystemTime,
+};
 
 pub(super) use anyhow::bail;
 pub(super) use bytes::Bytes;
@@ -7,8 +9,9 @@ pub(super) use wasmer_types::MemorySize;
 pub(super) use wasmer_wasix_types::{
     types::__wasi_ciovec_t,
     wasi::{
-        Advice, EpollCtl, EpollEventCtl, Errno, ExitCode, Fd, Fdflags, Filesize, Fstflags,
-        LookupFlags, Oflags, Rights, Snapshot0Clockid, Timestamp, Whence,
+        Advice, EpollCtl, EpollEventCtl, Errno, ExitCode, Fd, Fdflags, Filesize,
+        Fstflags, LookupFlags, Oflags, Rights, Snapshot0Clockid, Timestamp,
+        Whence,
     },
 };
 

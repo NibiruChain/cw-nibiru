@@ -57,8 +57,10 @@ mod sys_terminal_size {
 
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_terminal_size() -> (u32, u32) {
-        if let Some((terminal_size::Width(width), terminal_size::Height(height))) =
-            terminal_size::terminal_size()
+        if let Some((
+            terminal_size::Width(width),
+            terminal_size::Height(height),
+        )) = terminal_size::terminal_size()
         {
             (width.into(), height.into())
         } else {
@@ -77,8 +79,8 @@ mod sys_terminal_size {
 mod sys {
     use {
         libc::{
-            c_int, tcsetattr, termios, ECHO, ECHOCTL, ECHOE, ECHOK, ECHONL, ICANON, ICRNL, IEXTEN,
-            IGNCR, ISIG, IXON, ONLCR, OPOST, TCSANOW,
+            c_int, tcsetattr, termios, ECHO, ECHOCTL, ECHOE, ECHOK, ECHONL,
+            ICANON, ICRNL, IEXTEN, IGNCR, ISIG, IXON, ONLCR, OPOST, TCSANOW,
         },
         std::mem,
         std::os::unix::io::AsRawFd,
@@ -96,7 +98,8 @@ mod sys {
         io_result(unsafe { ::libc::tcgetattr(0, termios.as_mut_ptr()) })?;
         let mut termios = unsafe { termios.assume_init() };
 
-        termios.c_lflag |= ISIG | ICANON | IEXTEN | ECHO | ECHOE | ECHOK | ECHOCTL;
+        termios.c_lflag |=
+            ISIG | ICANON | IEXTEN | ECHO | ECHOE | ECHOK | ECHOCTL;
 
         unsafe { tcsetattr(0, TCSANOW, &termios) };
         Ok(())

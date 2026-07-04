@@ -12,10 +12,13 @@ pub fn wasmer_should_print_color() -> bool {
         .unwrap_or_else(|| std::io::stdout().is_terminal())
 }
 
-fn retrieve_alias_pathbuf(alias: &str, real_dir: &str) -> Result<(String, PathBuf)> {
-    let pb = Path::new(real_dir)
-        .canonicalize()
-        .with_context(|| format!("Unable to get the absolute path for \"{real_dir}\""))?;
+fn retrieve_alias_pathbuf(
+    alias: &str,
+    real_dir: &str,
+) -> Result<(String, PathBuf)> {
+    let pb = Path::new(real_dir).canonicalize().with_context(|| {
+        format!("Unable to get the absolute path for \"{real_dir}\"")
+    })?;
 
     if let Ok(pb_metadata) = pb.metadata() {
         if !pb_metadata.is_dir() {
@@ -35,7 +38,8 @@ pub fn parse_mapdir(entry: &str) -> Result<(String, PathBuf)> {
         retrieve_alias_pathbuf(alias, real_dir)
     }
     // And then we try splitting by `:` (for compatibility with previous API)
-    else if let [alias, real_dir] = entry.split(':').collect::<Vec<&str>>()[..] {
+    else if let [alias, real_dir] = entry.split(':').collect::<Vec<&str>>()[..]
+    {
         retrieve_alias_pathbuf(alias, real_dir)
     } else {
         bail!(

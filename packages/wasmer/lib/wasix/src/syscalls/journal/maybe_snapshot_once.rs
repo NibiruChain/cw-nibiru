@@ -16,8 +16,13 @@ pub fn maybe_snapshot_once<M: MemorySize>(
 ) -> WasiResult<FunctionEnvMut<'_, WasiEnv>> {
     use crate::os::task::process::{WasiProcessCheckpoint, WasiProcessInner};
 
-    if unsafe { handle_rewind_ext_with_default::<M, ()>(&mut ctx, HandleRewindType::ResultLess) }
-        .is_some()
+    if unsafe {
+        handle_rewind_ext_with_default::<M, ()>(
+            &mut ctx,
+            HandleRewindType::ResultLess,
+        )
+    }
+    .is_some()
     {
         return Ok(Ok(ctx));
     }

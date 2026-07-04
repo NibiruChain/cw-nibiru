@@ -40,7 +40,10 @@ impl Default for BufferedJournal {
 }
 
 impl WritableJournal for BufferedJournalTx {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         let entry = entry.into_owned();
         let state = self.state.lock().unwrap();
         let estimate_size = entry.estimate_size();
@@ -82,7 +85,10 @@ impl ReadableJournal for BufferedJournalRx {
 }
 
 impl WritableJournal for BufferedJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 

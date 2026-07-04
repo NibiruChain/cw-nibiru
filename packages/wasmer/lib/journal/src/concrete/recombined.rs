@@ -12,8 +12,13 @@ impl<W: WritableJournal, R: ReadableJournal> RecombinedJournal<W, R> {
     }
 }
 
-impl<W: WritableJournal, R: ReadableJournal> WritableJournal for RecombinedJournal<W, R> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+impl<W: WritableJournal, R: ReadableJournal> WritableJournal
+    for RecombinedJournal<W, R>
+{
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 
@@ -30,7 +35,9 @@ impl<W: WritableJournal, R: ReadableJournal> WritableJournal for RecombinedJourn
     }
 }
 
-impl<W: WritableJournal, R: ReadableJournal> ReadableJournal for RecombinedJournal<W, R> {
+impl<W: WritableJournal, R: ReadableJournal> ReadableJournal
+    for RecombinedJournal<W, R>
+{
     fn read(&self) -> anyhow::Result<Option<LogReadResult<'_>>> {
         self.rx.read()
     }

@@ -9,7 +9,8 @@ use thiserror::Error;
 #[cfg(feature = "wat")]
 use wasmer_types::WasmError;
 use wasmer_types::{
-    CompileError, DeserializeError, ExportsIterator, ImportsIterator, ModuleInfo, SerializeError,
+    CompileError, DeserializeError, ExportsIterator, ImportsIterator,
+    ModuleInfo, SerializeError,
 };
 use wasmer_types::{ExportType, ImportType};
 
@@ -116,7 +117,10 @@ impl Module {
     ///
     /// let module = Module::from_file(&engine, "path/to/foo.wasm");
     /// ```
-    pub fn new(engine: &impl AsEngineRef, bytes: impl AsRef<[u8]>) -> Result<Self, CompileError> {
+    pub fn new(
+        engine: &impl AsEngineRef,
+        bytes: impl AsRef<[u8]>,
+    ) -> Result<Self, CompileError> {
         #[cfg(feature = "wat")]
         let bytes = wat::parse_bytes(bytes.as_ref()).map_err(|e| {
             CompileError::Wasm(WasmError::Generic(format!(
@@ -148,7 +152,10 @@ impl Module {
     /// Opposed to [`Module::new`], this function is not compatible with
     /// the WebAssembly text format (if the "wat" feature is enabled for
     /// this crate).
-    pub fn from_binary(engine: &impl AsEngineRef, binary: &[u8]) -> Result<Self, CompileError> {
+    pub fn from_binary(
+        engine: &impl AsEngineRef,
+        binary: &[u8],
+    ) -> Result<Self, CompileError> {
         Ok(Self(module_imp::Module::from_binary(engine, binary)?))
     }
 
@@ -175,7 +182,10 @@ impl Module {
     /// This validation is normally pretty fast and checks the enabled
     /// WebAssembly features in the Store Engine to assure deterministic
     /// validation of the Module.
-    pub fn validate(engine: &impl AsEngineRef, binary: &[u8]) -> Result<(), CompileError> {
+    pub fn validate(
+        engine: &impl AsEngineRef,
+        binary: &[u8],
+    ) -> Result<(), CompileError> {
         module_imp::Module::validate(engine, binary)
     }
 
@@ -216,7 +226,10 @@ impl Module {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn serialize_to_file(&self, path: impl AsRef<Path>) -> Result<(), SerializeError> {
+    pub fn serialize_to_file(
+        &self,
+        path: impl AsRef<Path>,
+    ) -> Result<(), SerializeError> {
         let serialized = self.0.serialize()?;
         fs::write(path, serialized)?;
         Ok(())
@@ -418,7 +431,9 @@ impl Module {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn imports(&self) -> ImportsIterator<impl Iterator<Item = ImportType> + '_> {
+    pub fn imports(
+        &self,
+    ) -> ImportsIterator<impl Iterator<Item = ImportType> + '_> {
         self.0.imports()
     }
 
@@ -445,7 +460,9 @@ impl Module {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn exports(&self) -> ExportsIterator<impl Iterator<Item = ExportType> + '_> {
+    pub fn exports(
+        &self,
+    ) -> ExportsIterator<impl Iterator<Item = ExportType> + '_> {
         self.0.exports()
     }
 
@@ -456,7 +473,10 @@ impl Module {
     /// Following the WebAssembly spec, one name can have multiple
     /// custom sections. That's why an iterator (rather than one element)
     /// is returned.
-    pub fn custom_sections<'a>(&'a self, name: &'a str) -> impl Iterator<Item = Box<[u8]>> + 'a {
+    pub fn custom_sections<'a>(
+        &'a self,
+        name: &'a str,
+    ) -> impl Iterator<Item = Box<[u8]>> + 'a {
         self.0.custom_sections(name)
     }
 

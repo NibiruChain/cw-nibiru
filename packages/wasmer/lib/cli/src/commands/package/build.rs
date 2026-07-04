@@ -46,7 +46,9 @@ impl PackageBuild {
         }
     }
 
-    pub(crate) fn execute(&self) -> Result<(Package, PackageHash), anyhow::Error> {
+    pub(crate) fn execute(
+        &self,
+    ) -> Result<(Package, PackageHash), anyhow::Error> {
         let manifest_path = self.manifest_path()?;
         let Some((_, manifest)) = load_package_manifest(&manifest_path)? else {
             anyhow::bail!(
@@ -54,10 +56,11 @@ impl PackageBuild {
                 manifest_path.display()
             )
         };
-        let pkg = Package::from_manifest(manifest_path.clone()).context(format!(
-            "While parsing the manifest (loaded from {})",
-            manifest_path.canonicalize()?.display()
-        ))?;
+        let pkg =
+            Package::from_manifest(manifest_path.clone()).context(format!(
+                "While parsing the manifest (loaded from {})",
+                manifest_path.canonicalize()?.display()
+            ))?;
         let data = pkg.serialize().context("While validating the package")?;
         let hash = sha2::Sha256::digest(&data).into();
         let pkg_hash = PackageHash::from_sha256_bytes(hash);
@@ -106,7 +109,8 @@ impl PackageBuild {
                 p.join(name)
             } else {
                 if let Some(parent) = p.parent() {
-                    std::fs::create_dir_all(parent).context("could not create output directory")?;
+                    std::fs::create_dir_all(parent)
+                        .context("could not create output directory")?;
                 }
 
                 p.to_owned()
@@ -130,8 +134,9 @@ impl PackageBuild {
             WRITING_PACKAGE_EMOJI
         ));
 
-        std::fs::write(&out_path, &data)
-            .with_context(|| format!("could not write contents to '{}'", out_path.display()))?;
+        std::fs::write(&out_path, &data).with_context(|| {
+            format!("could not write contents to '{}'", out_path.display())
+        })?;
 
         pb.finish_with_message(format!(
             "{} Package written to '{}'",
@@ -162,7 +167,8 @@ impl PackageBuild {
                 );
             }
         } else {
-            let dir = std::env::current_dir().context("could not get current directory")?;
+            let dir = std::env::current_dir()
+                .context("could not get current directory")?;
             let manifest_path = dir.join("wasmer.toml");
             if !manifest_path.is_file() {
                 anyhow::bail!(
@@ -204,7 +210,8 @@ description = "hello"
         .unwrap();
 
         std::fs::create_dir(path.join("data")).unwrap();
-        std::fs::write(path.join("data").join("hello.txt"), "Hello, world!").unwrap();
+        std::fs::write(path.join("data").join("hello.txt"), "Hello, world!")
+            .unwrap();
 
         let cmd = PackageBuild {
             package: Some(path.to_owned()),

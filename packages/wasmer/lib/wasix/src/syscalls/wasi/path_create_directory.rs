@@ -27,7 +27,8 @@ pub fn path_create_directory<M: MemorySize>(
     path_len: M::Offset,
 ) -> Result<Errno, WasiError> {
     let env = ctx.data();
-    let (memory, state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
 
     let mut path_string = unsafe { get_input_str_ok!(&memory, path, path_len) };
     Span::current().record("path", path_string.as_str());
@@ -37,7 +38,8 @@ pub fn path_create_directory<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if env.enable_journal {
-        JournalEffector::save_path_create_directory(&mut ctx, fd, path_string).map_err(|err| {
+        JournalEffector::save_path_create_directory(&mut ctx, fd, path_string)
+            .map_err(|err| {
             tracing::error!("failed to save create directory event - {}", err);
             WasiError::Exit(ExitCode::from(Errno::Fault))
         })?;
@@ -52,11 +54,14 @@ pub(crate) fn path_create_directory_internal(
     path: &str,
 ) -> Result<(), Errno> {
     let env = ctx.data();
-    let (memory, state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
     let working_dir = state.fs.get_fd(fd)?;
 
     if !working_dir.rights.contains(Rights::PATH_CREATE_DIRECTORY) {
-        trace!("working directory (fd={fd}) has no rights to create a directory");
+        trace!(
+            "working directory (fd={fd}) has no rights to create a directory"
+        );
         return Err(Errno::Access);
     }
 
@@ -103,9 +108,10 @@ pub(crate) fn path_create_directory_internal(
                 path: new_dir_path,
                 entries: Default::default(),
             };
-            let new_inode = state
-                .fs
-                .create_inode(inodes, kind, false, dir_name.clone())?;
+            let new_inode =
+                state
+                    .fs
+                    .create_inode(inodes, kind, false, dir_name.clone())?;
 
             // reborrow to insert
             {

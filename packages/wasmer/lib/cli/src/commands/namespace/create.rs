@@ -1,4 +1,6 @@
-use crate::{commands::AsyncCliCommand, config::WasmerEnv, opts::ItemFormatOpts};
+use crate::{
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ItemFormatOpts,
+};
 
 /// Create a new namespace.
 #[derive(clap::Parser, Debug)]
@@ -28,7 +30,8 @@ impl AsyncCliCommand for CmdNamespaceCreate {
             name: self.name.clone(),
             description: self.description.clone(),
         };
-        let namespace = wasmer_backend_api::query::create_namespace(&client, vars).await?;
+        let namespace =
+            wasmer_backend_api::query::create_namespace(&client, vars).await?;
 
         println!("{}", self.fmt.get().render(&namespace));
 

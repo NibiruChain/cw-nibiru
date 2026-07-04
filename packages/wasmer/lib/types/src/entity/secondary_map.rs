@@ -11,7 +11,10 @@ use crate::lib::std::marker::PhantomData;
 use crate::lib::std::ops::{Index, IndexMut};
 use crate::lib::std::slice;
 use crate::lib::std::vec::Vec;
-use rkyv::{Archive, Archived, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Archived, Deserialize as RkyvDeserialize,
+    Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},
@@ -49,7 +52,9 @@ where
             + self
                 .elems
                 .iter()
-                .map(|value| value.size_of_val(tracker) - std::mem::size_of_val(value))
+                .map(|value| {
+                    value.size_of_val(tracker) - std::mem::size_of_val(value)
+                })
                 .sum::<usize>()
     }
 }
@@ -268,7 +273,11 @@ where
         seq.serialize_element(&Some(self.default.clone()))?;
         for e in self.elems.iter().take(elems_cnt) {
             let some_e = Some(e);
-            seq.serialize_element(if *e == self.default { &None } else { &some_e })?;
+            seq.serialize_element(if *e == self.default {
+                &None
+            } else {
+                &some_e
+            })?;
         }
         seq.end()
     }
@@ -308,11 +317,13 @@ where
                 match seq.next_element()? {
                     Some(Some(default_val)) => {
                         let default_val: V = default_val; // compiler can't infer the type
-                        let mut m = SecondaryMap::with_default(default_val.clone());
+                        let mut m =
+                            SecondaryMap::with_default(default_val.clone());
                         let mut idx = 0;
                         while let Some(val) = seq.next_element()? {
                             let val: Option<_> = val; // compiler can't infer the type
-                            m[K::new(idx)] = val.unwrap_or_else(|| default_val.clone());
+                            m[K::new(idx)] =
+                                val.unwrap_or_else(|| default_val.clone());
                             idx += 1;
                         }
                         Ok(m)

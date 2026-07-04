@@ -51,7 +51,10 @@ impl EngineBuilder {
     }
 
     /// Set the hashing algorithm
-    pub fn set_hash_algorithm(mut self, hash_algorithm: Option<HashAlgorithm>) -> Self {
+    pub fn set_hash_algorithm(
+        mut self,
+        hash_algorithm: Option<HashAlgorithm>,
+    ) -> Self {
         self.hash_algorithm = hash_algorithm;
         self
     }
@@ -61,9 +64,9 @@ impl EngineBuilder {
     pub fn engine(self) -> Engine {
         let target = self.target.unwrap_or_default();
         if let Some(compiler_config) = self.compiler_config {
-            let features = self
-                .features
-                .unwrap_or_else(|| compiler_config.default_features_for_target(&target));
+            let features = self.features.unwrap_or_else(|| {
+                compiler_config.default_features_for_target(&target)
+            });
             let mut engine = Engine::new(compiler_config, target, features);
 
             engine.set_hash_algorithm(self.hash_algorithm);

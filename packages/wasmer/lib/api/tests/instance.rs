@@ -5,7 +5,8 @@ use wasm_bindgen_test::*;
 use wasmer::*;
 
 #[universal_test]
-fn exports_work_after_multiple_instances_have_been_freed() -> Result<(), String> {
+fn exports_work_after_multiple_instances_have_been_freed() -> Result<(), String>
+{
     let mut store = Store::default();
     let module = Module::new(
         &store,
@@ -22,7 +23,8 @@ fn exports_work_after_multiple_instances_have_been_freed() -> Result<(), String>
     .map_err(|e| format!("{e:?}"))?;
 
     let imports = Imports::new();
-    let instance = Instance::new(&mut store, &module, &imports).map_err(|e| format!("{e:?}"))?;
+    let instance = Instance::new(&mut store, &module, &imports)
+        .map_err(|e| format!("{e:?}"))?;
     let instance2 = instance.clone();
     let instance3 = instance.clone();
 
@@ -61,7 +63,10 @@ fn unit_native_function_env() -> Result<(), String> {
         multiplier: u32,
     }
 
-    fn imported_fn(env: FunctionEnvMut<Env>, args: &[Value]) -> Result<Vec<Value>, RuntimeError> {
+    fn imported_fn(
+        env: FunctionEnvMut<Env>,
+        args: &[Value],
+    ) -> Result<Vec<Value>, RuntimeError> {
         let value = env.data().multiplier * args[0].unwrap_i32() as u32;
         Ok(vec![Value::I32(value as _)])
     }
@@ -72,7 +77,12 @@ fn unit_native_function_env() -> Result<(), String> {
     let env = FunctionEnv::new(&mut store, env);
 
     let imported_signature = FunctionType::new(vec![Type::I32], vec![Type::I32]);
-    let imported = Function::new_with_env(&mut store, &env, imported_signature, imported_fn);
+    let imported = Function::new_with_env(
+        &mut store,
+        &env,
+        imported_signature,
+        imported_fn,
+    );
 
     let expected = vec![Value::I32(12)].into_boxed_slice();
     let result = imported

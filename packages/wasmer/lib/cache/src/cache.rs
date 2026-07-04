@@ -24,5 +24,9 @@ pub trait Cache {
     ) -> Result<Module, Self::DeserializeError>;
 
     /// Store a [`Module`] into the cache with the given [`crate::Hash`].
-    fn store(&mut self, key: Hash, module: &Module) -> Result<(), Self::SerializeError>;
+    fn store(
+        &mut self,
+        key: Hash,
+        module: &Module,
+    ) -> Result<(), Self::SerializeError>;
 }

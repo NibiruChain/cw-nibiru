@@ -9,7 +9,8 @@ mod tests {
         remove_existing_artificats();
 
         // Tets the 'DylibExample' scheme
-        let success = run_ios_test("DylibExample/DylibExample.xcodeproj", "DylibExample");
+        let success =
+            run_ios_test("DylibExample/DylibExample.xcodeproj", "DylibExample");
         if !success {
             panic!("Dylib iOS Tests failed with the above output!");
         }

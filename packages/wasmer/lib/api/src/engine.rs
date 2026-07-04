@@ -15,7 +15,9 @@ use std::path::Path;
 use std::sync::Arc;
 #[cfg(feature = "sys")]
 #[allow(unused_imports)]
-pub use wasmer_compiler::{Artifact, CompilerConfig, EngineInner, Features, Tunables};
+pub use wasmer_compiler::{
+    Artifact, CompilerConfig, EngineInner, Features, Tunables,
+};
 #[cfg(feature = "sys")]
 use wasmer_types::DeserializeError;
 

@@ -16,7 +16,10 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use wasmer_wasix::runners::MappedDirectory;
 
-fn retrieve_alias_pathbuf(alias: &str, real_dir: &str) -> Result<MappedDirectory> {
+fn retrieve_alias_pathbuf(
+    alias: &str,
+    real_dir: &str,
+) -> Result<MappedDirectory> {
     let pb = PathBuf::from(&real_dir).canonicalize()?;
     if let Ok(pb_metadata) = pb.metadata() {
         if !pb_metadata.is_dir() {
@@ -38,7 +41,9 @@ pub fn parse_mapdir(entry: &str) -> Result<MappedDirectory> {
         retrieve_alias_pathbuf(alias, real_dir)
     }
     // And then we try splitting by `:` (for compatibility with previous API)
-    else if let [alias, real_dir] = entry.splitn(2, ':').collect::<Vec<&str>>()[..] {
+    else if let [alias, real_dir] =
+        entry.splitn(2, ':').collect::<Vec<&str>>()[..]
+    {
         retrieve_alias_pathbuf(alias, real_dir)
     } else {
         bail!(
@@ -88,7 +93,9 @@ pub fn load_package_manifest(
 
     let contents = match std::fs::read_to_string(&file_path) {
         Ok(c) => c,
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(None)
+        }
         Err(err) => {
             return Err(err).with_context(|| {
                 format!(
@@ -99,13 +106,14 @@ pub fn load_package_manifest(
         }
     };
 
-    let manifest = wasmer_config::package::Manifest::parse(&contents).with_context(|| {
-        format!(
-            "Could not parse package config at: '{}' - full config: {}",
-            file_path.display(),
-            contents
-        )
-    })?;
+    let manifest = wasmer_config::package::Manifest::parse(&contents)
+        .with_context(|| {
+            format!(
+                "Could not parse package config at: '{}' - full config: {}",
+                file_path.display(),
+                contents
+            )
+        })?;
 
     Ok(Some((file_path, manifest)))
 }
@@ -185,7 +193,10 @@ impl FromStr for Identifier {
 /// Merge two yaml values by recursively merging maps from b into a.
 ///
 /// Preserves old values that were not in b.
-pub(crate) fn merge_yaml_values(a: &serde_yaml::Value, b: &serde_yaml::Value) -> serde_yaml::Value {
+pub(crate) fn merge_yaml_values(
+    a: &serde_yaml::Value,
+    b: &serde_yaml::Value,
+) -> serde_yaml::Value {
     use serde_yaml::Value as V;
     match (a, b) {
         (V::Mapping(a), V::Mapping(b)) => {

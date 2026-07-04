@@ -112,8 +112,8 @@ pub fn generate_header_file(
             Some((module_info.local_func_index(f_index)?, sig_index))
         })
         .map(|(function_local_index, _sig_index)| {
-            let function_name =
-                symbol_registry.symbol_to_name(Symbol::LocalFunction(function_local_index));
+            let function_name = symbol_registry
+                .symbol_to_name(Symbol::LocalFunction(function_local_index));
             // TODO: figure out the signature here too
             CStatement::Declaration {
                 name: function_name,
@@ -144,8 +144,8 @@ pub fn generate_header_file(
                 Some((module_info.local_func_index(f_index)?, sig_index))
             })
             .map(|(function_local_index, _sig_index)| {
-                let function_name =
-                    symbol_registry.symbol_to_name(Symbol::LocalFunction(function_local_index));
+                let function_name = symbol_registry
+                    .symbol_to_name(Symbol::LocalFunction(function_local_index));
                 // TODO: figure out the signature here too
 
                 CStatement::Cast {
@@ -175,15 +175,19 @@ pub fn generate_header_file(
             .signatures
             .iter()
             .map(|(sig_index, _func_type)| {
-                let function_name =
-                    symbol_registry.symbol_to_name(Symbol::FunctionCallTrampoline(sig_index));
+                let function_name = symbol_registry
+                    .symbol_to_name(Symbol::FunctionCallTrampoline(sig_index));
 
                 CStatement::Declaration {
                     name: function_name,
                     is_extern: true,
                     is_const: false,
                     ctype: CType::Function {
-                        arguments: vec![CType::void_ptr(), CType::void_ptr(), CType::void_ptr()],
+                        arguments: vec![
+                            CType::void_ptr(),
+                            CType::void_ptr(),
+                            CType::void_ptr(),
+                        ],
                         return_value: None,
                     },
                     definition: None,
@@ -205,8 +209,8 @@ pub fn generate_header_file(
             .signatures
             .iter()
             .map(|(sig_index, _vm_shared_index)| {
-                let function_name =
-                    symbol_registry.symbol_to_name(Symbol::FunctionCallTrampoline(sig_index));
+                let function_name = symbol_registry
+                    .symbol_to_name(Symbol::FunctionCallTrampoline(sig_index));
                 CStatement::LiteralConstant {
                     value: function_name,
                 }
@@ -231,15 +235,19 @@ pub fn generate_header_file(
         .keys()
         .take(module_info.num_imported_functions)
         .map(|func_index| {
-            let function_name =
-                symbol_registry.symbol_to_name(Symbol::DynamicFunctionTrampoline(func_index));
+            let function_name = symbol_registry
+                .symbol_to_name(Symbol::DynamicFunctionTrampoline(func_index));
             // TODO: figure out the signature here
             CStatement::Declaration {
                 name: function_name,
                 is_extern: true,
                 is_const: false,
                 ctype: CType::Function {
-                    arguments: vec![CType::void_ptr(), CType::void_ptr(), CType::void_ptr()],
+                    arguments: vec![
+                        CType::void_ptr(),
+                        CType::void_ptr(),
+                        CType::void_ptr(),
+                    ],
                     return_value: None,
                 },
                 definition: None,
@@ -257,7 +265,11 @@ pub fn generate_header_file(
 
     c_statements.push(CStatement::TypeDef {
         source_type: CType::Function {
-            arguments: vec![CType::void_ptr(), CType::void_ptr(), CType::void_ptr()],
+            arguments: vec![
+                CType::void_ptr(),
+                CType::void_ptr(),
+                CType::void_ptr(),
+            ],
             return_value: None,
         },
         new_name: "dyn_func_trampoline_t".to_string(),
@@ -270,8 +282,9 @@ pub fn generate_header_file(
             .keys()
             .take(module_info.num_imported_functions)
             .map(|func_index| {
-                let function_name =
-                    symbol_registry.symbol_to_name(Symbol::DynamicFunctionTrampoline(func_index));
+                let function_name = symbol_registry.symbol_to_name(
+                    Symbol::DynamicFunctionTrampoline(func_index),
+                );
                 CStatement::LiteralConstant {
                     value: function_name,
                 }
@@ -282,7 +295,9 @@ pub fn generate_header_file(
             is_extern: false,
             is_const: true,
             ctype: CType::Array {
-                inner: Box::new(CType::TypeDef("dyn_func_trampoline_t".to_string())),
+                inner: Box::new(CType::TypeDef(
+                    "dyn_func_trampoline_t".to_string(),
+                )),
             },
             definition: Some(Box::new(CStatement::LiteralArray {
                 items: dynamic_function_trampoline_statements,
@@ -291,7 +306,10 @@ pub fn generate_header_file(
     }
 
     c_statements.push(CStatement::LiteralConstant {
-        value: gen_helper_functions(atom_name, &symbol_registry.symbol_to_name(Symbol::Metadata)),
+        value: gen_helper_functions(
+            atom_name,
+            &symbol_registry.symbol_to_name(Symbol::Metadata),
+        ),
     });
 
     c_statements.push(CStatement::LiteralConstant {

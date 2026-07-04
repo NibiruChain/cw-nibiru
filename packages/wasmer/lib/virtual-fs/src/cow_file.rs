@@ -62,7 +62,9 @@ impl CopyOnWriteFile {
             while *pos < inner.size() {
                 let mut read_temp = ReadBuf::new(&mut temp);
 
-                if let Err(err) = Pin::new(inner.as_mut()).start_seek(SeekFrom::Start(*pos)) {
+                if let Err(err) =
+                    Pin::new(inner.as_mut()).start_seek(SeekFrom::Start(*pos))
+                {
                     return Poll::Ready(Err(err));
                 }
                 match Pin::new(inner.as_mut()).poll_complete(cx).map_ok(|_| ()) {
@@ -85,7 +87,10 @@ impl CopyOnWriteFile {
         }
         Poll::Ready(Ok(()))
     }
-    fn poll_copy_start_and_progress(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
+    fn poll_copy_start_and_progress(
+        &mut self,
+        cx: &mut Context,
+    ) -> Poll<io::Result<()>> {
         replace_with_or_abort(&mut self.state, |state| match state {
             CowState::ReadOnly(inner) => CowState::Copying { pos: 0, inner },
             state => state,
@@ -95,7 +100,10 @@ impl CopyOnWriteFile {
 }
 
 impl AsyncSeek for CopyOnWriteFile {
-    fn start_seek(mut self: Pin<&mut Self>, position: io::SeekFrom) -> io::Result<()> {
+    fn start_seek(
+        mut self: Pin<&mut Self>,
+        position: io::SeekFrom,
+    ) -> io::Result<()> {
         let data = Pin::new(&mut self.buf);
         data.start_seek(position)?;
 
@@ -106,7 +114,10 @@ impl AsyncSeek for CopyOnWriteFile {
         Ok(())
     }
 
-    fn poll_complete(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         match self.state.as_mut() {
             Some(inner) => Pin::new(inner.as_mut()).poll_complete(cx),
             None => {
@@ -146,7 +157,10 @@ impl AsyncWrite for CopyOnWriteFile {
         data.poll_write_vectored(cx, bufs)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         match self.poll_copy_start_and_progress(cx) {
             Poll::Ready(Ok(())) => {}
             p => return p,
@@ -155,7 +169,10 @@ impl AsyncWrite for CopyOnWriteFile {
         data.poll_flush(cx)
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         match self.poll_copy_start_and_progress(cx) {
             Poll::Ready(Ok(())) => {}
             p => return p,
@@ -195,7 +212,11 @@ impl VirtualFile for CopyOnWriteFile {
     fn created_time(&self) -> u64 {
         self.created_time
     }
-    fn set_times(&mut self, atime: Option<u64>, mtime: Option<u64>) -> crate::Result<()> {
+    fn set_times(
+        &mut self,
+        atime: Option<u64>,
+        mtime: Option<u64>,
+    ) -> crate::Result<()> {
         if let Some(atime) = atime {
             self.last_accessed = atime;
         }
@@ -217,7 +238,10 @@ impl VirtualFile for CopyOnWriteFile {
     fn unlink(&mut self) -> crate::Result<()> {
         self.buf.set_len(0)
     }
-    fn poll_read_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         match self.poll_copy_progress(cx) {
             Poll::Pending => return Poll::Pending,
             Poll::Ready(Err(err)) => return Poll::Ready(Err(err)),
@@ -232,7 +256,10 @@ impl VirtualFile for CopyOnWriteFile {
         }
     }
 
-    fn poll_write_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         self.poll_copy_progress(cx).map_ok(|_| 8192)
     }
 }

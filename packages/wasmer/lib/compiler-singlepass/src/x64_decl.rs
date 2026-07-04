@@ -57,13 +57,16 @@ pub enum XMM {
 impl AbstractReg for GPR {
     fn is_callee_save(self) -> bool {
         const IS_CALLEE_SAVE: [bool; 16] = [
-            false, false, false, true, true, true, false, false, false, false, false, false, true,
-            true, true, true,
+            false, false, false, true, true, true, false, false, false, false,
+            false, false, true, true, true, true,
         ];
         IS_CALLEE_SAVE[self as usize]
     }
     fn is_reserved(self) -> bool {
-        self == GPR::RSP || self == GPR::RBP || self == GPR::R10 || self == GPR::R15
+        self == GPR::RSP
+            || self == GPR::RBP
+            || self == GPR::R10
+            || self == GPR::R15
     }
     fn into_index(self) -> usize {
         self as usize
@@ -120,8 +123,8 @@ impl AbstractReg for GPR {
 impl AbstractReg for XMM {
     fn is_callee_save(self) -> bool {
         const IS_CALLEE_SAVE: [bool; 16] = [
-            false, false, false, false, false, false, false, false, true, true, true, true, true,
-            true, true, true,
+            false, false, false, false, false, false, false, false, true, true,
+            true, true, true, true, true, true,
         ];
         IS_CALLEE_SAVE[self as usize]
     }
@@ -243,7 +246,9 @@ impl CombinedRegister for X64Register {
         ];
         Some(match x {
             0..=15 => X64Register::GPR(DWARF_REGS[x as usize]),
-            17..=24 => X64Register::XMM(XMM::from_index(x as usize - 17).unwrap()),
+            17..=24 => {
+                X64Register::XMM(XMM::from_index(x as usize - 17).unwrap())
+            }
             _ => return None,
         })
     }
@@ -266,7 +271,8 @@ impl ArgumentRegisterAllocator {
         let ret = match calling_convention {
             CallingConvention::WindowsFastcall => {
                 static GPR_SEQ: &[GPR] = &[GPR::RCX, GPR::RDX, GPR::R8, GPR::R9];
-                static XMM_SEQ: &[XMM] = &[XMM::XMM0, XMM::XMM1, XMM::XMM2, XMM::XMM3];
+                static XMM_SEQ: &[XMM] =
+                    &[XMM::XMM0, XMM::XMM1, XMM::XMM2, XMM::XMM3];
                 let idx = self.n_gprs + self.n_xmms;
                 match ty {
                     Type::I32 | Type::I64 => {

@@ -50,16 +50,16 @@ impl<'ctx> ControlFrame<'ctx> {
 
     pub fn br_dest(&self) -> &BasicBlock<'ctx> {
         match self {
-            ControlFrame::Block { ref next, .. } | ControlFrame::IfElse { ref next, .. } => next,
+            ControlFrame::Block { ref next, .. }
+            | ControlFrame::IfElse { ref next, .. } => next,
             ControlFrame::Loop { ref body, .. } => body,
         }
     }
 
     pub fn phis(&self) -> &[PhiValue<'ctx>] {
         match self {
-            ControlFrame::Block { ref phis, .. } | ControlFrame::Loop { ref phis, .. } => {
-                phis.as_slice()
-            }
+            ControlFrame::Block { ref phis, .. }
+            | ControlFrame::Loop { ref phis, .. } => phis.as_slice(),
             ControlFrame::IfElse { ref next_phis, .. } => next_phis.as_slice(),
         }
     }
@@ -134,7 +134,8 @@ impl ExtraInfo {
     pub const fn strip_pending(&self) -> ExtraInfo {
         ExtraInfo {
             state: self.state
-                & !(ExtraInfo::pending_f32_nan().state | ExtraInfo::pending_f64_nan().state),
+                & !(ExtraInfo::pending_f32_nan().state
+                    | ExtraInfo::pending_f64_nan().state),
         }
     }
 }
@@ -195,13 +196,17 @@ impl BitAnd for ExtraInfo {
             (false, false) => Default::default(),
             (true, false) => ExtraInfo::arithmetic_f32(),
             (false, true) => ExtraInfo::arithmetic_f64(),
-            (true, true) => (ExtraInfo::arithmetic_f32() | ExtraInfo::arithmetic_f64())?,
+            (true, true) => {
+                (ExtraInfo::arithmetic_f32() | ExtraInfo::arithmetic_f64())?
+            }
         };
         match (self.has_pending_f32_nan(), self.has_pending_f64_nan()) {
             (false, false) => Ok(info),
             (true, false) => info | ExtraInfo::pending_f32_nan(),
             (false, true) => info | ExtraInfo::pending_f64_nan(),
-            (true, true) => unreachable!("Can't form ExtraInfo with two pending canonicalizations"),
+            (true, true) => unreachable!(
+                "Can't form ExtraInfo with two pending canonicalizations"
+            ),
         }
     }
 }
@@ -247,18 +252,25 @@ impl<'ctx> State<'ctx> {
 
     pub fn outermost_frame(&self) -> Result<&ControlFrame<'ctx>, CompileError> {
         self.control_stack.first().ok_or_else(|| {
-            CompileError::Codegen("outermost_frame: invalid control stack depth".to_string())
+            CompileError::Codegen(
+                "outermost_frame: invalid control stack depth".to_string(),
+            )
         })
     }
 
-    pub fn frame_at_depth(&self, depth: u32) -> Result<&ControlFrame<'ctx>, CompileError> {
+    pub fn frame_at_depth(
+        &self,
+        depth: u32,
+    ) -> Result<&ControlFrame<'ctx>, CompileError> {
         let index = self
             .control_stack
             .len()
             .checked_sub(1 + (depth as usize))
             .ok_or_else(|| {
-                CompileError::Codegen("frame_at_depth: invalid control stack depth".to_string())
-            })?;
+            CompileError::Codegen(
+                "frame_at_depth: invalid control stack depth".to_string(),
+            )
+        })?;
         Ok(&self.control_stack[index])
     }
 
@@ -271,14 +283,18 @@ impl<'ctx> State<'ctx> {
             .len()
             .checked_sub(1 + (depth as usize))
             .ok_or_else(|| {
-                CompileError::Codegen("frame_at_depth_mut: invalid control stack depth".to_string())
-            })?;
+            CompileError::Codegen(
+                "frame_at_depth_mut: invalid control stack depth".to_string(),
+            )
+        })?;
         Ok(&mut self.control_stack[index])
     }
 
     pub fn pop_frame(&mut self) -> Result<ControlFrame<'ctx>, CompileError> {
         self.control_stack.pop().ok_or_else(|| {
-            CompileError::Codegen("pop_frame: cannot pop from control stack".to_string())
+            CompileError::Codegen(
+                "pop_frame: cannot pop from control stack".to_string(),
+            )
         })
     }
 
@@ -286,7 +302,11 @@ impl<'ctx> State<'ctx> {
         self.push1_extra(value, Default::default());
     }
 
-    pub fn push1_extra<T: BasicValue<'ctx>>(&mut self, value: T, info: ExtraInfo) {
+    pub fn push1_extra<T: BasicValue<'ctx>>(
+        &mut self,
+        value: T,
+        info: ExtraInfo,
+    ) {
         self.stack.push((value.as_basic_value_enum(), info));
     }
 
@@ -294,13 +314,17 @@ impl<'ctx> State<'ctx> {
         Ok(self.pop1_extra()?.0)
     }
 
-    pub fn pop1_extra(&mut self) -> Result<(BasicValueEnum<'ctx>, ExtraInfo), CompileError> {
-        self.stack
-            .pop()
-            .ok_or_else(|| CompileError::Codegen("pop1_extra: invalid value stack".to_string()))
+    pub fn pop1_extra(
+        &mut self,
+    ) -> Result<(BasicValueEnum<'ctx>, ExtraInfo), CompileError> {
+        self.stack.pop().ok_or_else(|| {
+            CompileError::Codegen("pop1_extra: invalid value stack".to_string())
+        })
     }
 
-    pub fn pop2(&mut self) -> Result<(BasicValueEnum<'ctx>, BasicValueEnum<'ctx>), CompileError> {
+    pub fn pop2(
+        &mut self,
+    ) -> Result<(BasicValueEnum<'ctx>, BasicValueEnum<'ctx>), CompileError> {
         let v2 = self.pop1()?;
         let v1 = self.pop1()?;
         Ok((v1, v2))
@@ -354,15 +378,19 @@ impl<'ctx> State<'ctx> {
         Ok((v1, v2, v3))
     }
 
-    pub fn peek1_extra(&self) -> Result<(BasicValueEnum<'ctx>, ExtraInfo), CompileError> {
-        let index =
-            self.stack.len().checked_sub(1).ok_or_else(|| {
-                CompileError::Codegen("peek1_extra: invalid value stack".to_string())
-            })?;
+    pub fn peek1_extra(
+        &self,
+    ) -> Result<(BasicValueEnum<'ctx>, ExtraInfo), CompileError> {
+        let index = self.stack.len().checked_sub(1).ok_or_else(|| {
+            CompileError::Codegen("peek1_extra: invalid value stack".to_string())
+        })?;
         Ok(self.stack[index])
     }
 
-    pub fn peekn(&self, n: usize) -> Result<Vec<BasicValueEnum<'ctx>>, CompileError> {
+    pub fn peekn(
+        &self,
+        n: usize,
+    ) -> Result<Vec<BasicValueEnum<'ctx>>, CompileError> {
         Ok(self.peekn_extra(n)?.iter().map(|x| x.0).collect())
     }
 
@@ -370,10 +398,9 @@ impl<'ctx> State<'ctx> {
         &self,
         n: usize,
     ) -> Result<&[(BasicValueEnum<'ctx>, ExtraInfo)], CompileError> {
-        let index =
-            self.stack.len().checked_sub(n).ok_or_else(|| {
-                CompileError::Codegen("peekn_extra: invalid value stack".to_string())
-            })?;
+        let index = self.stack.len().checked_sub(n).ok_or_else(|| {
+            CompileError::Codegen("peekn_extra: invalid value stack".to_string())
+        })?;
         Ok(&self.stack[index..])
     }
 
@@ -387,17 +414,19 @@ impl<'ctx> State<'ctx> {
     }
 
     pub fn popn(&mut self, n: usize) -> Result<(), CompileError> {
-        let index = self
-            .stack
-            .len()
-            .checked_sub(n)
-            .ok_or_else(|| CompileError::Codegen("popn: invalid value stack".to_string()))?;
+        let index = self.stack.len().checked_sub(n).ok_or_else(|| {
+            CompileError::Codegen("popn: invalid value stack".to_string())
+        })?;
 
         self.stack.truncate(index);
         Ok(())
     }
 
-    pub fn push_block(&mut self, next: BasicBlock<'ctx>, phis: SmallVec<[PhiValue<'ctx>; 1]>) {
+    pub fn push_block(
+        &mut self,
+        next: BasicBlock<'ctx>,
+        phis: SmallVec<[PhiValue<'ctx>; 1]>,
+    ) {
         self.control_stack.push(ControlFrame::Block {
             next,
             phis,

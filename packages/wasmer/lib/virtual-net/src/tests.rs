@@ -9,8 +9,8 @@ use tracing_test::traced_test;
 #[cfg(feature = "remote")]
 use crate::RemoteNetworkingServer;
 use crate::{
-    host::LocalNetworking, meta::FrameSerializationFormat, VirtualConnectedSocketExt,
-    VirtualTcpListenerExt,
+    host::LocalNetworking, meta::FrameSerializationFormat,
+    VirtualConnectedSocketExt, VirtualTcpListenerExt,
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -23,7 +23,8 @@ async fn setup_mpsc() -> (RemoteNetworkingClient, RemoteNetworkingServer) {
     let (tx2, rx2) = tokio::sync::mpsc::channel(100);
 
     tracing::info!("constructing remote client (mpsc)");
-    let (client, client_driver) = RemoteNetworkingClient::new_from_mpsc(tx1, rx2);
+    let (client, client_driver) =
+        RemoteNetworkingClient::new_from_mpsc(tx1, rx2);
 
     tracing::info!("spawning driver for remote client");
     tokio::task::spawn(client_driver);
@@ -32,8 +33,11 @@ async fn setup_mpsc() -> (RemoteNetworkingClient, RemoteNetworkingServer) {
     let local_networking = LocalNetworking::new();
 
     tracing::info!("constructing remote server (mpsc)");
-    let (server, server_driver) =
-        RemoteNetworkingServer::new_from_mpsc(tx2, rx1, Arc::new(local_networking));
+    let (server, server_driver) = RemoteNetworkingServer::new_from_mpsc(
+        tx2,
+        rx1,
+        Arc::new(local_networking),
+    );
 
     tracing::info!("spawning driver for remote server");
     tokio::task::spawn(server_driver);
@@ -51,7 +55,8 @@ async fn setup_pipe(
     let (tx2, rx2) = tokio::io::duplex(buf_size);
 
     tracing::info!("constructing remote client (mpsc)");
-    let (client, client_driver) = RemoteNetworkingClient::new_from_async_io(tx1, rx2, format);
+    let (client, client_driver) =
+        RemoteNetworkingClient::new_from_async_io(tx1, rx2, format);
 
     tracing::info!("spawning driver for remote client");
     tokio::task::spawn(client_driver);
@@ -60,8 +65,12 @@ async fn setup_pipe(
     let local_networking = LocalNetworking::new();
 
     tracing::info!("constructing remote server (mpsc)");
-    let (server, server_driver) =
-        RemoteNetworkingServer::new_from_async_io(tx2, rx1, format, Arc::new(local_networking));
+    let (server, server_driver) = RemoteNetworkingServer::new_from_async_io(
+        tx2,
+        rx1,
+        format,
+        Arc::new(local_networking),
+    );
 
     tracing::info!("spawning driver for remote server");
     tokio::task::spawn(server_driver);
@@ -70,7 +79,10 @@ async fn setup_pipe(
 }
 
 #[cfg(feature = "remote")]
-async fn test_tcp(client: RemoteNetworkingClient, _server: RemoteNetworkingServer) {
+async fn test_tcp(
+    client: RemoteNetworkingClient,
+    _server: RemoteNetworkingServer,
+) {
     let mut listener = client
         .listen_tcp(
             SocketAddr::from((Ipv4Addr::LOCALHOST, 0)),
@@ -141,7 +153,8 @@ async fn test_tcp_with_mpsc() {
 #[tokio::test(flavor = "multi_thread")]
 #[serial_test::serial]
 async fn test_tcp_with_small_pipe_using_bincode() {
-    let (client, server) = setup_pipe(10, FrameSerializationFormat::Bincode).await;
+    let (client, server) =
+        setup_pipe(10, FrameSerializationFormat::Bincode).await;
     test_tcp(client, server).await
 }
 
@@ -151,7 +164,8 @@ async fn test_tcp_with_small_pipe_using_bincode() {
 #[tokio::test(flavor = "multi_thread")]
 #[serial_test::serial]
 async fn test_tcp_with_large_pipe_using_bincode() {
-    let (client, server) = setup_pipe(1024000, FrameSerializationFormat::Bincode).await;
+    let (client, server) =
+        setup_pipe(1024000, FrameSerializationFormat::Bincode).await;
     test_tcp(client, server).await
 }
 
@@ -176,7 +190,8 @@ async fn test_tcp_with_small_pipe_using_json() {
 #[tokio::test(flavor = "multi_thread")]
 #[serial_test::serial]
 async fn test_tcp_with_large_pipe_json_using_json() {
-    let (client, server) = setup_pipe(1024000, FrameSerializationFormat::Json).await;
+    let (client, server) =
+        setup_pipe(1024000, FrameSerializationFormat::Json).await;
     test_tcp(client, server).await
 }
 
@@ -190,7 +205,8 @@ async fn test_tcp_with_large_pipe_json_using_json() {
 #[tokio::test(flavor = "multi_thread")]
 #[serial_test::serial]
 async fn test_tcp_with_small_pipe_using_messagepack() {
-    let (client, server) = setup_pipe(10, FrameSerializationFormat::MessagePack).await;
+    let (client, server) =
+        setup_pipe(10, FrameSerializationFormat::MessagePack).await;
     test_tcp(client, server).await
 }
 
@@ -204,7 +220,8 @@ async fn test_tcp_with_small_pipe_using_messagepack() {
 #[tokio::test(flavor = "multi_thread")]
 #[serial_test::serial]
 async fn test_tcp_with_large_pipe_json_using_messagepack() {
-    let (client, server) = setup_pipe(1024000, FrameSerializationFormat::MessagePack).await;
+    let (client, server) =
+        setup_pipe(1024000, FrameSerializationFormat::MessagePack).await;
     test_tcp(client, server).await
 }
 
@@ -229,7 +246,8 @@ async fn test_tcp_with_small_pipe_using_cbor() {
 #[tokio::test(flavor = "multi_thread")]
 #[serial_test::serial]
 async fn test_tcp_with_large_pipe_json_using_cbor() {
-    let (client, server) = setup_pipe(1024000, FrameSerializationFormat::Cbor).await;
+    let (client, server) =
+        setup_pipe(1024000, FrameSerializationFormat::Cbor).await;
     test_tcp(client, server).await
 }
 
@@ -273,7 +291,10 @@ async fn test_google_poll() {
     }
     impl<'a> Future for Poller<'a> {
         type Output = Result<usize>;
-        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        fn poll(
+            mut self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Self::Output> {
             self.socket.poll_write_ready(cx)
         }
     }
@@ -298,7 +319,10 @@ async fn test_google_poll() {
         }
         impl<'a> Future for Poller<'a> {
             type Output = Result<usize>;
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                mut self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 self.socket.poll_read_ready(cx)
             }
         }
@@ -367,7 +391,10 @@ async fn test_google_epoll() {
     }
     impl<'a> Future for Poller<'a> {
         type Output = Result<()>;
-        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        fn poll(
+            mut self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Self::Output> {
             if self.handler.is_none() {
                 self.handler
                     .replace(SharedWakerInterestHandler::new(cx.waker()));
@@ -412,7 +439,10 @@ async fn test_google_epoll() {
         }
         impl<'a> Future for Poller<'a> {
             type Output = Result<()>;
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                mut self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 if self.handler.is_none() {
                     self.handler
                         .replace(SharedWakerInterestHandler::new(cx.waker()));

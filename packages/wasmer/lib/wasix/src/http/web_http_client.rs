@@ -88,10 +88,14 @@ impl WebHttpClient {
     fn spawn_js(
         &self,
         request: HttpRequest,
-    ) -> Result<oneshot::Receiver<Result<HttpResponse, Error>>, WasiThreadError> {
+    ) -> Result<oneshot::Receiver<Result<HttpResponse, Error>>, WasiThreadError>
+    {
         let (sender, receiver) = oneshot::channel();
 
-        fn spawn_fetch(request: HttpRequest, sender: oneshot::Sender<Result<HttpResponse, Error>>) {
+        fn spawn_fetch(
+            request: HttpRequest,
+            sender: oneshot::Sender<Result<HttpResponse, Error>>,
+        ) {
             wasm_bindgen_futures::spawn_local(async move {
                 let result = fetch(request).await;
                 let _ = sender.send(result);
@@ -116,7 +120,10 @@ impl WebHttpClient {
 }
 
 impl HttpClient for WebHttpClient {
-    fn request(&self, mut request: HttpRequest) -> BoxFuture<'_, Result<HttpResponse, Error>> {
+    fn request(
+        &self,
+        mut request: HttpRequest,
+    ) -> BoxFuture<'_, Result<HttpResponse, Error>> {
         for (name, value) in &self.default_headers {
             if !request.headers.contains_key(name) {
                 request.headers.insert(name, value.clone());
@@ -141,10 +148,11 @@ async fn fetch(request: HttpRequest) -> Result<HttpResponse, Error> {
         method,
         headers,
         body,
-        options: HttpRequestOptions {
-            gzip: _,
-            cors_proxy,
-        },
+        options:
+            HttpRequestOptions {
+                gzip: _,
+                cors_proxy,
+            },
     } = request;
 
     let mut opts = RequestInit::new();
@@ -160,9 +168,10 @@ async fn fetch(request: HttpRequest) -> Result<HttpResponse, Error> {
     }
 
     let request = {
-        let request = web_sys::Request::new_with_str_and_init(url.as_str(), &opts)
-            .map_err(js_error)
-            .context("Could not construct request object")?;
+        let request =
+            web_sys::Request::new_with_str_and_init(url.as_str(), &opts)
+                .map_err(js_error)
+                .context("Could not construct request object")?;
 
         let set_headers = request.headers();
 
@@ -171,7 +180,9 @@ async fn fetch(request: HttpRequest) -> Result<HttpResponse, Error> {
             set_headers
                 .set(name.as_str(), &val)
                 .map_err(js_error)
-                .with_context(|| format!("could not apply request header: '{name}': '{val}'"))?;
+                .with_context(|| {
+                    format!("could not apply request header: '{name}': '{val}'")
+                })?;
         }
         request
     };
@@ -184,12 +195,16 @@ async fn fetch(request: HttpRequest) -> Result<HttpResponse, Error> {
             let url = if let Some(cors_proxy) = cors_proxy {
                 format!("https://{}/{}", cors_proxy, url)
             } else {
-                return Err(js_error(e).context(format!("Could not fetch '{url}'")));
+                return Err(
+                    js_error(e).context(format!("Could not fetch '{url}'"))
+                );
             };
 
             let request = web_sys::Request::new_with_str_and_init(&url, &opts)
                 .map_err(js_error)
-                .with_context(|| format!("Could not construct request for url '{url}'"))?;
+                .with_context(|| {
+                    format!("Could not construct request for url '{url}'")
+                })?;
 
             let set_headers = request.headers();
             for (name, val) in headers.iter() {
@@ -213,9 +228,12 @@ async fn fetch(request: HttpRequest) -> Result<HttpResponse, Error> {
     read_response(response).await
 }
 
-async fn read_response(response: &web_sys::Response) -> Result<HttpResponse, anyhow::Error> {
+async fn read_response(
+    response: &web_sys::Response,
+) -> Result<HttpResponse, anyhow::Error> {
     let status = http::StatusCode::from_u16(response.status())?;
-    let headers = headers(response.headers()).context("Unable to read the headers")?;
+    let headers =
+        headers(response.headers()).context("Unable to read the headers")?;
     let body = get_response_data(response).await?;
 
     Ok(HttpResponse {
@@ -234,8 +252,8 @@ fn headers(headers: web_sys::Headers) -> Result<http::HeaderMap, anyhow::Error> 
 
     for pair in iter {
         let pair = pair.map_err(js_error)?;
-        let [key, value]: [js_sys::JsString; 2] =
-            js_array(&pair).context("Unable to unpack the header's key-value pairs")?;
+        let [key, value]: [js_sys::JsString; 2] = js_array(&pair)
+            .context("Unable to unpack the header's key-value pairs")?;
 
         let key = String::from(key);
         let key: http::HeaderName = key.parse()?;
@@ -258,9 +276,9 @@ where
     let mut items = Vec::new();
 
     for value in array.iter() {
-        let item = value
-            .dyn_into()
-            .map_err(|_| anyhow::anyhow!("Unable to cast to a {}", std::any::type_name::<T>()))?;
+        let item = value.dyn_into().map_err(|_| {
+            anyhow::anyhow!("Unable to cast to a {}", std::any::type_name::<T>())
+        })?;
         items.push(item);
     }
 
@@ -272,7 +290,9 @@ where
     })
 }
 
-pub async fn get_response_data(resp: &web_sys::Response) -> Result<Vec<u8>, anyhow::Error> {
+pub async fn get_response_data(
+    resp: &web_sys::Response,
+) -> Result<Vec<u8>, anyhow::Error> {
     let buffer = JsFuture::from(resp.array_buffer().unwrap())
         .await
         .map_err(js_error)

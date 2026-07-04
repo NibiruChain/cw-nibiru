@@ -113,9 +113,13 @@ impl std::ops::Deref for Handler {
 impl Service<Request<hyper::body::Incoming>> for Handler {
     type Response = Response<Body>;
     type Error = anyhow::Error;
-    type Future = Pin<Box<dyn Future<Output = anyhow::Result<Response<Body>>> + Send>>;
+    type Future =
+        Pin<Box<dyn Future<Output = anyhow::Result<Response<Body>>> + Send>>;
 
-    fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(
+        &mut self,
+        _cx: &mut std::task::Context<'_>,
+    ) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
 

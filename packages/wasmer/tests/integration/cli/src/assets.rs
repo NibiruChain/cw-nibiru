@@ -141,7 +141,9 @@ pub fn get_repo_root_path() -> Option<PathBuf> {
     let mut result = None;
     'outer: while counter < 50 {
         counter += 1;
-        if current_dir.join("CHANGELOG.md").exists() && current_dir.join("LICENSE").exists() {
+        if current_dir.join("CHANGELOG.md").exists()
+            && current_dir.join("LICENSE").exists()
+        {
             result = Some(current_dir.to_path_buf());
             break 'outer;
         } else {

@@ -117,7 +117,9 @@ impl WasiControlPlane {
     /// Register a new task.
     ///
     // Currently just increments the task counter.
-    pub(crate) fn register_task(&self) -> Result<TaskCountGuard, ControlPlaneError> {
+    pub(crate) fn register_task(
+        &self,
+    ) -> Result<TaskCountGuard, ControlPlaneError> {
         let count = self.state.task_count.fetch_add(1, Ordering::SeqCst);
         if let Some(max) = self.state.config.max_task_count {
             if count > max {
@@ -131,7 +133,10 @@ impl WasiControlPlane {
     /// Creates a new process
     // FIXME: De-register terminated processes!
     // Currently they just accumulate.
-    pub fn new_process(&self, module_hash: ModuleHash) -> Result<WasiProcess, ControlPlaneError> {
+    pub fn new_process(
+        &self,
+        module_hash: ModuleHash,
+    ) -> Result<WasiProcess, ControlPlaneError> {
         if let Some(max) = self.state.config.max_task_count {
             if self.active_task_count() >= max {
                 // NOTE: task count is not incremented here, only when new threads are spawned.
@@ -141,7 +146,8 @@ impl WasiControlPlane {
         }
 
         // Create the process first to do all the allocations before locking.
-        let mut proc = WasiProcess::new(WasiProcessId::from(0), module_hash, self.handle());
+        let mut proc =
+            WasiProcess::new(WasiProcessId::from(0), module_hash, self.handle());
 
         let mut mutable = self.state.mutable.write().unwrap();
 
@@ -253,7 +259,10 @@ mod tests {
 
         for _ in 0..10 {
             let _thread = p1
-                .new_thread(WasiMemoryLayout::default(), ThreadStartType::MainThread)
+                .new_thread(
+                    WasiMemoryLayout::default(),
+                    ThreadStartType::MainThread,
+                )
                 .unwrap();
         }
 

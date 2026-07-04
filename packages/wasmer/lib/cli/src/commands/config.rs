@@ -246,9 +246,10 @@ impl GetOrSet {
                     println!("{}", config.registry.get_current_registry());
                 }
                 RetrievableConfigField::RegistryToken => {
-                    if let Some(s) = config
-                        .registry
-                        .get_login_token_for_registry(&config.registry.get_current_registry())
+                    if let Some(s) =
+                        config.registry.get_login_token_for_registry(
+                            &config.registry.get_current_registry(),
+                        )
                     {
                         println!("{s}");
                     }
@@ -271,10 +272,12 @@ impl GetOrSet {
                 match s {
                     StorableConfigField::RegistryUrl(s) => {
                         config.registry.set_current_registry(&s.url).await;
-                        let current_registry = config.registry.get_current_registry();
+                        let current_registry =
+                            config.registry.get_current_registry();
                         if let Ok(client) = env.client() {
                             if let Some(u) =
-                                wasmer_backend_api::query::current_user(&client).await?
+                                wasmer_backend_api::query::current_user(&client)
+                                    .await?
                             {
                                 println!(
                                 "Successfully logged into registry {current_registry:?} as user {u:?}"
@@ -303,9 +306,9 @@ impl GetOrSet {
                         config.update_notifications_enabled = u.enabled.0;
                     }
                 }
-                config
-                    .save(config_file)
-                    .with_context(|| anyhow::anyhow!("could not save config file"))?;
+                config.save(config_file).with_context(|| {
+                    anyhow::anyhow!("could not save config file")
+                })?;
             }
         }
         Ok(())

@@ -76,8 +76,9 @@ impl PackageUnpack {
         })?;
 
         let outdir = &self.out_dir;
-        std::fs::create_dir_all(outdir)
-            .with_context(|| format!("could not create output directory '{}'", outdir.display()))?;
+        std::fs::create_dir_all(outdir).with_context(|| {
+            format!("could not create output directory '{}'", outdir.display())
+        })?;
 
         match self.format {
             Format::Package => {

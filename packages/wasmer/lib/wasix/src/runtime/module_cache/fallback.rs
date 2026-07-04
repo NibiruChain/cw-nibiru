@@ -62,7 +62,11 @@ where
     Primary: ModuleCache + Send + Sync,
     Fallback: ModuleCache + Send + Sync,
 {
-    async fn load(&self, key: ModuleHash, engine: &Engine) -> Result<Module, CacheError> {
+    async fn load(
+        &self,
+        key: ModuleHash,
+        engine: &Engine,
+    ) -> Result<Module, CacheError> {
         let primary_error = match self.primary.load(key, engine).await {
             Ok(m) => return Ok(m),
             Err(e) => e,
@@ -143,7 +147,11 @@ mod tests {
 
     #[async_trait::async_trait]
     impl<I: ModuleCache + Send + Sync> ModuleCache for Spy<I> {
-        async fn load(&self, key: ModuleHash, engine: &Engine) -> Result<Module, CacheError> {
+        async fn load(
+            &self,
+            key: ModuleHash,
+            engine: &Engine,
+        ) -> Result<Module, CacheError> {
             match self.inner.load(key, engine).await {
                 Ok(m) => {
                     self.success.fetch_add(1, Ordering::SeqCst);

@@ -41,7 +41,8 @@ impl UnwindRegistry {
             _ => return Err("unsupported unwind information".to_string()),
         };
 
-        let mut entry: IMAGE_RUNTIME_FUNCTION_ENTRY = unsafe { std::mem::zeroed() };
+        let mut entry: IMAGE_RUNTIME_FUNCTION_ENTRY =
+            unsafe { std::mem::zeroed() };
 
         entry.BeginAddress = func_start;
         entry.EndAddress = func_start + func_len;
@@ -49,7 +50,8 @@ impl UnwindRegistry {
         // The unwind information should be immediately following the function
         // with padding for 4 byte alignment
         entry.Anonymous.UnwindInfoAddress = (entry.EndAddress + 3) & !3;
-        let entries = self.functions.entry(base_address).or_insert_with(Vec::new);
+        let entries =
+            self.functions.entry(base_address).or_insert_with(Vec::new);
 
         entries.push(entry);
 
@@ -79,7 +81,9 @@ impl UnwindRegistry {
                         *base_address as u64,
                     ) == 0
                     {
-                        return Err("failed to register function tables".to_string());
+                        return Err(
+                            "failed to register function tables".to_string()
+                        );
                     }
                 }
             }

@@ -34,9 +34,19 @@ pub unsafe fn restore_snapshot(
     tracing::trace!("replaying stdout");
     for (offset, data, is_64bit) in runner.stdout {
         if is_64bit {
-            JournalEffector::apply_fd_write::<Memory64>(&runner.ctx, 1, offset, data)
+            JournalEffector::apply_fd_write::<Memory64>(
+                &runner.ctx,
+                1,
+                offset,
+                data,
+            )
         } else {
-            JournalEffector::apply_fd_write::<Memory32>(&runner.ctx, 1, offset, data)
+            JournalEffector::apply_fd_write::<Memory32>(
+                &runner.ctx,
+                1,
+                offset,
+                data,
+            )
         }
         .map_err(anyhow_err_to_runtime_err)?;
     }
@@ -44,9 +54,19 @@ pub unsafe fn restore_snapshot(
     tracing::trace!("replaying stdout");
     for (offset, data, is_64bit) in runner.stderr {
         if is_64bit {
-            JournalEffector::apply_fd_write::<Memory64>(&runner.ctx, 2, offset, data)
+            JournalEffector::apply_fd_write::<Memory64>(
+                &runner.ctx,
+                2,
+                offset,
+                data,
+            )
         } else {
-            JournalEffector::apply_fd_write::<Memory32>(&runner.ctx, 2, offset, data)
+            JournalEffector::apply_fd_write::<Memory32>(
+                &runner.ctx,
+                2,
+                offset,
+                data,
+            )
         }
         .map_err(anyhow_err_to_runtime_err)?;
     }
@@ -72,7 +92,9 @@ pub unsafe fn restore_snapshot(
     // Spawn all the threads
     let thread_count = runner.spawn_threads.len();
     tracing::trace!(thread_count, "restoring threads");
-    for (index, (thread_id, thread_state)) in runner.spawn_threads.into_iter().enumerate() {
+    for (index, (thread_id, thread_state)) in
+        runner.spawn_threads.into_iter().enumerate()
+    {
         tracing::trace!("restoring thread {}/{}", index + 1, thread_count);
 
         if thread_state.is_64bit {

@@ -34,7 +34,10 @@ impl LogWriteResult {
 pub trait WritableJournal: std::fmt::Debug {
     /// Takes in a stream of snapshot log entries and saves them so that they
     /// may be restored at a later moment
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult>;
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult>;
 
     /// Flushes the data to disk or network
     fn flush(&self) -> anyhow::Result<()>;

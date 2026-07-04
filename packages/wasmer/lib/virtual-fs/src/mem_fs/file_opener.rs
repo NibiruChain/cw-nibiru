@@ -1,6 +1,8 @@
 use super::filesystem::InodeResolution;
 use super::*;
-use crate::{FileType, FsError, Metadata, OpenOptionsConfig, Result, VirtualFile};
+use crate::{
+    FileType, FsError, Metadata, OpenOptionsConfig, Result, VirtualFile,
+};
 use std::borrow::Cow;
 use std::path::Path;
 use tracing::*;
@@ -8,9 +10,14 @@ use tracing::*;
 impl FileSystem {
     /// Inserts a readonly file into the file system that uses copy-on-write
     /// (this is required for zero-copy creation of the same file)
-    pub fn insert_ro_file(&self, path: &Path, contents: Cow<'static, [u8]>) -> Result<()> {
+    pub fn insert_ro_file(
+        &self,
+        path: &Path,
+        contents: Cow<'static, [u8]>,
+    ) -> Result<()> {
         let _ = crate::FileSystem::remove_file(self, path);
-        let (inode_of_parent, maybe_inode_of_file, name_of_file) = self.insert_inode(path)?;
+        let (inode_of_parent, maybe_inode_of_file, name_of_file) =
+            self.insert_inode(path)?;
 
         let inode_of_parent = match inode_of_parent {
             InodeResolution::Found(a) => a,
@@ -33,25 +40,26 @@ impl FileSystem {
 
                 // Creating the file in the storage.
                 let inode_of_file = fs.storage.vacant_entry().key();
-                let real_inode_of_file = fs.storage.insert(Node::ReadOnlyFile(ReadOnlyFileNode {
-                    inode: inode_of_file,
-                    name: name_of_file,
-                    file,
-                    metadata: {
-                        let time = time();
+                let real_inode_of_file =
+                    fs.storage.insert(Node::ReadOnlyFile(ReadOnlyFileNode {
+                        inode: inode_of_file,
+                        name: name_of_file,
+                        file,
+                        metadata: {
+                            let time = time();
 
-                        Metadata {
-                            ft: FileType {
-                                file: true,
-                                ..Default::default()
-                            },
-                            accessed: time,
-                            created: time,
-                            modified: time,
-                            len: file_len,
-                        }
-                    },
-                }));
+                            Metadata {
+                                ft: FileType {
+                                    file: true,
+                                    ..Default::default()
+                                },
+                                accessed: time,
+                                created: time,
+                                modified: time,
+                                len: file_len,
+                            }
+                        },
+                    }));
 
                 assert_eq!(
                     inode_of_file, real_inode_of_file,
@@ -93,7 +101,8 @@ impl FileSystem {
             // The file doesn't already exist; it's OK to create it if
             None => {
                 // Write lock.
-                let mut fs_lock = self.inner.write().map_err(|_| FsError::Lock)?;
+                let mut fs_lock =
+                    self.inner.write().map_err(|_| FsError::Lock)?;
 
                 // Read the metadata or generate a dummy one
                 let meta = match fs.metadata(&target_path) {
@@ -115,13 +124,14 @@ impl FileSystem {
 
                 // Creating the file in the storage.
                 let inode_of_file = fs_lock.storage.vacant_entry().key();
-                let real_inode_of_file = fs_lock.storage.insert(Node::ArcFile(ArcFileNode {
-                    inode: inode_of_file,
-                    name: name_of_file,
-                    fs,
-                    path: source_path,
-                    metadata: meta,
-                }));
+                let real_inode_of_file =
+                    fs_lock.storage.insert(Node::ArcFile(ArcFileNode {
+                        inode: inode_of_file,
+                        name: name_of_file,
+                        fs,
+                        path: source_path,
+                        metadata: meta,
+                    }));
 
                 assert_eq!(
                     inode_of_file, real_inode_of_file,
@@ -173,12 +183,13 @@ impl FileSystem {
             // The file doesn't already exist; it's OK to create it if
             None => {
                 // Write lock.
-                let mut fs_lock = self.inner.write().map_err(|_| FsError::Lock)?;
+                let mut fs_lock =
+                    self.inner.write().map_err(|_| FsError::Lock)?;
 
                 // Creating the file in the storage.
                 let inode_of_file = fs_lock.storage.vacant_entry().key();
-                let real_inode_of_file =
-                    fs_lock.storage.insert(Node::ArcDirectory(ArcDirectoryNode {
+                let real_inode_of_file = fs_lock.storage.insert(
+                    Node::ArcDirectory(ArcDirectoryNode {
                         inode: inode_of_file,
                         name: name_of_file,
                         fs: other,
@@ -196,7 +207,8 @@ impl FileSystem {
                                 len: 0,
                             }
                         },
-                    }));
+                    }),
+                );
 
                 assert_eq!(
                     inode_of_file, real_inode_of_file,
@@ -250,24 +262,25 @@ impl FileSystem {
 
         // Creating the file in the storage.
         let inode_of_file = fs_lock.storage.vacant_entry().key();
-        let real_inode_of_file = fs_lock.storage.insert(Node::CustomFile(CustomFileNode {
-            inode: inode_of_file,
-            name: name_of_file,
-            file: Mutex::new(file),
-            metadata: {
-                let time = time();
-                Metadata {
-                    ft: FileType {
-                        file: true,
-                        ..Default::default()
-                    },
-                    accessed: time,
-                    created: time,
-                    modified: time,
-                    len: 0,
-                }
-            },
-        }));
+        let real_inode_of_file =
+            fs_lock.storage.insert(Node::CustomFile(CustomFileNode {
+                inode: inode_of_file,
+                name: name_of_file,
+                file: Mutex::new(file),
+                metadata: {
+                    let time = time();
+                    Metadata {
+                        ft: FileType {
+                            file: true,
+                            ..Default::default()
+                        },
+                        accessed: time,
+                        created: time,
+                        modified: time,
+                        len: 0,
+                    }
+                },
+            }));
 
         assert_eq!(
             inode_of_file, real_inode_of_file,
@@ -310,7 +323,10 @@ impl FileSystem {
 
         // Find the inode of the file if it exists.
         let maybe_inode_of_file = fs
-            .as_parent_get_position_and_inode_of_file(inode_of_parent, &name_of_file)?
+            .as_parent_get_position_and_inode_of_file(
+                inode_of_parent,
+                &name_of_file,
+            )?
             .map(|(_nth, inode)| inode);
 
         Ok((
@@ -353,7 +369,8 @@ impl crate::FileOpener for FileSystem {
             write = false;
         }
 
-        let (inode_of_parent, maybe_inode_of_file, name_of_file) = self.insert_inode(path)?;
+        let (inode_of_parent, maybe_inode_of_file, name_of_file) =
+            self.insert_inode(path)?;
 
         let inode_of_parent = match inode_of_parent {
             InodeResolution::Found(a) => a,
@@ -370,14 +387,19 @@ impl crate::FileOpener for FileSystem {
         let inode_of_file = match maybe_inode_of_file {
             // The file already exists, and a _new_ one _must_ be
             // created; it's not OK.
-            Some(_inode_of_file) if create_new => return Err(FsError::AlreadyExists),
+            Some(_inode_of_file) if create_new => {
+                return Err(FsError::AlreadyExists)
+            }
 
             // The file already exists; it's OK.
             Some(inode_of_file) => {
                 let inode_of_file = match inode_of_file {
                     InodeResolution::Found(a) => a,
                     InodeResolution::Redirect(fs, path) => {
-                        return fs.new_open_options().options(conf.clone()).open(path);
+                        return fs
+                            .new_open_options()
+                            .options(conf.clone())
+                            .open(path);
                     }
                 };
 
@@ -402,7 +424,11 @@ impl crate::FileOpener for FileSystem {
                         }
                     }
 
-                    Some(Node::OffloadedFile(OffloadedFileNode { metadata, file, .. })) => {
+                    Some(Node::OffloadedFile(OffloadedFileNode {
+                        metadata,
+                        file,
+                        ..
+                    })) => {
                         // Update the accessed time.
                         metadata.accessed = time();
 
@@ -482,7 +508,9 @@ impl crate::FileOpener for FileSystem {
             // The file doesn't already exist; it's OK to create it if:
             // 1. `create_new` is used with `write` or `append`,
             // 2. `create` is used with `write` or `append`.
-            None if (create_new || create) && (create_new || write || append) => {
+            None if (create_new || create)
+                && (create_new || write || append) =>
+            {
                 // Write lock.
                 let mut fs = self.inner.write().map_err(|_| FsError::Lock)?;
 
@@ -534,7 +562,9 @@ impl crate::FileOpener for FileSystem {
                 inode_of_file
             }
 
-            None if (create_new || create) => return Err(FsError::PermissionDenied),
+            None if (create_new || create) => {
+                return Err(FsError::PermissionDenied)
+            }
 
             None => return Err(FsError::EntryNotFound),
         };

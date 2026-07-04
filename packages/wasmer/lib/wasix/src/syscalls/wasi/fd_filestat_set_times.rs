@@ -27,12 +27,13 @@ pub fn fd_filestat_set_times(
 
     #[cfg(feature = "journal")]
     if env.enable_journal {
-        JournalEffector::save_fd_set_times(&mut ctx, fd, st_atim, st_mtim, fst_flags).map_err(
-            |err| {
-                tracing::error!("failed to save file set times event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            },
-        )?;
+        JournalEffector::save_fd_set_times(
+            &mut ctx, fd, st_atim, st_mtim, fst_flags,
+        )
+        .map_err(|err| {
+            tracing::error!("failed to save file set times event - {}", err);
+            WasiError::Exit(ExitCode::from(Errno::Fault))
+        })?;
     }
 
     Ok(Errno::Success)
@@ -53,8 +54,10 @@ pub(crate) fn fd_filestat_set_times_internal(
         return Err(Errno::Access);
     }
 
-    if (fst_flags.contains(Fstflags::SET_ATIM) && fst_flags.contains(Fstflags::SET_ATIM_NOW))
-        || (fst_flags.contains(Fstflags::SET_MTIM) && fst_flags.contains(Fstflags::SET_MTIM_NOW))
+    if (fst_flags.contains(Fstflags::SET_ATIM)
+        && fst_flags.contains(Fstflags::SET_ATIM_NOW))
+        || (fst_flags.contains(Fstflags::SET_MTIM)
+            && fst_flags.contains(Fstflags::SET_MTIM_NOW))
     {
         return Err(Errno::Inval);
     }
@@ -64,7 +67,9 @@ pub(crate) fn fd_filestat_set_times_internal(
     let mut atime = None;
     let mut mtime = None;
 
-    if fst_flags.contains(Fstflags::SET_ATIM) || fst_flags.contains(Fstflags::SET_ATIM_NOW) {
+    if fst_flags.contains(Fstflags::SET_ATIM)
+        || fst_flags.contains(Fstflags::SET_ATIM_NOW)
+    {
         let time_to_set = if fst_flags.contains(Fstflags::SET_ATIM) {
             st_atim
         } else {
@@ -74,7 +79,9 @@ pub(crate) fn fd_filestat_set_times_internal(
         atime = Some(time_to_set);
     }
 
-    if fst_flags.contains(Fstflags::SET_MTIM) || fst_flags.contains(Fstflags::SET_MTIM_NOW) {
+    if fst_flags.contains(Fstflags::SET_MTIM)
+        || fst_flags.contains(Fstflags::SET_MTIM_NOW)
+    {
         let time_to_set = if fst_flags.contains(Fstflags::SET_MTIM) {
             st_mtim
         } else {

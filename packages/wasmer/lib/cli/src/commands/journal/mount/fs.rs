@@ -12,8 +12,9 @@ use std::{
 };
 
 use fuser::{
-    FileAttr, Filesystem, ReplyAttr, ReplyBmap, ReplyCreate, ReplyData, ReplyDirectory, ReplyEmpty,
-    ReplyEntry, ReplyLock, ReplyOpen, ReplyStatfs, ReplyWrite, ReplyXattr, Request,
+    FileAttr, Filesystem, ReplyAttr, ReplyBmap, ReplyCreate, ReplyData,
+    ReplyDirectory, ReplyEmpty, ReplyEntry, ReplyLock, ReplyOpen, ReplyStatfs,
+    ReplyWrite, ReplyXattr, Request,
 };
 use indicatif::{ProgressBar, ProgressStyle};
 use shared_buffer::OwnedBuffer;
@@ -25,8 +26,9 @@ use virtual_fs::{
 use wasmer_wasix::{
     fs::WasiFdSeed,
     journal::{
-        copy_journal, ArchivedJournalEntry, ArchivedJournalEntryFileDescriptorWriteV1, Journal,
-        JournalEntry, JournalEntryFileDescriptorWriteV1, LogFileJournal, LogWriteResult,
+        copy_journal, ArchivedJournalEntry,
+        ArchivedJournalEntryFileDescriptorWriteV1, Journal, JournalEntry,
+        JournalEntryFileDescriptorWriteV1, LogFileJournal, LogWriteResult,
         ReadableJournal, WritableJournal,
     },
     types::Oflags,
@@ -41,7 +43,11 @@ struct State {
     inos: HashMap<u64, Cow<'static, str>>,
     lookup: HashMap<
         u32,
-        Arc<tokio::sync::Mutex<Box<dyn virtual_fs::VirtualFile + Send + Sync + 'static>>>,
+        Arc<
+            tokio::sync::Mutex<
+                Box<dyn virtual_fs::VirtualFile + Send + Sync + 'static>,
+            >,
+        >,
     >,
     seed: WasiFdSeed,
     fake_offset: u64,
@@ -85,7 +91,8 @@ impl JournalFileSystemBuilder {
         let backing_store = journal.backing_store();
         let file_len = backing_store.owned_buffer().len();
 
-        let mem_fs = mem_fs::FileSystem::default().with_backing_offload(backing_store)?;
+        let mem_fs =
+            mem_fs::FileSystem::default().with_backing_offload(backing_store)?;
         let state = MutexState {
             inner: Mutex::new(State {
                 handle: tokio::runtime::Handle::current(),
@@ -172,7 +179,8 @@ impl JournalFileSystem {
         match res {
             Ok(meta) => {
                 // The ino is just the hash of the name
-                let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                let mut hasher =
+                    std::collections::hash_map::DefaultHasher::new();
                 path.hash(&mut hasher);
                 let ino = hasher.finish();
                 state
@@ -205,7 +213,10 @@ impl JournalFileSystem {
 }
 
 impl WritableJournal for MutexState {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         let mut state = self.inner.lock().unwrap();
         let ret = LogWriteResult {
             record_start: state.fake_offset,
@@ -306,7 +317,10 @@ impl WritableJournal for MutexState {
                 handle.block_on(async {
                     state
                         .mem_fs
-                        .rename(&Path::new(old_path.as_ref()), &Path::new(new_path.as_ref()))
+                        .rename(
+                            &Path::new(old_path.as_ref()),
+                            &Path::new(new_path.as_ref()),
+                        )
                         .await
                 })?;
             }
@@ -347,13 +361,19 @@ impl WritableJournal for MutexState {
 }
 
 impl JournalFileSystem {
-    fn compute_path<'a>(&'a self, parent: u64, name: &'a OsStr) -> Result<Cow<'_, str>, i32> {
+    fn compute_path<'a>(
+        &'a self,
+        parent: u64,
+        name: &'a OsStr,
+    ) -> Result<Cow<'_, str>, i32> {
         // Get the path from the ino otherwise it is not a known
         // path (this means the other methods have to be hit first)
         let path = match self.reverse_ino(parent) {
             Ok(a) => a,
             Err(err) => {
-                tracing::trace!("fs::compute_path reverse_ino({parent}) errno={err}");
+                tracing::trace!(
+                    "fs::compute_path reverse_ino({parent}) errno={err}"
+                );
                 return Err(err);
             }
         };
@@ -376,7 +396,13 @@ impl Filesystem for JournalFileSystem {
 
     fn destroy(&mut self, _req: &Request) {}
 
-    fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
+    fn lookup(
+        &mut self,
+        _req: &Request,
+        parent: u64,
+        name: &OsStr,
+        reply: ReplyEntry,
+    ) {
         let path = match self.compute_path(parent, name) {
             Ok(a) => a,
             Err(err) => {
@@ -456,10 +482,22 @@ impl Filesystem for JournalFileSystem {
                         ino,
                         size: file.size(),
                         blocks: (1u64.max(file.size()) - 1 / 512) + 1,
-                        atime: time01::Timespec::new(file.last_accessed() as i64, 0),
-                        mtime: time01::Timespec::new(file.last_modified() as i64, 0),
-                        ctime: time01::Timespec::new(file.created_time() as i64, 0),
-                        crtime: time01::Timespec::new(file.created_time() as i64, 0),
+                        atime: time01::Timespec::new(
+                            file.last_accessed() as i64,
+                            0,
+                        ),
+                        mtime: time01::Timespec::new(
+                            file.last_modified() as i64,
+                            0,
+                        ),
+                        ctime: time01::Timespec::new(
+                            file.created_time() as i64,
+                            0,
+                        ),
+                        crtime: time01::Timespec::new(
+                            file.created_time() as i64,
+                            0,
+                        ),
                         kind: fuser::FileType::RegularFile,
                         perm: 0o644,
                         nlink: 1,
@@ -474,7 +512,9 @@ impl Filesystem for JournalFileSystem {
                 let path = match self.reverse_ino(ino) {
                     Ok(a) => a,
                     Err(err) => {
-                        tracing::trace!("fs::setattr reverse_ino({ino}) errno={err}");
+                        tracing::trace!(
+                            "fs::setattr reverse_ino({ino}) errno={err}"
+                        );
                         reply.error(err);
                         return;
                     }
@@ -510,7 +550,9 @@ impl Filesystem for JournalFileSystem {
                                 st_size: size,
                             })
                         }
-                        entries.push(JournalEntry::CloseFileDescriptorV1 { fd: fh });
+                        entries.push(JournalEntry::CloseFileDescriptorV1 {
+                            fd: fh,
+                        });
 
                         for entry in entries.iter() {
                             if self.state.write(entry.clone()).is_err() {
@@ -530,10 +572,22 @@ impl Filesystem for JournalFileSystem {
                             ino,
                             size: file.size(),
                             blocks: (1u64.max(file.size()) - 1 / 512) + 1,
-                            atime: time01::Timespec::new(file.last_accessed() as i64, 0),
-                            mtime: time01::Timespec::new(file.last_modified() as i64, 0),
-                            ctime: time01::Timespec::new(file.created_time() as i64, 0),
-                            crtime: time01::Timespec::new(file.created_time() as i64, 0),
+                            atime: time01::Timespec::new(
+                                file.last_accessed() as i64,
+                                0,
+                            ),
+                            mtime: time01::Timespec::new(
+                                file.last_modified() as i64,
+                                0,
+                            ),
+                            ctime: time01::Timespec::new(
+                                file.created_time() as i64,
+                                0,
+                            ),
+                            crtime: time01::Timespec::new(
+                                file.created_time() as i64,
+                                0,
+                            ),
                             kind: fuser::FileType::RegularFile,
                             perm: 0o644,
                             nlink: 1,
@@ -545,15 +599,29 @@ impl Filesystem for JournalFileSystem {
                     }
                     Err(FsError::EntryNotFound) => {
                         // Maybe its a directory, in which case we are done
-                        if let Ok(meta) = state.mem_fs.metadata(&Path::new(path.as_ref())) {
+                        if let Ok(meta) =
+                            state.mem_fs.metadata(&Path::new(path.as_ref()))
+                        {
                             FileAttr {
                                 ino,
                                 size: meta.len,
                                 blocks: (1u64.max(meta.len) - 1 / 512) + 1,
-                                atime: time01::Timespec::new(meta.accessed as i64, 0),
-                                mtime: time01::Timespec::new(meta.modified as i64, 0),
-                                ctime: time01::Timespec::new(meta.created as i64, 0),
-                                crtime: time01::Timespec::new(meta.created as i64, 0),
+                                atime: time01::Timespec::new(
+                                    meta.accessed as i64,
+                                    0,
+                                ),
+                                mtime: time01::Timespec::new(
+                                    meta.modified as i64,
+                                    0,
+                                ),
+                                ctime: time01::Timespec::new(
+                                    meta.created as i64,
+                                    0,
+                                ),
+                                crtime: time01::Timespec::new(
+                                    meta.created as i64,
+                                    0,
+                                ),
                                 kind: file_type_to_kind(meta.ft),
                                 perm: 0o644,
                                 nlink: 1,
@@ -563,13 +631,17 @@ impl Filesystem for JournalFileSystem {
                                 flags: 0,
                             }
                         } else {
-                            tracing::trace!("fs::setattr open_file({path}) err=ENOENT");
+                            tracing::trace!(
+                                "fs::setattr open_file({path}) err=ENOENT"
+                            );
                             reply.error(libc::ENOENT);
                             return;
                         }
                     }
                     Err(err) => {
-                        tracing::trace!("fs::setattr open_file({path}) err={err}");
+                        tracing::trace!(
+                            "fs::setattr open_file({path}) err={err}"
+                        );
                         reply.error(libc::EIO);
                         return;
                     }
@@ -925,11 +997,15 @@ impl Filesystem for JournalFileSystem {
             }
         };
 
-        for (i, entry) in read_dir.into_iter().enumerate().skip(offset as usize) {
+        for (i, entry) in read_dir.into_iter().enumerate().skip(offset as usize)
+        {
             let entry = match entry {
                 Ok(a) => a,
                 Err(err) => {
-                    tracing::trace!("fs::readir direntry(index={i}) err={}", err);
+                    tracing::trace!(
+                        "fs::readir direntry(index={i}) err={}",
+                        err
+                    );
                     reply.error(libc::EIO);
                     return;
                 }
@@ -965,7 +1041,14 @@ impl Filesystem for JournalFileSystem {
         reply.ok();
     }
 
-    fn mkdir(&mut self, _req: &Request, parent: u64, name: &OsStr, _mode: u32, reply: ReplyEntry) {
+    fn mkdir(
+        &mut self,
+        _req: &Request,
+        parent: u64,
+        name: &OsStr,
+        _mode: u32,
+        reply: ReplyEntry,
+    ) {
         let path = match self.compute_path(parent, name) {
             Ok(a) => a,
             Err(err) => {
@@ -993,7 +1076,13 @@ impl Filesystem for JournalFileSystem {
         }
     }
 
-    fn rmdir(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEmpty) {
+    fn rmdir(
+        &mut self,
+        _req: &Request,
+        parent: u64,
+        name: &OsStr,
+        reply: ReplyEmpty,
+    ) {
         let path = match self.compute_path(parent, name) {
             Ok(a) => a,
             Err(err) => {
@@ -1012,7 +1101,13 @@ impl Filesystem for JournalFileSystem {
         reply.ok();
     }
 
-    fn unlink(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEmpty) {
+    fn unlink(
+        &mut self,
+        _req: &Request,
+        parent: u64,
+        name: &OsStr,
+        reply: ReplyEmpty,
+    ) {
         let path = match self.compute_path(parent, name) {
             Ok(a) => a,
             Err(err) => {
@@ -1090,17 +1185,37 @@ impl Filesystem for JournalFileSystem {
         reply.error(libc::ENOSYS);
     }
 
-    fn fsync(&mut self, _req: &Request, _ino: u64, _fh: u64, _datasync: bool, reply: ReplyEmpty) {
+    fn fsync(
+        &mut self,
+        _req: &Request,
+        _ino: u64,
+        _fh: u64,
+        _datasync: bool,
+        reply: ReplyEmpty,
+    ) {
         tracing::trace!("fs::fsync err=ENOSYS");
         reply.error(libc::ENOSYS);
     }
 
-    fn opendir(&mut self, _req: &Request, _ino: u64, _flags: u32, reply: ReplyOpen) {
+    fn opendir(
+        &mut self,
+        _req: &Request,
+        _ino: u64,
+        _flags: u32,
+        reply: ReplyOpen,
+    ) {
         tracing::trace!("fs::opendir opened");
         reply.opened(0, 0);
     }
 
-    fn releasedir(&mut self, _req: &Request, _ino: u64, _fh: u64, _flags: u32, reply: ReplyEmpty) {
+    fn releasedir(
+        &mut self,
+        _req: &Request,
+        _ino: u64,
+        _fh: u64,
+        _flags: u32,
+        reply: ReplyEmpty,
+    ) {
         tracing::trace!("fs::releasedir ok");
         reply.ok();
     }
@@ -1122,17 +1237,35 @@ impl Filesystem for JournalFileSystem {
         reply.statfs(0, 0, 0, 0, 0, 512, 255, 0);
     }
 
-    fn listxattr(&mut self, _req: &Request, _ino: u64, _size: u32, reply: ReplyXattr) {
+    fn listxattr(
+        &mut self,
+        _req: &Request,
+        _ino: u64,
+        _size: u32,
+        reply: ReplyXattr,
+    ) {
         tracing::trace!("fs::listxattr err=ENOSYS");
         reply.error(libc::ENOSYS);
     }
 
-    fn removexattr(&mut self, _req: &Request, _ino: u64, _name: &OsStr, reply: ReplyEmpty) {
+    fn removexattr(
+        &mut self,
+        _req: &Request,
+        _ino: u64,
+        _name: &OsStr,
+        reply: ReplyEmpty,
+    ) {
         tracing::trace!("fs::removexattr err=ENOSYS");
         reply.error(libc::ENOSYS);
     }
 
-    fn access(&mut self, _req: &Request, _ino: u64, _mask: u32, reply: ReplyEmpty) {
+    fn access(
+        &mut self,
+        _req: &Request,
+        _ino: u64,
+        _mask: u32,
+        reply: ReplyEmpty,
+    ) {
         tracing::trace!("fs::access err=ENOSYS");
         reply.error(libc::ENOSYS);
     }
@@ -1170,7 +1303,14 @@ impl Filesystem for JournalFileSystem {
         reply.error(libc::ENOSYS);
     }
 
-    fn bmap(&mut self, _req: &Request, _ino: u64, _blocksize: u32, _idx: u64, reply: ReplyBmap) {
+    fn bmap(
+        &mut self,
+        _req: &Request,
+        _ino: u64,
+        _blocksize: u32,
+        _idx: u64,
+        reply: ReplyBmap,
+    ) {
         tracing::trace!("fs::bmp err=ENOSYS");
         reply.error(libc::ENOSYS);
     }

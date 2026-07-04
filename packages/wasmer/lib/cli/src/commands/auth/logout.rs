@@ -34,21 +34,23 @@ impl AsyncCliCommand for Logout {
             .unwrap()
             .bold();
 
-        let client = self
-            .env
-            .client()
-            .map_err(|_| anyhow::anyhow!("Not logged into registry {host_str}"))?;
+        let client = self.env.client().map_err(|_| {
+            anyhow::anyhow!("Not logged into registry {host_str}")
+        })?;
 
         let user = wasmer_backend_api::query::current_user(&client)
             .await
-            .map_err(|e| anyhow::anyhow!("Not logged into registry {host_str}: {e}"))?
-            .ok_or_else(|| anyhow::anyhow!("Not logged into registry {host_str}"))?;
+            .map_err(|e| {
+                anyhow::anyhow!("Not logged into registry {host_str}: {e}")
+            })?
+            .ok_or_else(|| {
+                anyhow::anyhow!("Not logged into registry {host_str}")
+            })?;
 
         let theme = dialoguer::theme::ColorfulTheme::default();
-        let prompt = dialoguer::Confirm::with_theme(&theme).with_prompt(format!(
-            "Log user {} out of registry {host_str}?",
-            user.username
-        ));
+        let prompt = dialoguer::Confirm::with_theme(&theme).with_prompt(
+            format!("Log user {} out of registry {host_str}?", user.username),
+        );
 
         if prompt.interact()? || self.non_interactive {
             let mut config = self.env.config()?;
@@ -92,7 +94,8 @@ impl AsyncCliCommand for Logout {
                 };
 
                 if should_revoke {
-                    wasmer_backend_api::query::revoke_token(&client, token).await?;
+                    wasmer_backend_api::query::revoke_token(&client, token)
+                        .await?;
                     println!(
                         "Token for user {} in registry {host_str} correctly revoked",
                         user.username.bold()

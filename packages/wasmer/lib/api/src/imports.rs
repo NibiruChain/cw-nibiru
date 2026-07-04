@@ -141,7 +141,10 @@ impl Imports {
     ///
     /// This means the returned `Vec<Extern>` might be a subset of the imports contained in `self`.
     #[allow(clippy::result_large_err)]
-    pub fn imports_for_module(&self, module: &Module) -> Result<Vec<Extern>, LinkError> {
+    pub fn imports_for_module(
+        &self,
+        module: &Module,
+    ) -> Result<Vec<Extern>, LinkError> {
         let mut ret = vec![];
         for import in module.imports() {
             if let Some(imp) = self
@@ -188,7 +191,8 @@ impl<'a> Iterator for ImportsIterator<'a> {
 }
 
 impl IntoIterator for &Imports {
-    type IntoIter = std::collections::hash_map::IntoIter<(String, String), Extern>;
+    type IntoIter =
+        std::collections::hash_map::IntoIter<(String, String), Extern>;
     type Item = ((String, String), Extern);
 
     fn into_iter(self) -> Self::IntoIter {
@@ -197,7 +201,10 @@ impl IntoIterator for &Imports {
 }
 
 impl Extend<((String, String), Extern)> for Imports {
-    fn extend<T: IntoIterator<Item = ((String, String), Extern)>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = ((String, String), Extern)>>(
+        &mut self,
+        iter: T,
+    ) {
         for ((ns, name), ext) in iter.into_iter() {
             self.define(&ns, &name, ext);
         }

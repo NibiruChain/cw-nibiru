@@ -12,7 +12,9 @@ use crate::{
     bin_factory::BinaryPackage,
     capabilities::Capabilities,
     journal::{DynJournal, SnapshotTrigger},
-    runners::{wasi_common::CommonWasiOptions, MappedDirectory, MountedDirectory},
+    runners::{
+        wasi_common::CommonWasiOptions, MappedDirectory, MountedDirectory,
+    },
     runtime::task_manager::VirtualTaskManagerExt,
     Runtime, WasiEnvBuilder, WasiError, WasiRuntimeError,
 };
@@ -64,7 +66,11 @@ impl WasiRunner {
     }
 
     /// Builder method to provide environment variables to the runner.
-    pub fn with_env(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+    pub fn with_env(
+        mut self,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> Self {
         self.wasi.env.insert(key.into(), value.into());
         self
     }
@@ -91,7 +97,9 @@ impl WasiRunner {
         I: IntoIterator<Item = D>,
         D: Into<MappedDirectory>,
     {
-        self.with_mounted_directories(dirs.into_iter().map(Into::into).map(MountedDirectory::from))
+        self.with_mounted_directories(
+            dirs.into_iter().map(Into::into).map(MountedDirectory::from),
+        )
     }
 
     pub fn with_home_mapped(&mut self, is_home_mapped: bool) -> &mut Self {
@@ -114,7 +122,11 @@ impl WasiRunner {
     }
 
     /// Mount a [`FileSystem`] instance at a particular location.
-    pub fn with_mount(&mut self, dest: String, fs: Arc<dyn FileSystem + Send + Sync>) -> &mut Self {
+    pub fn with_mount(
+        &mut self,
+        dest: String,
+        fs: Arc<dyn FileSystem + Send + Sync>,
+    ) -> &mut Self {
         self.wasi.mounts.push(MountedDirectory { guest: dest, fs });
         self
     }
@@ -164,7 +176,10 @@ impl WasiRunner {
         &mut self.wasi.capabilities
     }
 
-    pub fn with_capabilities(&mut self, capabilities: Capabilities) -> &mut Self {
+    pub fn with_capabilities(
+        &mut self,
+        capabilities: Capabilities,
+    ) -> &mut Self {
         self.wasi.capabilities = capabilities;
         self
     }
@@ -187,7 +202,10 @@ impl WasiRunner {
         self.wasi.snapshot_on.iter().any(|t| *t == on)
     }
 
-    pub fn with_snapshot_interval(&mut self, period: std::time::Duration) -> &mut Self {
+    pub fn with_snapshot_interval(
+        &mut self,
+        period: std::time::Duration,
+    ) -> &mut Self {
         if !self.has_snapshot_trigger(SnapshotTrigger::PeriodicInterval) {
             self.with_snapshot_trigger(SnapshotTrigger::PeriodicInterval);
         }
@@ -200,17 +218,26 @@ impl WasiRunner {
         self
     }
 
-    pub fn with_stdin(&mut self, stdin: Box<dyn VirtualFile + Send + Sync>) -> &mut Self {
+    pub fn with_stdin(
+        &mut self,
+        stdin: Box<dyn VirtualFile + Send + Sync>,
+    ) -> &mut Self {
         self.stdin = Some(ArcBoxFile::new(stdin));
         self
     }
 
-    pub fn with_stdout(&mut self, stdout: Box<dyn VirtualFile + Send + Sync>) -> &mut Self {
+    pub fn with_stdout(
+        &mut self,
+        stdout: Box<dyn VirtualFile + Send + Sync>,
+    ) -> &mut Self {
         self.stdout = Some(ArcBoxFile::new(stdout));
         self
     }
 
-    pub fn with_stderr(&mut self, stderr: Box<dyn VirtualFile + Send + Sync>) -> &mut Self {
+    pub fn with_stderr(
+        &mut self,
+        stderr: Box<dyn VirtualFile + Send + Sync>,
+    ) -> &mut Self {
         self.stderr = Some(ArcBoxFile::new(stderr));
         self
     }
@@ -301,7 +328,8 @@ impl WasiRunner {
         let wasi = webc::metadata::annotations::Wasi::new(program_name);
         let mut store = runtime.new_store();
 
-        let mut builder = self.prepare_webc_env(program_name, &wasi, None, runtime, None)?;
+        let mut builder =
+            self.prepare_webc_env(program_name, &wasi, None, runtime, None)?;
 
         #[cfg(feature = "ctrlc")]
         {
@@ -313,7 +341,8 @@ impl WasiRunner {
             for trigger in self.wasi.snapshot_on.iter().cloned() {
                 builder.add_snapshot_trigger(trigger);
             }
-            if self.wasi.snapshot_on.is_empty() && !self.wasi.journals.is_empty() {
+            if self.wasi.snapshot_on.is_empty() && !self.wasi.journals.is_empty()
+            {
                 for on in crate::journal::DEFAULT_SNAPSHOT_TRIGGERS {
                     builder.add_snapshot_trigger(on);
                 }
@@ -331,7 +360,11 @@ impl WasiRunner {
         if asyncify {
             builder.run_with_store_async(module.clone(), module_hash, store)?;
         } else {
-            builder.run_with_store_ext(module.clone(), module_hash, &mut store)?;
+            builder.run_with_store_ext(
+                module.clone(),
+                module_hash,
+                &mut store,
+            )?;
         }
 
         Ok(())
@@ -352,9 +385,9 @@ impl crate::runners::Runner for WasiRunner {
         pkg: &BinaryPackage,
         runtime: Arc<dyn Runtime + Send + Sync>,
     ) -> Result<(), Error> {
-        let cmd = pkg
-            .get_command(command_name)
-            .with_context(|| format!("The package doesn't contain a \"{command_name}\" command"))?;
+        let cmd = pkg.get_command(command_name).with_context(|| {
+            format!("The package doesn't contain a \"{command_name}\" command")
+        })?;
         let wasi = cmd
             .metadata()
             .annotation("wasi")?
@@ -368,7 +401,13 @@ impl crate::runners::Runner for WasiRunner {
 
         #[allow(unused_mut)]
         let mut env = self
-            .prepare_webc_env(exec_name, &wasi, Some(pkg), Arc::clone(&runtime), None)
+            .prepare_webc_env(
+                exec_name,
+                &wasi,
+                Some(pkg),
+                Arc::clone(&runtime),
+                None,
+            )
             .context("Unable to prepare the WASI environment")?;
 
         #[cfg(feature = "journal")]
@@ -391,10 +430,15 @@ impl crate::runners::Runner for WasiRunner {
 
         let exit_code = tasks.spawn_and_block_on(
             async move {
-                let mut task_handle =
-                    crate::bin_factory::spawn_exec(pkg, &command_name, store, env, &runtime)
-                        .await
-                        .context("Spawn failed")?;
+                let mut task_handle = crate::bin_factory::spawn_exec(
+                    pkg,
+                    &command_name,
+                    store,
+                    env,
+                    &runtime,
+                )
+                .await
+                .context("Spawn failed")?;
 
                 #[cfg(feature = "ctrlc")]
                 task_handle.install_ctrlc_handler();
@@ -409,27 +453,37 @@ impl crate::runners::Runner for WasiRunner {
                         Arc::into_inner(err).unwrap_or_else(|| {
                             weak.upgrade()
                                 .map(|err| match err.as_ref() {
-                                    WasiRuntimeError::Init(a) => WasiRuntimeError::Init(a.clone()),
+                                    WasiRuntimeError::Init(a) => {
+                                        WasiRuntimeError::Init(a.clone())
+                                    }
                                     WasiRuntimeError::Export(a) => {
                                         WasiRuntimeError::Export(a.clone())
                                     }
                                     WasiRuntimeError::Instantiation(a) => {
-                                        WasiRuntimeError::Instantiation(a.clone())
+                                        WasiRuntimeError::Instantiation(
+                                            a.clone(),
+                                        )
                                     }
-                                    WasiRuntimeError::Wasi(WasiError::Exit(a)) => {
-                                        WasiRuntimeError::Wasi(WasiError::Exit(*a))
-                                    }
-                                    WasiRuntimeError::Wasi(WasiError::ThreadExit) => {
-                                        WasiRuntimeError::Wasi(WasiError::ThreadExit)
-                                    }
-                                    WasiRuntimeError::Wasi(WasiError::UnknownWasiVersion) => {
-                                        WasiRuntimeError::Wasi(WasiError::UnknownWasiVersion)
-                                    }
-                                    WasiRuntimeError::Wasi(WasiError::DeepSleep(_)) => {
-                                        WasiRuntimeError::Anyhow(Arc::new(anyhow::format_err!(
-                                            "deep-sleep"
-                                        )))
-                                    }
+                                    WasiRuntimeError::Wasi(WasiError::Exit(
+                                        a,
+                                    )) => WasiRuntimeError::Wasi(
+                                        WasiError::Exit(*a),
+                                    ),
+                                    WasiRuntimeError::Wasi(
+                                        WasiError::ThreadExit,
+                                    ) => WasiRuntimeError::Wasi(
+                                        WasiError::ThreadExit,
+                                    ),
+                                    WasiRuntimeError::Wasi(
+                                        WasiError::UnknownWasiVersion,
+                                    ) => WasiRuntimeError::Wasi(
+                                        WasiError::UnknownWasiVersion,
+                                    ),
+                                    WasiRuntimeError::Wasi(
+                                        WasiError::DeepSleep(_),
+                                    ) => WasiRuntimeError::Anyhow(Arc::new(
+                                        anyhow::format_err!("deep-sleep"),
+                                    )),
                                     WasiRuntimeError::ControlPlane(a) => {
                                         WasiRuntimeError::ControlPlane(a.clone())
                                     }
@@ -444,9 +498,9 @@ impl crate::runners::Runner for WasiRunner {
                                     }
                                 })
                                 .unwrap_or_else(|| {
-                                    WasiRuntimeError::Anyhow(Arc::new(anyhow::format_err!(
-                                        "{}", msg
-                                    )))
+                                    WasiRuntimeError::Anyhow(Arc::new(
+                                        anyhow::format_err!("{}", msg),
+                                    ))
                                 })
                         })
                     })
@@ -485,8 +539,10 @@ mod tests {
 
         let tokrt = tokio::runtime::Handle::current();
 
-        let hostdir = virtual_fs::host_fs::FileSystem::new(tokrt.clone(), "/").unwrap();
-        let hostdir_dyn: Arc<dyn virtual_fs::FileSystem + Send + Sync> = Arc::new(hostdir);
+        let hostdir =
+            virtual_fs::host_fs::FileSystem::new(tokrt.clone(), "/").unwrap();
+        let hostdir_dyn: Arc<dyn virtual_fs::FileSystem + Send + Sync> =
+            Arc::new(hostdir);
 
         root_fs
             .mount("/host".into(), &hostdir_dyn, "/".into())
@@ -496,13 +552,21 @@ mod tests {
 
         let annotations = webc::metadata::annotations::Wasi::new("test");
 
-        let tm = Arc::new(crate::runtime::task_manager::tokio::TokioTaskManager::new(
-            tokrt.clone(),
-        ));
+        let tm = Arc::new(
+            crate::runtime::task_manager::tokio::TokioTaskManager::new(
+                tokrt.clone(),
+            ),
+        );
         let rt = crate::PluggableRuntime::new(tm);
 
         let envb = envb
-            .prepare_webc_env("test", &annotations, None, Arc::new(rt), Some(root_fs))
+            .prepare_webc_env(
+                "test",
+                &annotations,
+                None,
+                Arc::new(rt),
+                Some(root_fs),
+            )
             .unwrap();
 
         let init = envb.build_init().unwrap();
@@ -523,8 +587,10 @@ mod tests {
 
         let tokrt = tokio::runtime::Handle::current();
 
-        let hostdir = virtual_fs::host_fs::FileSystem::new(tokrt.clone(), "/").unwrap();
-        let hostdir_dyn: Arc<dyn virtual_fs::FileSystem + Send + Sync> = Arc::new(hostdir);
+        let hostdir =
+            virtual_fs::host_fs::FileSystem::new(tokrt.clone(), "/").unwrap();
+        let hostdir_dyn: Arc<dyn virtual_fs::FileSystem + Send + Sync> =
+            Arc::new(hostdir);
 
         root_fs
             .mount("/host".into(), &hostdir_dyn, "/".into())
@@ -534,19 +600,24 @@ mod tests {
 
         let annotations = webc::metadata::annotations::Wasi::new("test");
 
-        let tm = Arc::new(crate::runtime::task_manager::tokio::TokioTaskManager::new(
-            tokrt.clone(),
-        ));
+        let tm = Arc::new(
+            crate::runtime::task_manager::tokio::TokioTaskManager::new(
+                tokrt.clone(),
+            ),
+        );
         let mut rt = crate::PluggableRuntime::new(tm);
-        rt.set_package_loader(crate::runtime::package_loader::BuiltinPackageLoader::new());
+        rt.set_package_loader(
+            crate::runtime::package_loader::BuiltinPackageLoader::new(),
+        );
 
         let webc_path = std::path::PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("../../tests/integration/cli/tests/webc/wasmer-tests--volume-static-webserver@0.1.0.webc");
         let webc_data = std::fs::read(webc_path).unwrap();
         let container = from_bytes(webc_data).unwrap();
 
-        let binpkg = crate::bin_factory::BinaryPackage::from_webc(&container, &rt)
-            .await
-            .unwrap();
+        let binpkg =
+            crate::bin_factory::BinaryPackage::from_webc(&container, &rt)
+                .await
+                .unwrap();
 
         let mut envb = envb
             .prepare_webc_env(

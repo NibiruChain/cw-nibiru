@@ -196,7 +196,11 @@ impl Package {
 }
 
 impl PackageBuilder {
-    pub fn new(name: impl Into<String>, version: Version, description: impl Into<String>) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        version: Version,
+        description: impl Into<String>,
+    ) -> Self {
         let mut builder = PackageBuilder::default();
         builder.name(name).version(version).description(description);
         builder
@@ -263,10 +267,16 @@ pub struct CommandV2 {
 impl CommandV2 {
     /// Get annotations, automatically loading them from a file relative to the
     /// `wasmer.toml`'s directory, if necessary.
-    pub fn get_annotations(&self, basepath: &Path) -> Result<Option<ciborium::Value>, String> {
+    pub fn get_annotations(
+        &self,
+        basepath: &Path,
+    ) -> Result<Option<ciborium::Value>, String> {
         match self.annotations.as_ref() {
             Some(CommandAnnotations::Raw(v)) => Ok(Some(toml_to_cbor_value(v))),
-            Some(CommandAnnotations::File(FileCommandAnnotations { file, kind })) => {
+            Some(CommandAnnotations::File(FileCommandAnnotations {
+                file,
+                kind,
+            })) => {
                 let path = basepath.join(file.clone());
                 let file = std::fs::read_to_string(&path).map_err(|e| {
                     format!(
@@ -371,7 +381,9 @@ impl FromStr for ModuleReference {
 impl Display for ModuleReference {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ModuleReference::CurrentPackage { module } => Display::fmt(module, f),
+            ModuleReference::CurrentPackage { module } => {
+                Display::fmt(module, f)
+            }
             ModuleReference::Dependency { dependency, module } => {
                 write!(f, "{dependency}:{module}")
             }
@@ -382,7 +394,9 @@ impl Display for ModuleReference {
 fn toml_to_cbor_value(val: &toml::Value) -> ciborium::Value {
     match val {
         toml::Value::String(s) => ciborium::Value::Text(s.clone()),
-        toml::Value::Integer(i) => ciborium::Value::Integer(ciborium::value::Integer::from(*i)),
+        toml::Value::Integer(i) => {
+            ciborium::Value::Integer(ciborium::value::Integer::from(*i))
+        }
         toml::Value::Float(f) => ciborium::Value::Float(*f),
         toml::Value::Boolean(b) => ciborium::Value::Bool(*b),
         toml::Value::Datetime(d) => ciborium::Value::Text(format!("{}", d)),
@@ -391,7 +405,9 @@ fn toml_to_cbor_value(val: &toml::Value) -> ciborium::Value {
         }
         toml::Value::Table(m) => ciborium::Value::Map(
             m.iter()
-                .map(|(k, v)| (ciborium::Value::Text(k.clone()), toml_to_cbor_value(v)))
+                .map(|(k, v)| {
+                    (ciborium::Value::Text(k.clone()), toml_to_cbor_value(v))
+                })
                 .collect(),
         ),
     }
@@ -418,7 +434,9 @@ fn json_to_cbor_value(val: &serde_json::Value) -> ciborium::Value {
         }
         serde_json::Value::Object(m) => ciborium::Value::Map(
             m.iter()
-                .map(|(k, v)| (ciborium::Value::Text(k.clone()), json_to_cbor_value(v)))
+                .map(|(k, v)| {
+                    (ciborium::Value::Text(k.clone()), json_to_cbor_value(v))
+                })
                 .collect(),
         ),
     }
@@ -473,7 +491,9 @@ pub struct FileCommandAnnotations {
 }
 
 /// The different formats that [`FileCommandAnnotations`] can be saved in.
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Deserialize, Serialize)]
+#[derive(
+    Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Deserialize, Serialize,
+)]
 pub enum FileKind {
     /// A `*.yaml` file that will be deserialized using [`serde_yaml`].
     #[serde(rename = "yaml")]
@@ -519,7 +539,10 @@ impl Bindings {
     /// look for any files that are imported.
     ///
     /// The caller can assume that any path that was referenced exists.
-    pub fn referenced_files(&self, base_directory: &Path) -> Result<Vec<PathBuf>, ImportsError> {
+    pub fn referenced_files(
+        &self,
+        base_directory: &Path,
+    ) -> Result<Vec<PathBuf>, ImportsError> {
         match self {
             Bindings::Wit(WitBindings { wit_exports, .. }) => {
                 // Note: we explicitly don't support imported files with WIT
@@ -558,7 +581,8 @@ impl<'de> Deserialize<'de> for Bindings {
         let value = toml::Value::deserialize(deserializer)?;
 
         let keys = ["wit-bindgen", "wai-version"];
-        let [wit_bindgen, wai_version] = keys.map(|key| value.get(key).is_some());
+        let [wit_bindgen, wai_version] =
+            keys.map(|key| value.get(key).is_some());
 
         match (wit_bindgen, wai_version) {
             (true, false) => WitBindings::deserialize(value)
@@ -601,7 +625,10 @@ pub struct WaiBindings {
 }
 
 impl WaiBindings {
-    fn referenced_files(&self, base_directory: &Path) -> Result<Vec<PathBuf>, ImportsError> {
+    fn referenced_files(
+        &self,
+        base_directory: &Path,
+    ) -> Result<Vec<PathBuf>, ImportsError> {
         let WaiBindings {
             exports, imports, ..
         } = self;
@@ -644,10 +671,11 @@ impl WaiBindings {
 ///
 /// This function makes sure any imported files exist.
 fn get_imported_wai_files(path: &Path) -> Result<Vec<PathBuf>, ImportsError> {
-    let _wai_src = std::fs::read_to_string(path).map_err(|error| ImportsError::Read {
-        path: path.to_path_buf(),
-        error,
-    })?;
+    let _wai_src =
+        std::fs::read_to_string(path).map_err(|error| ImportsError::Read {
+            path: path.to_path_buf(),
+            error,
+        })?;
 
     let parent_dir = path.parent()
             .expect("All paths should have a parent directory because we joined them relative to the base directory");
@@ -753,7 +781,9 @@ impl Manifest {
 
     /// Construct a manifest by searching in the specified directory for a
     /// manifest file.
-    pub fn find_in_directory<T: AsRef<Path>>(path: T) -> Result<Self, ManifestError> {
+    pub fn find_in_directory<T: AsRef<Path>>(
+        path: T,
+    ) -> Result<Self, ManifestError> {
         let path = path.as_ref();
 
         if !path.is_dir() {
@@ -803,7 +833,8 @@ impl Manifest {
         let mut commands = BTreeMap::new();
 
         for command in &self.commands {
-            let is_duplicate = commands.insert(command.get_name(), command).is_some();
+            let is_duplicate =
+                commands.insert(command.get_name(), command).is_some();
 
             if is_duplicate {
                 return Err(ValidationError::DuplicateCommand {
@@ -815,7 +846,8 @@ impl Manifest {
             match &module_reference {
                 ModuleReference::CurrentPackage { module } => {
                     if let Some(module) = modules.get(&module) {
-                        if module.abi == Abi::None && module.interfaces.is_none() {
+                        if module.abi == Abi::None && module.interfaces.is_none()
+                        {
                             return Err(ValidationError::MissingABI {
                                 command: command.get_name().to_string(),
                                 module: module.name.clone(),
@@ -847,7 +879,10 @@ impl Manifest {
                 if !commands.contains_key(entrypoint) {
                     return Err(ValidationError::InvalidEntrypoint {
                         entrypoint: entrypoint.to_string(),
-                        available_commands: commands.keys().map(ToString::to_string).collect(),
+                        available_commands: commands
+                            .keys()
+                            .map(ToString::to_string)
+                            .collect(),
                     });
                 }
             }
@@ -857,13 +892,20 @@ impl Manifest {
     }
 
     /// add a dependency
-    pub fn add_dependency(&mut self, dependency_name: String, dependency_version: VersionReq) {
+    pub fn add_dependency(
+        &mut self,
+        dependency_name: String,
+        dependency_version: VersionReq,
+    ) {
         self.dependencies
             .insert(dependency_name, dependency_version);
     }
 
     /// remove dependency by package name
-    pub fn remove_dependency(&mut self, dependency_name: &str) -> Option<VersionReq> {
+    pub fn remove_dependency(
+        &mut self,
+        dependency_name: &str,
+    ) -> Option<VersionReq> {
         self.dependencies.remove(dependency_name)
     }
 
@@ -876,7 +918,8 @@ impl Manifest {
     /// Write the manifest to permanent storage
     pub fn save(&self, path: impl AsRef<Path>) -> anyhow::Result<()> {
         let manifest = toml::to_string_pretty(self)?;
-        std::fs::write(path, manifest).map_err(ManifestError::CannotSaveManifest)?;
+        std::fs::write(path, manifest)
+            .map_err(ManifestError::CannotSaveManifest)?;
         Ok(())
     }
 }
@@ -900,7 +943,11 @@ impl ManifestBuilder {
 
     /// Include a directory on the host in the package and make it available to
     /// a WebAssembly guest at the `guest` path.
-    pub fn map_fs(&mut self, guest: impl Into<String>, host: impl Into<PathBuf>) -> &mut Self {
+    pub fn map_fs(
+        &mut self,
+        guest: impl Into<String>,
+        host: impl Into<PathBuf>,
+    ) -> &mut Self {
         self.fs
             .get_or_insert_with(IndexMap::new)
             .insert(guest.into(), host.into());
@@ -908,7 +955,11 @@ impl ManifestBuilder {
     }
 
     /// Add a dependency to the [`Manifest`].
-    pub fn with_dependency(&mut self, name: impl Into<String>, version: VersionReq) -> &mut Self {
+    pub fn with_dependency(
+        &mut self,
+        name: impl Into<String>,
+        version: VersionReq,
+    ) -> &mut Self {
         self.dependencies
             .get_or_insert_with(HashMap::new)
             .insert(name.into(), version);
@@ -1054,7 +1105,9 @@ module = "mod"
             modules[1],
             Module {
                 name: "mod-with-exports".to_string(),
-                source: PathBuf::from("target/wasm32-wasi/release/mod-with-exports.wasm"),
+                source: PathBuf::from(
+                    "target/wasm32-wasi/release/mod-with-exports.wasm"
+                ),
                 abi: Abi::None,
                 kind: None,
                 interfaces: None,
@@ -1205,10 +1258,12 @@ annotations = { file = "Runefile.yml", kind = "yaml" }
                 name: "run".into(),
                 module: "sine".parse().unwrap(),
                 runner: "rune".into(),
-                annotations: Some(CommandAnnotations::File(FileCommandAnnotations {
-                    file: "Runefile.yml".into(),
-                    kind: FileKind::Yaml,
-                }))
+                annotations: Some(CommandAnnotations::File(
+                    FileCommandAnnotations {
+                        file: "Runefile.yml".into(),
+                        kind: FileKind::Yaml,
+                    }
+                ))
             })
         );
     }
@@ -1291,7 +1346,10 @@ annotations = { file = "Runefile.yml", kind = "yaml" }
         let dependency_name = "dep_pkg";
         let dependency_version: VersionReq = "0.1.0".parse().unwrap();
 
-        manifest.add_dependency(dependency_name.to_string(), dependency_version.clone());
+        manifest.add_dependency(
+            dependency_name.to_string(),
+            dependency_version.clone(),
+        );
         assert_eq!(1, manifest.dependencies.len());
 
         // adding the same dependency twice changes nothing
@@ -1301,7 +1359,8 @@ annotations = { file = "Runefile.yml", kind = "yaml" }
         // adding a second different dependency will increase the count
         let dependency_name_2 = "dep_pkg_2";
         let dependency_version_2: VersionReq = "0.2.0".parse().unwrap();
-        manifest.add_dependency(dependency_name_2.to_string(), dependency_version_2);
+        manifest
+            .add_dependency(dependency_name_2.to_string(), dependency_version_2);
         assert_eq!(2, manifest.dependencies.len());
     }
 
@@ -1416,10 +1475,13 @@ annotations = { file = "Runefile.yml", kind = "yaml" }
 
     #[test]
     fn use_builder_api_to_create_simplest_manifest() {
-        let package =
-            Package::builder("my/package", "1.0.0".parse().unwrap(), "My awesome package")
-                .build()
-                .unwrap();
+        let package = Package::builder(
+            "my/package",
+            "1.0.0".parse().unwrap(),
+            "My awesome package",
+        )
+        .build()
+        .unwrap();
         let manifest = Manifest::builder(package).build().unwrap();
 
         manifest.validate().unwrap();

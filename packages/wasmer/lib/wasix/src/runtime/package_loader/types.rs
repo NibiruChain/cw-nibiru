@@ -8,9 +8,13 @@ use crate::{
     runtime::resolver::{PackageSummary, Resolution},
 };
 
-pub fn to_module_hash(value: webc::metadata::AtomSignature) -> wasmer_types::ModuleHash {
+pub fn to_module_hash(
+    value: webc::metadata::AtomSignature,
+) -> wasmer_types::ModuleHash {
     match value {
-        webc::metadata::AtomSignature::Sha256(bytes) => wasmer_types::ModuleHash::Sha256(bytes),
+        webc::metadata::AtomSignature::Sha256(bytes) => {
+            wasmer_types::ModuleHash::Sha256(bytes)
+        }
     }
 }
 

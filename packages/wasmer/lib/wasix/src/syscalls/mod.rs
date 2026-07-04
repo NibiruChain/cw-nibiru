@@ -53,7 +53,10 @@ pub(crate) use std::{
     thread::LocalKey,
     time::Duration,
 };
-use std::{io::IoSlice, marker::PhantomData, mem::MaybeUninit, task::Waker, time::Instant};
+use std::{
+    io::IoSlice, marker::PhantomData, mem::MaybeUninit, task::Waker,
+    time::Instant,
+};
 
 pub(crate) use bytes::{Bytes, BytesMut};
 pub(crate) use cooked_waker::IntoWaker;
@@ -75,22 +78,26 @@ pub(crate) use virtual_fs::{
 };
 pub(crate) use virtual_net::StreamSecurity;
 pub(crate) use wasmer::{
-    AsStoreMut, AsStoreRef, Extern, Function, FunctionEnv, FunctionEnvMut, Global, Instance,
-    Memory, Memory32, Memory64, MemoryAccessError, MemoryError, MemorySize, MemoryView, Module,
-    OnCalledAction, Pages, RuntimeError, Store, TypedFunction, Value, WasmPtr, WasmSlice,
+    AsStoreMut, AsStoreRef, Extern, Function, FunctionEnv, FunctionEnvMut,
+    Global, Instance, Memory, Memory32, Memory64, MemoryAccessError,
+    MemoryError, MemorySize, MemoryView, Module, OnCalledAction, Pages,
+    RuntimeError, Store, TypedFunction, Value, WasmPtr, WasmSlice,
 };
-pub(crate) use wasmer_wasix_types::{asyncify::__wasi_asyncify_t, wasi::EventUnion};
+pub(crate) use wasmer_wasix_types::{
+    asyncify::__wasi_asyncify_t, wasi::EventUnion,
+};
 #[cfg(target_os = "windows")]
 pub use windows::*;
 
 pub(crate) use self::types::{
     wasi::{
-        Addressfamily, Advice, Clockid, Dircookie, Dirent, Errno, Event, EventFdReadwrite,
-        Eventrwflags, Eventtype, ExitCode, Fd as WasiFd, Fdflags, Fdstat, Filesize, Filestat,
-        Filetype, Fstflags, Linkcount, Longsize, OptionFd, Pid, Prestat, Rights, Snapshot0Clockid,
-        Sockoption, Sockstatus, Socktype, StackSnapshot, StdioMode as WasiStdioMode,
-        Streamsecurity, Subscription, SubscriptionFsReadwrite, Tid, Timestamp, TlKey, TlUser,
-        TlVal, Tty, Whence,
+        Addressfamily, Advice, Clockid, Dircookie, Dirent, Errno, Event,
+        EventFdReadwrite, Eventrwflags, Eventtype, ExitCode, Fd as WasiFd,
+        Fdflags, Fdstat, Filesize, Filestat, Filetype, Fstflags, Linkcount,
+        Longsize, OptionFd, Pid, Prestat, Rights, Snapshot0Clockid, Sockoption,
+        Sockstatus, Socktype, StackSnapshot, StdioMode as WasiStdioMode,
+        Streamsecurity, Subscription, SubscriptionFsReadwrite, Tid, Timestamp,
+        TlKey, TlUser, TlVal, Tty, Whence,
     },
     *,
 };
@@ -112,17 +119,17 @@ pub(crate) use crate::{
     },
     runtime::SpawnMemoryType,
     state::{
-        self, iterate_poll_events, InodeGuard, InodeWeakGuard, PollEvent, PollEventBuilder,
-        WasiFutex, WasiState,
+        self, iterate_poll_events, InodeGuard, InodeWeakGuard, PollEvent,
+        PollEventBuilder, WasiFutex, WasiState,
     },
     utils::{self, map_io_err},
-    Runtime, VirtualTaskManager, WasiEnv, WasiError, WasiFunctionEnv, WasiInstanceHandles,
-    WasiVFork,
+    Runtime, VirtualTaskManager, WasiEnv, WasiError, WasiFunctionEnv,
+    WasiInstanceHandles, WasiVFork,
 };
 use crate::{
     fs::{
-        fs_error_into_wasi_err, virtual_file_type_to_wasi_file_type, Fd, InodeVal, Kind,
-        MAX_SYMLINKS,
+        fs_error_into_wasi_err, virtual_file_type_to_wasi_file_type, Fd,
+        InodeVal, Kind, MAX_SYMLINKS,
     },
     journal::{DynJournal, JournalEffector},
     os::task::{
@@ -131,17 +138,21 @@ use crate::{
     },
     runtime::task_manager::InlineWaker,
     utils::store::StoreSnapshot,
-    DeepSleepWork, RewindPostProcess, RewindState, RewindStateOption, SpawnError, WasiInodes,
-    WasiResult, WasiRuntimeError,
+    DeepSleepWork, RewindPostProcess, RewindState, RewindStateOption,
+    SpawnError, WasiInodes, WasiResult, WasiRuntimeError,
 };
 pub(crate) use crate::{net::net_error_into_wasi_err, utils::WasiParkingLot};
 
-pub(crate) fn to_offset<M: MemorySize>(offset: usize) -> Result<M::Offset, Errno> {
+pub(crate) fn to_offset<M: MemorySize>(
+    offset: usize,
+) -> Result<M::Offset, Errno> {
     let ret: M::Offset = offset.try_into().map_err(|_| Errno::Inval)?;
     Ok(ret)
 }
 
-pub(crate) fn from_offset<M: MemorySize>(offset: M::Offset) -> Result<usize, Errno> {
+pub(crate) fn from_offset<M: MemorySize>(
+    offset: M::Offset,
+) -> Result<usize, Errno> {
     let ret: usize = offset.try_into().map_err(|_| Errno::Inval)?;
     Ok(ret)
 }
@@ -242,12 +253,14 @@ pub unsafe fn stderr_write<'a>(
     buf: &[u8],
 ) -> LocalBoxFuture<'a, Result<(), Errno>> {
     let env = ctx.data();
-    let (memory, state, inodes) = env.get_memory_and_wasi_state_and_inodes(ctx, 0);
+    let (memory, state, inodes) =
+        env.get_memory_and_wasi_state_and_inodes(ctx, 0);
 
     let buf = buf.to_vec();
     let fd_map = state.fs.fd_map.clone();
     Box::pin(async move {
-        let mut stderr = WasiInodes::stderr_mut(&fd_map).map_err(fs_error_into_wasi_err)?;
+        let mut stderr =
+            WasiInodes::stderr_mut(&fd_map).map_err(fs_error_into_wasi_err)?;
         stderr.write_all(&buf).await.map_err(map_io_err)
     })
 }
@@ -333,12 +346,19 @@ where
         Fut: Future<Output = Result<T, Errno>>,
     {
         type Output = Result<Fut::Output, WasiError>;
-        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        fn poll(
+            mut self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Self::Output> {
             if let Poll::Ready(res) = Pin::new(&mut self.pinned_work).poll(cx) {
                 return Poll::Ready(Ok(res));
             }
-            if let Some(signals) = self.ctx.data().thread.pop_signals_or_subscribe(cx.waker()) {
-                if let Err(err) = WasiEnv::process_signals_internal(self.ctx, signals) {
+            if let Some(signals) =
+                self.ctx.data().thread.pop_signals_or_subscribe(cx.waker())
+            {
+                if let Err(err) =
+                    WasiEnv::process_signals_internal(self.ctx, signals)
+                {
                     return Poll::Ready(Err(err));
                 }
                 return Poll::Ready(Ok(Err(Errno::Intr)));
@@ -373,17 +393,22 @@ where
 {
     type Output = Result<T, WasiError>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Self::Output> {
         if let Poll::Ready(res) = self.work.as_mut().poll(cx) {
             return Poll::Ready(Ok(res));
         }
 
         let env = self.ctx.data();
         if let Some(forced_exit) = env.thread.try_join() {
-            return Poll::Ready(Err(WasiError::Exit(forced_exit.unwrap_or_else(|err| {
-                tracing::debug!("exit runtime error - {}", err);
-                Errno::Child.into()
-            }))));
+            return Poll::Ready(Err(WasiError::Exit(
+                forced_exit.unwrap_or_else(|err| {
+                    tracing::debug!("exit runtime error - {}", err);
+                    Errno::Child.into()
+                }),
+            )));
         }
         if env.thread.has_signals_or_subscribe(cx.waker()) {
             let has_exit = {
@@ -397,7 +422,9 @@ where
                             || *sig == Signal::Sigkill
                             || *sig == Signal::Sigabrt
                         {
-                            Some(env.thread.set_or_get_exit_code_for_signal(*sig))
+                            Some(
+                                env.thread.set_or_get_exit_code_for_signal(*sig),
+                            )
                         } else {
                             None
                         }
@@ -413,7 +440,9 @@ where
                         Poll::Pending
                     }
                 }
-                Ok(Err(err)) => Poll::Ready(Err(WasiError::Exit(ExitCode::from(err)))),
+                Ok(Err(err)) => {
+                    Poll::Ready(Err(WasiError::Exit(ExitCode::from(err))))
+                }
                 Err(err) => Poll::Ready(Err(err)),
             };
         }
@@ -580,11 +609,15 @@ where
         Fut: Future<Output = Result<T, Errno>>,
     {
         type Output = Result<Fut::Output, WasiError>;
-        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        fn poll(
+            mut self: Pin<&mut Self>,
+            cx: &mut Context<'_>,
+        ) -> Poll<Self::Output> {
             if let Poll::Ready(res) = Pin::new(&mut self.pinned_work).poll(cx) {
                 return Poll::Ready(Ok(res));
             }
-            if let Poll::Ready(()) = Pin::new(&mut self.pinned_snapshot).poll(cx) {
+            if let Poll::Ready(()) = Pin::new(&mut self.pinned_snapshot).poll(cx)
+            {
                 return Poll::Ready(Ok(Err(Errno::Intr)));
             }
             if let Some(exit_code) = self.env.should_exit() {
@@ -777,7 +810,9 @@ pub(crate) fn __sock_upgrade<'a, F, Fut>(
 ) -> Result<(), Errno>
 where
     F: FnOnce(crate::net::socket::InodeSocket, Fdflags) -> Fut,
-    Fut: std::future::Future<Output = Result<Option<crate::net::socket::InodeSocket>, Errno>> + 'a,
+    Fut: std::future::Future<
+            Output = Result<Option<crate::net::socket::InodeSocket>, Errno>,
+        > + 'a,
 {
     let env = ctx.data();
     let fd_entry = env.state.fs.get_fd(sock)?;
@@ -850,7 +885,9 @@ pub(crate) fn write_buffer_array<M: MemorySize>(
     ptr_buffer: WasmPtr<WasmPtr<u8, M>, M>,
     buffer: WasmPtr<u8, M>,
 ) -> Errno {
-    let ptrs = wasi_try_mem!(ptr_buffer.slice(memory, wasi_try!(to_offset::<M>(from.len()))));
+    let ptrs = wasi_try_mem!(
+        ptr_buffer.slice(memory, wasi_try!(to_offset::<M>(from.len())))
+    );
 
     let mut current_buffer_offset = 0usize;
     for ((i, sub_buffer), ptr) in from.iter().enumerate().zip(ptrs.iter()) {
@@ -860,7 +897,8 @@ pub(crate) fn write_buffer_array<M: MemorySize>(
         wasi_try_mem!(ptr.write(new_ptr));
 
         let data =
-            wasi_try_mem!(new_ptr.slice(memory, wasi_try!(to_offset::<M>(sub_buffer.len()))));
+            wasi_try_mem!(new_ptr
+                .slice(memory, wasi_try!(to_offset::<M>(sub_buffer.len()))));
         wasi_try_mem!(data.write_slice(sub_buffer));
         wasi_try_mem!(wasi_try_mem!(
             new_ptr.add_offset(wasi_try!(to_offset::<M>(sub_buffer.len())))
@@ -874,7 +912,8 @@ pub(crate) fn write_buffer_array<M: MemorySize>(
 }
 
 pub(crate) fn get_current_time_in_nanos() -> Result<Timestamp, Errno> {
-    let now = platform_clock_time_get(Snapshot0Clockid::Monotonic, 1_000_000).unwrap() as u128;
+    let now = platform_clock_time_get(Snapshot0Clockid::Monotonic, 1_000_000)
+        .unwrap() as u128;
     Ok(now as Timestamp)
 }
 
@@ -892,14 +931,17 @@ pub(crate) unsafe fn get_memory_stack_pointer(
     // Get the current value of the stack pointer (which we will use
     // to save all of the stack)
     let stack_upper = get_stack_upper(ctx.data());
-    let stack_pointer = if let Some(stack_pointer) = ctx.data().inner().stack_pointer.clone() {
+    let stack_pointer = if let Some(stack_pointer) =
+        ctx.data().inner().stack_pointer.clone()
+    {
         match stack_pointer.get(ctx) {
             Value::I32(a) => a as u64,
             Value::I64(a) => a as u64,
             _ => stack_upper,
         }
     } else {
-        return Err("failed to save stack: not exported __stack_pointer global".to_string());
+        return Err("failed to save stack: not exported __stack_pointer global"
+            .to_string());
     };
     Ok(stack_pointer)
 }
@@ -922,7 +964,9 @@ pub(crate) fn set_memory_stack_offset(
     let stack_pointer = stack_upper - offset;
     if let Some(stack_pointer_ptr) = env
         .try_inner()
-        .ok_or_else(|| "unable to access the stack pointer of the instance".to_string())?
+        .ok_or_else(|| {
+            "unable to access the stack pointer of the instance".to_string()
+        })?
         .stack_pointer
         .clone()
     {
@@ -941,7 +985,8 @@ pub(crate) fn set_memory_stack_offset(
             }
         }
     } else {
-        return Err("failed to save stack: not exported __stack_pointer global".to_string());
+        return Err("failed to save stack: not exported __stack_pointer global"
+            .to_string());
     }
     Ok(())
 }
@@ -956,7 +1001,9 @@ pub(crate) fn get_memory_stack<M: MemorySize>(
     let stack_base = get_stack_upper(env);
     let stack_pointer = if let Some(stack_pointer) = env
         .try_inner()
-        .ok_or_else(|| "unable to access the stack pointer of the instance".to_string())?
+        .ok_or_else(|| {
+            "unable to access the stack pointer of the instance".to_string()
+        })?
         .stack_pointer
         .clone()
     {
@@ -966,11 +1013,12 @@ pub(crate) fn get_memory_stack<M: MemorySize>(
             _ => stack_base,
         }
     } else {
-        return Err("failed to save stack: not exported __stack_pointer global".to_string());
+        return Err("failed to save stack: not exported __stack_pointer global"
+            .to_string());
     };
-    let memory = env
-        .try_memory_view(store)
-        .ok_or_else(|| "unable to access the memory of the instance".to_string())?;
+    let memory = env.try_memory_view(store).ok_or_else(|| {
+        "unable to access the memory of the instance".to_string()
+    })?;
     let stack_offset = env.layout.stack_upper - stack_pointer;
 
     // Read the memory stack into a vector
@@ -1001,21 +1049,20 @@ pub(crate) fn set_memory_stack<M: MemorySize>(
     let stack_upper = get_stack_upper(env);
     let stack_offset = stack.len() as u64;
     let stack_pointer = stack_upper - stack_offset;
-    let stack_ptr = WasmPtr::<u8, M>::new(
-        stack_pointer
-            .try_into()
-            .map_err(|_| "failed to restore stack: stack pointer overflow".to_string())?,
-    );
+    let stack_ptr =
+        WasmPtr::<u8, M>::new(stack_pointer.try_into().map_err(|_| {
+            "failed to restore stack: stack pointer overflow".to_string()
+        })?);
 
-    let memory = env
-        .try_memory_view(store)
-        .ok_or_else(|| "unable to set the stack pointer of the instance".to_string())?;
+    let memory = env.try_memory_view(store).ok_or_else(|| {
+        "unable to set the stack pointer of the instance".to_string()
+    })?;
     stack_ptr
         .slice(
             &memory,
-            stack_offset
-                .try_into()
-                .map_err(|_| "failed to restore stack: stack pointer overflow".to_string())?,
+            stack_offset.try_into().map_err(|_| {
+                "failed to restore stack: stack pointer overflow".to_string()
+            })?,
         )
         .and_then(|memory_stack| memory_stack.write_slice(&stack[..]))
         .map_err(|err| format!("failed to write stack: {}", err))?;
@@ -1033,91 +1080,105 @@ pub(crate) fn deep_sleep<M: MemorySize>(
     trigger: Pin<Box<AsyncifyFuture>>,
 ) -> Result<(), WasiError> {
     // Grab all the globals and serialize them
-    let store_data = crate::utils::store::capture_store_snapshot(&mut ctx.as_store_mut())
-        .serialize()
-        .unwrap();
+    let store_data =
+        crate::utils::store::capture_store_snapshot(&mut ctx.as_store_mut())
+            .serialize()
+            .unwrap();
     let store_data = Bytes::from(store_data);
     let thread_start = ctx.data().thread.thread_start_type();
 
     // Perform the unwind action
     let tasks = ctx.data().tasks().clone();
-    let res = unwind::<M, _>(ctx, move |mut ctx, memory_stack, rewind_stack| {
-        let memory_stack = memory_stack.freeze();
-        let rewind_stack = rewind_stack.freeze();
-        let thread_layout = ctx.data().thread.memory_layout().clone();
+    let res = unwind::<M, _>(
+        ctx,
+        move |mut ctx, memory_stack, rewind_stack| {
+            let memory_stack = memory_stack.freeze();
+            let rewind_stack = rewind_stack.freeze();
+            let thread_layout = ctx.data().thread.memory_layout().clone();
 
-        // If journal'ing is enabled then we dump the stack into the journal
-        if ctx.data().enable_journal {
-            // Grab all the globals and serialize them
-            let store_data = crate::utils::store::capture_store_snapshot(&mut ctx.as_store_mut())
+            // If journal'ing is enabled then we dump the stack into the journal
+            if ctx.data().enable_journal {
+                // Grab all the globals and serialize them
+                let store_data = crate::utils::store::capture_store_snapshot(
+                    &mut ctx.as_store_mut(),
+                )
                 .serialize()
                 .unwrap();
-            let store_data = Bytes::from(store_data);
+                let store_data = Bytes::from(store_data);
 
-            tracing::trace!(
+                tracing::trace!(
                 "stack snapshot unwind (memory_stack={}, rewind_stack={}, store_data={})",
                 memory_stack.len(),
                 rewind_stack.len(),
                 store_data.len(),
             );
 
-            #[cfg(feature = "journal")]
-            {
-                // Write our thread state to the snapshot
-                let tid = ctx.data().thread.tid();
-                let thread_start = ctx.data().thread.thread_start_type();
-                if let Err(err) = JournalEffector::save_thread_state::<M>(
-                    &mut ctx,
-                    tid,
-                    memory_stack.clone(),
-                    rewind_stack.clone(),
-                    store_data.clone(),
-                    thread_start,
-                    thread_layout.clone(),
-                ) {
-                    return wasmer_types::OnCalledAction::Trap(err.into());
-                }
-            }
-
-            // If all the threads are now in a deep sleep state
-            // then we can trigger the idle snapshot event
-            let inner = ctx.data().process.inner.clone();
-            let is_idle = {
-                let mut guard = inner.0.lock().unwrap();
-                guard.threads.values().all(WasiThread::is_deep_sleeping)
-            };
-
-            // When we idle the journal functionality may be set
-            // will take a snapshot of the memory and threads so
-            // that it can resumed.
-            #[cfg(feature = "journal")]
-            {
-                if is_idle && ctx.data_mut().has_snapshot_trigger(SnapshotTrigger::Idle) {
-                    let mut guard = inner.0.lock().unwrap();
-                    if let Err(err) = JournalEffector::save_memory_and_snapshot(
+                #[cfg(feature = "journal")]
+                {
+                    // Write our thread state to the snapshot
+                    let tid = ctx.data().thread.tid();
+                    let thread_start = ctx.data().thread.thread_start_type();
+                    if let Err(err) = JournalEffector::save_thread_state::<M>(
                         &mut ctx,
-                        &mut guard,
-                        SnapshotTrigger::Idle,
+                        tid,
+                        memory_stack.clone(),
+                        rewind_stack.clone(),
+                        store_data.clone(),
+                        thread_start,
+                        thread_layout.clone(),
                     ) {
                         return wasmer_types::OnCalledAction::Trap(err.into());
                     }
                 }
-            }
-        }
 
-        // Schedule the process on the stack so that it can be resumed
-        OnCalledAction::Trap(Box::new(WasiError::DeepSleep(DeepSleepWork {
-            trigger,
-            rewind: RewindState {
-                memory_stack,
-                rewind_stack,
-                store_data,
-                start: thread_start,
-                layout: thread_layout,
-                is_64bit: M::is_64bit(),
-            },
-        })))
-    })?;
+                // If all the threads are now in a deep sleep state
+                // then we can trigger the idle snapshot event
+                let inner = ctx.data().process.inner.clone();
+                let is_idle = {
+                    let mut guard = inner.0.lock().unwrap();
+                    guard.threads.values().all(WasiThread::is_deep_sleeping)
+                };
+
+                // When we idle the journal functionality may be set
+                // will take a snapshot of the memory and threads so
+                // that it can resumed.
+                #[cfg(feature = "journal")]
+                {
+                    if is_idle
+                        && ctx
+                            .data_mut()
+                            .has_snapshot_trigger(SnapshotTrigger::Idle)
+                    {
+                        let mut guard = inner.0.lock().unwrap();
+                        if let Err(err) =
+                            JournalEffector::save_memory_and_snapshot(
+                                &mut ctx,
+                                &mut guard,
+                                SnapshotTrigger::Idle,
+                            )
+                        {
+                            return wasmer_types::OnCalledAction::Trap(
+                                err.into(),
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Schedule the process on the stack so that it can be resumed
+            OnCalledAction::Trap(Box::new(WasiError::DeepSleep(DeepSleepWork {
+                trigger,
+                rewind: RewindState {
+                    memory_stack,
+                    rewind_stack,
+                    store_data,
+                    start: thread_start,
+                    layout: thread_layout,
+                    is_64bit: M::is_64bit(),
+                },
+            })))
+        },
+    )?;
 
     // If there is an error then exit the process, otherwise we are done
     match res {
@@ -1154,10 +1215,12 @@ where
 
     // Write the addresses to the start of the stack space
     let unwind_pointer = env.layout.stack_lower;
-    let unwind_data_start =
-        unwind_pointer + (std::mem::size_of::<__wasi_asyncify_t<M::Offset>>() as u64);
+    let unwind_data_start = unwind_pointer
+        + (std::mem::size_of::<__wasi_asyncify_t<M::Offset>>() as u64);
     let unwind_data = __wasi_asyncify_t::<M::Offset> {
-        start: wasi_try_ok!(unwind_data_start.try_into().map_err(|_| Errno::Overflow)),
+        start: wasi_try_ok!(unwind_data_start
+            .try_into()
+            .map_err(|_| Errno::Overflow)),
         end: wasi_try_ok!((env.layout.stack_upper - memory_stack.len() as u64)
             .try_into()
             .map_err(|_| Errno::Overflow)),
@@ -1170,10 +1233,12 @@ where
 
     // Invoke the callback that will prepare to unwind
     // We need to start unwinding the stack
-    let asyncify_data = wasi_try_ok!(unwind_pointer.try_into().map_err(|_| Errno::Overflow));
-    if let Some(asyncify_start_unwind) = wasi_try_ok!(env.try_inner().ok_or(Errno::Fault))
-        .asyncify_start_unwind
-        .clone()
+    let asyncify_data =
+        wasi_try_ok!(unwind_pointer.try_into().map_err(|_| Errno::Overflow));
+    if let Some(asyncify_start_unwind) =
+        wasi_try_ok!(env.try_inner().ok_or(Errno::Fault))
+            .asyncify_start_unwind
+            .clone()
     {
         asyncify_start_unwind.call(&mut ctx, asyncify_data);
     } else {
@@ -1312,8 +1377,8 @@ pub fn rewind_ext<M: MemorySize>(
 
     // Write the addresses to the start of the stack space
     let rewind_pointer = env.layout.stack_lower;
-    let rewind_data_start =
-        rewind_pointer + (std::mem::size_of::<__wasi_asyncify_t<M::Offset>>() as u64);
+    let rewind_data_start = rewind_pointer
+        + (std::mem::size_of::<__wasi_asyncify_t<M::Offset>>() as u64);
     let rewind_data_end = rewind_data_start + (rewind_stack.len() as u64);
     if rewind_data_end > env.layout.stack_upper {
         warn!(
@@ -1323,7 +1388,9 @@ pub fn rewind_ext<M: MemorySize>(
         return Errno::Overflow;
     }
     let rewind_data = __wasi_asyncify_t::<M::Offset> {
-        start: wasi_try!(rewind_data_end.try_into().map_err(|_| Errno::Overflow)),
+        start: wasi_try!(rewind_data_end
+            .try_into()
+            .map_err(|_| Errno::Overflow)),
         end: wasi_try!(env
             .layout
             .stack_upper
@@ -1343,12 +1410,16 @@ pub fn rewind_ext<M: MemorySize>(
     wasi_try_mem!(rewind_stack_ptr
         .slice(
             &memory,
-            wasi_try!(rewind_stack.len().try_into().map_err(|_| Errno::Overflow))
+            wasi_try!(rewind_stack
+                .len()
+                .try_into()
+                .map_err(|_| Errno::Overflow))
         )
         .and_then(|stack| { stack.write_slice(&rewind_stack[..]) }));
 
     // Invoke the callback that will prepare to rewind
-    let asyncify_data = wasi_try!(rewind_pointer.try_into().map_err(|_| Errno::Overflow));
+    let asyncify_data =
+        wasi_try!(rewind_pointer.try_into().map_err(|_| Errno::Overflow));
     if let Some(asyncify_start_rewind) = env
         .try_inner()
         .into_iter()
@@ -1451,7 +1522,9 @@ where
 
         // Notify asyncify that we are no longer rewinding
         let env = ctx.data();
-        if let Some(asyncify_stop_rewind) = env.inner().asyncify_stop_unwind.clone() {
+        if let Some(asyncify_stop_rewind) =
+            env.inner().asyncify_stop_unwind.clone()
+        {
             asyncify_stop_rewind.call(ctx);
         } else {
             warn!("failed to handle rewind because the asyncify_start_rewind export is missing or inaccessible");
@@ -1507,7 +1580,8 @@ pub(crate) fn _prepare_wasi(
             .iter()
             .map(|b| {
                 let string = String::from_utf8_lossy(b);
-                let (key, val) = string.split_once('=').expect("env var is malformed");
+                let (key, val) =
+                    string.split_once('=').expect("env var is malformed");
 
                 (key.to_string(), val.to_string().as_bytes().to_vec())
             })

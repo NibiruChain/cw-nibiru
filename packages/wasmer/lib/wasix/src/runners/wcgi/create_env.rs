@@ -14,7 +14,9 @@ pub(crate) async fn default_recycle_env(mut conf: RecycleEnvConfig) {
     conf.env.on_exit(None).await;
 }
 
-pub(crate) async fn default_create_env(conf: CreateEnvConfig) -> anyhow::Result<CreateEnvResult> {
+pub(crate) async fn default_create_env(
+    conf: CreateEnvConfig,
+) -> anyhow::Result<CreateEnvResult> {
     tracing::debug!("Creating the WebAssembly instance");
 
     let (req_body_sender, req_body_receiver) = Pipe::channel();

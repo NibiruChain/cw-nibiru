@@ -8,8 +8,8 @@ use std::{
 };
 
 use crate::{
-    limiter::DynFsMemoryLimiter, mem_fs, BoxFuture, FileSystem, Metadata, OpenOptions, ReadDir,
-    Result,
+    limiter::DynFsMemoryLimiter, mem_fs, BoxFuture, FileSystem, Metadata,
+    OpenOptions, ReadDir, Result,
 };
 
 #[derive(Debug, Default, Clone)]
@@ -77,7 +77,11 @@ impl FileSystem for TmpFileSystem {
         self.fs.remove_dir(path)
     }
 
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<()>> {
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<()>> {
         Box::pin(async { self.fs.rename(from, to).await })
     }
 

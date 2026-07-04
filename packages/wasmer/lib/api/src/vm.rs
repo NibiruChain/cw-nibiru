@@ -2,39 +2,51 @@
 
 #[cfg(feature = "js")]
 pub(crate) use crate::js::vm::{
-    VMExtern, VMExternFunction, VMExternGlobal, VMExternMemory, VMExternRef, VMExternTable,
-    VMFuncRef, VMFunctionCallback, VMFunctionEnvironment, VMInstance, VMTrampoline,
+    VMExtern, VMExternFunction, VMExternGlobal, VMExternMemory, VMExternRef,
+    VMExternTable, VMFuncRef, VMFunctionCallback, VMFunctionEnvironment,
+    VMInstance, VMTrampoline,
 };
 
 #[cfg(feature = "jsc")]
 pub(crate) use crate::jsc::vm::{
-    VMExtern, VMExternFunction, VMExternGlobal, VMExternMemory, VMExternRef, VMExternTable,
-    VMFuncRef, VMFunctionCallback, VMFunctionEnvironment, VMInstance, VMTrampoline,
+    VMExtern, VMExternFunction, VMExternGlobal, VMExternMemory, VMExternRef,
+    VMExternTable, VMFuncRef, VMFunctionCallback, VMFunctionEnvironment,
+    VMInstance, VMTrampoline,
 };
 
 #[cfg(feature = "wasm-c-api")]
 pub(crate) use crate::c_api::vm::{
-    VMExtern, VMExternFunction, VMExternGlobal, VMExternMemory, VMExternRef, VMExternTable,
-    VMFuncRef, VMFunctionCallback, VMFunctionEnvironment, VMInstance, VMTrampoline,
+    VMExtern, VMExternFunction, VMExternGlobal, VMExternMemory, VMExternRef,
+    VMExternTable, VMFuncRef, VMFunctionCallback, VMFunctionEnvironment,
+    VMInstance, VMTrampoline,
 };
 
 #[cfg(feature = "sys")]
 pub(crate) use crate::sys::vm::{
-    VMExtern, VMExternFunction, VMExternGlobal, VMExternMemory, VMExternRef, VMExternTable,
-    VMFuncRef, VMFunctionCallback, VMFunctionEnvironment, VMInstance, VMTrampoline,
+    VMExtern, VMExternFunction, VMExternGlobal, VMExternMemory, VMExternRef,
+    VMExternTable, VMFuncRef, VMFunctionCallback, VMFunctionEnvironment,
+    VMInstance, VMTrampoline,
 };
 
 #[cfg(feature = "js")]
-pub use crate::js::vm::{VMFunction, VMGlobal, VMMemory, VMSharedMemory, VMTable};
+pub use crate::js::vm::{
+    VMFunction, VMGlobal, VMMemory, VMSharedMemory, VMTable,
+};
 
 #[cfg(feature = "sys")]
-pub use wasmer_vm::{VMConfig, VMFunction, VMGlobal, VMMemory, VMSharedMemory, VMTable};
+pub use wasmer_vm::{
+    VMConfig, VMFunction, VMGlobal, VMMemory, VMSharedMemory, VMTable,
+};
 
 #[cfg(feature = "jsc")]
-pub use crate::jsc::vm::{VMFunction, VMGlobal, VMMemory, VMSharedMemory, VMTable};
+pub use crate::jsc::vm::{
+    VMFunction, VMGlobal, VMMemory, VMSharedMemory, VMTable,
+};
 
 #[cfg(feature = "wasm-c-api")]
-pub use crate::c_api::vm::{VMFunction, VMGlobal, VMMemory, VMSharedMemory, VMTable};
+pub use crate::c_api::vm::{
+    VMFunction, VMGlobal, VMMemory, VMSharedMemory, VMTable,
+};
 
 // Needed for tunables customization (those are public types now)
 #[cfg(feature = "sys")]

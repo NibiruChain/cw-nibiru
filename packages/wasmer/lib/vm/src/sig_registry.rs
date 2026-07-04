@@ -52,7 +52,8 @@ impl SignatureRegistry {
                     u32::MAX as usize,
                     "Invariant check: signature_hash.len() < u32::MAX"
                 );
-                let sig_id = VMSharedSignatureIndex::new(u32::try_from(len).unwrap());
+                let sig_id =
+                    VMSharedSignatureIndex::new(u32::try_from(len).unwrap());
                 entry.insert(sig_id);
                 inner.index2signature.insert(sig_id, sig.clone());
                 sig_id

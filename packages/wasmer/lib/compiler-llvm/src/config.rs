@@ -1,7 +1,7 @@
 use crate::compiler::LLVMCompiler;
 use inkwell::targets::{
-    CodeModel, InitializationConfig, RelocMode, Target as InkwellTarget, TargetMachine,
-    TargetTriple,
+    CodeModel, InitializationConfig, RelocMode, Target as InkwellTarget,
+    TargetMachine, TargetTriple,
 };
 pub use inkwell::OptimizationLevel as LLVMOptLevel;
 use itertools::Itertools;
@@ -36,7 +36,11 @@ pub enum CompiledKind {
 pub trait LLVMCallbacks: Debug + Send + Sync {
     fn preopt_ir(&self, function: &CompiledKind, module: &InkwellModule);
     fn postopt_ir(&self, function: &CompiledKind, module: &InkwellModule);
-    fn obj_memory_buffer(&self, function: &CompiledKind, memory_buffer: &InkwellMemoryBuffer);
+    fn obj_memory_buffer(
+        &self,
+        function: &CompiledKind,
+        memory_buffer: &InkwellMemoryBuffer,
+    );
 }
 
 #[derive(Debug, Clone)]
@@ -72,7 +76,10 @@ impl LLVM {
 
     /// Callbacks that will triggered in the different compilation
     /// phases in LLVM.
-    pub fn callbacks(&mut self, callbacks: Option<Arc<dyn LLVMCallbacks>>) -> &mut Self {
+    pub fn callbacks(
+        &mut self,
+        callbacks: Option<Arc<dyn LLVMCallbacks>>,
+    ) -> &mut Self {
         self.callbacks = callbacks;
         self
     }
@@ -100,32 +107,37 @@ impl LLVM {
 
     fn target_triple(&self, target: &Target) -> TargetTriple {
         let architecture = if target.triple().architecture
-            == Architecture::Riscv64(target_lexicon::Riscv64Architecture::Riscv64gc)
-        {
-            target_lexicon::Architecture::Riscv64(target_lexicon::Riscv64Architecture::Riscv64)
+            == Architecture::Riscv64(
+                target_lexicon::Riscv64Architecture::Riscv64gc,
+            ) {
+            target_lexicon::Architecture::Riscv64(
+                target_lexicon::Riscv64Architecture::Riscv64,
+            )
         } else {
             target.triple().architecture
         };
         // Hack: we're using is_pic to determine whether this is a native
         // build or not.
 
-        let operating_system =
-            if target.triple().operating_system == OperatingSystem::Darwin && !self.is_pic {
-                // LLVM detects static relocation + darwin + 64-bit and
-                // force-enables PIC because MachO doesn't support that
-                // combination. They don't check whether they're targeting
-                // MachO, they check whether the OS is set to Darwin.
-                //
-                // Since both linux and darwin use SysV ABI, this should work.
-                //  but not in the case of Aarch64, there the ABI is slightly different
-                #[allow(clippy::match_single_binding)]
-                match target.triple().architecture {
-                    Architecture::Aarch64(_) => OperatingSystem::Darwin,
-                    _ => OperatingSystem::Linux,
-                }
-            } else {
-                target.triple().operating_system
-            };
+        let operating_system = if target.triple().operating_system
+            == OperatingSystem::Darwin
+            && !self.is_pic
+        {
+            // LLVM detects static relocation + darwin + 64-bit and
+            // force-enables PIC because MachO doesn't support that
+            // combination. They don't check whether they're targeting
+            // MachO, they check whether the OS is set to Darwin.
+            //
+            // Since both linux and darwin use SysV ABI, this should work.
+            //  but not in the case of Aarch64, there the ABI is slightly different
+            #[allow(clippy::match_single_binding)]
+            match target.triple().architecture {
+                Architecture::Aarch64(_) => OperatingSystem::Darwin,
+                _ => OperatingSystem::Linux,
+            }
+        } else {
+            target.triple().operating_system
+        };
 
         let binary_format = if self.is_pic {
             target.triple().binary_format
@@ -158,22 +170,26 @@ impl LLVM {
                     machine_code: true,
                 })
             }
-            Architecture::Aarch64(_) => InkwellTarget::initialize_aarch64(&InitializationConfig {
-                asm_parser: true,
-                asm_printer: true,
-                base: true,
-                disassembler: true,
-                info: true,
-                machine_code: true,
-            }),
-            Architecture::Riscv64(_) => InkwellTarget::initialize_riscv(&InitializationConfig {
-                asm_parser: true,
-                asm_printer: true,
-                base: true,
-                disassembler: true,
-                info: true,
-                machine_code: true,
-            }),
+            Architecture::Aarch64(_) => {
+                InkwellTarget::initialize_aarch64(&InitializationConfig {
+                    asm_parser: true,
+                    asm_printer: true,
+                    base: true,
+                    disassembler: true,
+                    info: true,
+                    machine_code: true,
+                })
+            }
+            Architecture::Riscv64(_) => {
+                InkwellTarget::initialize_riscv(&InitializationConfig {
+                    asm_parser: true,
+                    asm_printer: true,
+                    base: true,
+                    disassembler: true,
+                    info: true,
+                    machine_code: true,
+                })
+            }
             Architecture::LoongArch64 => {
                 InkwellTarget::initialize_loongarch(&InitializationConfig {
                     asm_parser: true,
@@ -221,7 +237,9 @@ impl LLVM {
                 self.opt_level,
                 self.reloc_mode(),
                 match triple.architecture {
-                    Architecture::LoongArch64 | Architecture::Riscv64(_) => CodeModel::Medium,
+                    Architecture::LoongArch64 | Architecture::Riscv64(_) => {
+                        CodeModel::Medium
+                    }
                     _ => self.code_model(),
                 },
             )
@@ -244,18 +262,21 @@ impl LLVM {
                 // instead of the default that don't use float registers
                 // because there is no current way to do this change
 
-                let my_target_machine: MyTargetMachine = std::mem::transmute(llvm_target_machine);
+                let my_target_machine: MyTargetMachine =
+                    std::mem::transmute(llvm_target_machine);
 
-                *((my_target_machine.target_machine as *mut u8).offset(0x410) as *mut u64) = 5;
+                *((my_target_machine.target_machine as *mut u8).offset(0x410)
+                    as *mut u64) = 5;
                 std::ptr::copy_nonoverlapping(
                     "lp64d\0".as_ptr(),
                     (my_target_machine.target_machine as *mut u8).offset(0x418),
                     6,
                 );
 
-                std::mem::transmute::<MyTargetMachine, inkwell::targets::TargetMachine>(
-                    my_target_machine,
-                )
+                std::mem::transmute::<
+                    MyTargetMachine,
+                    inkwell::targets::TargetMachine,
+                >(my_target_machine)
             }
         } else {
             llvm_target_machine

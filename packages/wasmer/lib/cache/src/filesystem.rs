@@ -51,7 +51,10 @@ impl FileSystemCache {
                     // This directory is readonly.
                     Err(io::Error::new(
                         io::ErrorKind::PermissionDenied,
-                        format!("the supplied path is readonly: {}", path.display()),
+                        format!(
+                            "the supplied path is readonly: {}",
+                            path.display()
+                        ),
                     ))
                 }
             } else {
@@ -70,7 +73,10 @@ impl FileSystemCache {
             if res.is_err() {
                 Err(io::Error::new(
                     io::ErrorKind::Other,
-                    format!("failed to create cache directory: {}", path.display()),
+                    format!(
+                        "failed to create cache directory: {}",
+                        path.display()
+                    ),
                 ))
             } else {
                 Ok(Self { path, ext: None })
@@ -112,7 +118,11 @@ impl Cache for FileSystemCache {
         ret
     }
 
-    fn store(&mut self, key: Hash, module: &Module) -> Result<(), Self::SerializeError> {
+    fn store(
+        &mut self,
+        key: Hash,
+        module: &Module,
+    ) -> Result<(), Self::SerializeError> {
         let filename = if let Some(ref ext) = self.ext {
             format!("{}.{}", key, ext)
         } else {

@@ -62,7 +62,10 @@ impl PipeJournal {
 }
 
 impl WritableJournal for PipeJournalTx {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         let entry = entry.into_owned();
         let entry_size = entry.estimate_size() as u64;
 
@@ -75,7 +78,10 @@ impl WritableJournal for PipeJournalTx {
                 record: entry,
             })
             .map_err(|err| {
-                anyhow::format_err!("failed to send journal event through the pipe - {}", err)
+                anyhow::format_err!(
+                    "failed to send journal event through the pipe - {}",
+                    err
+                )
             })?;
         sender.offset += entry_size;
         Ok(LogWriteResult {
@@ -109,7 +115,10 @@ impl ReadableJournal for PipeJournalRx {
 }
 
 impl WritableJournal for PipeJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 

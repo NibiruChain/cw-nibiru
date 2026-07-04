@@ -8,7 +8,9 @@
 /// 2. The Arc reference is placed as the last field which should be dropped last
 ///    (https://doc.rust-lang.org/reference/destructors.html#:~:text=The%20fields%20of%20a%20struct,first%20element%20to%20the%20last.)
 use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, LockResult, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{
+    Arc, LockResult, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 
 /// Locks this rwlock with shared read access, blocking the current thread
 /// until it can be acquired.
@@ -50,7 +52,9 @@ use std::sync::{Arc, LockResult, PoisonError, RwLock, RwLockReadGuard, RwLockWri
 //     assert!(r.is_ok());
 // }).join().unwrap();
 // ```
-pub(crate) fn read_owned<T>(lock: &Arc<RwLock<T>>) -> LockResult<OwnedRwLockReadGuard<T>> {
+pub(crate) fn read_owned<T>(
+    lock: &Arc<RwLock<T>>,
+) -> LockResult<OwnedRwLockReadGuard<T>> {
     OwnedRwLockReadGuard::new(lock)
 }
 
@@ -84,7 +88,9 @@ pub(crate) fn read_owned<T>(lock: &Arc<RwLock<T>>) -> LockResult<OwnedRwLockRead
 // let mut n = write_owned(&lock).unwrap();
 // *n = 2;
 // ```
-pub(crate) fn write_owned<T>(lock: &Arc<RwLock<T>>) -> LockResult<OwnedRwLockWriteGuard<T>> {
+pub(crate) fn write_owned<T>(
+    lock: &Arc<RwLock<T>>,
+) -> LockResult<OwnedRwLockWriteGuard<T>> {
     OwnedRwLockWriteGuard::new(lock)
 }
 
@@ -138,7 +144,8 @@ where
 impl<T> OwnedRwLockReadGuard<T> {
     fn new(lock: &Arc<RwLock<T>>) -> LockResult<Self> {
         let conv = |guard: RwLockReadGuard<'_, T>| {
-            let guard: RwLockReadGuard<'static, T> = unsafe { std::mem::transmute(guard) };
+            let guard: RwLockReadGuard<'static, T> =
+                unsafe { std::mem::transmute(guard) };
             Self {
                 ownership: lock.clone(),
                 guard: Some(guard),
@@ -216,7 +223,8 @@ where
 impl<T> OwnedRwLockWriteGuard<T> {
     fn new(lock: &Arc<RwLock<T>>) -> LockResult<Self> {
         let conv = |guard: RwLockWriteGuard<'_, T>| {
-            let guard: RwLockWriteGuard<'static, T> = unsafe { std::mem::transmute(guard) };
+            let guard: RwLockWriteGuard<'static, T> =
+                unsafe { std::mem::transmute(guard) };
             Self {
                 ownership: lock.clone(),
                 guard: Some(guard),

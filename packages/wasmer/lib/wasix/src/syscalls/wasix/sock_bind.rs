@@ -26,10 +26,12 @@ pub fn sock_bind<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if ctx.data().enable_journal {
-        JournalEffector::save_sock_bind(&mut ctx, sock, addr).map_err(|err| {
-            tracing::error!("failed to save sock_bind event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_sock_bind(&mut ctx, sock, addr).map_err(
+            |err| {
+                tracing::error!("failed to save sock_bind event - {}", err);
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            },
+        )?;
     }
 
     Ok(Errno::Success)
@@ -48,7 +50,9 @@ pub(crate) fn sock_bind_internal(
         ctx,
         sock,
         Rights::SOCK_BIND,
-        move |socket, _| async move { socket.bind(tasks.deref(), net.deref(), addr).await }
+        move |socket, _| async move {
+            socket.bind(tasks.deref(), net.deref(), addr).await
+        }
     ));
 
     Ok(Ok(()))

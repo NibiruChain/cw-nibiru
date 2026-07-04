@@ -24,9 +24,13 @@ impl tower::Service<Uri> for HyperProxyConnector {
     type Error = BoxError;
 
     #[allow(clippy::type_complexity)]
-    type Future = Pin<Box<dyn Future<Output = Result<HyperProxyStream, BoxError>> + Send>>;
+    type Future =
+        Pin<Box<dyn Future<Output = Result<HyperProxyStream, BoxError>> + Send>>;
 
-    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(
+        &mut self,
+        _cx: &mut Context<'_>,
+    ) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
 

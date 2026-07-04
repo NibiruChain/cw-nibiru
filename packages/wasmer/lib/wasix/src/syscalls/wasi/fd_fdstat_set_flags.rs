@@ -20,10 +20,15 @@ pub fn fd_fdstat_set_flags(
     if ret == Errno::Success {
         #[cfg(feature = "journal")]
         if env.enable_journal {
-            JournalEffector::save_fd_set_flags(&mut ctx, fd, flags).map_err(|err| {
-                tracing::error!("failed to save file set flags event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            })?;
+            JournalEffector::save_fd_set_flags(&mut ctx, fd, flags).map_err(
+                |err| {
+                    tracing::error!(
+                        "failed to save file set flags event - {}",
+                        err
+                    );
+                    WasiError::Exit(ExitCode::from(Errno::Fault))
+                },
+            )?;
         }
     }
 
@@ -37,7 +42,8 @@ pub(crate) fn fd_fdstat_set_flags_internal(
 ) -> Result<Errno, WasiError> {
     {
         let env = ctx.data();
-        let (_, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+        let (_, mut state, inodes) =
+            unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
         let mut fd_map = state.fs.fd_map.write().unwrap();
         let fd_entry = wasi_try_ok!(fd_map.get_mut(fd).ok_or(Errno::Badf));
         let inode = fd_entry.inode.clone();
@@ -48,7 +54,8 @@ pub(crate) fn fd_fdstat_set_flags_internal(
     }
 
     let env = ctx.data();
-    let (_, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (_, mut state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
     let mut fd_map = state.fs.fd_map.write().unwrap();
     let fd_entry = wasi_try_ok!(fd_map.get_mut(fd).ok_or(Errno::Badf));
     fd_entry.flags = flags;

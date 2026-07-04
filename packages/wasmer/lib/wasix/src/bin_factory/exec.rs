@@ -7,7 +7,8 @@ use crate::{
     },
     runtime::{
         task_manager::{
-            TaskWasm, TaskWasmRecycle, TaskWasmRecycleProperties, TaskWasmRunProperties,
+            TaskWasm, TaskWasmRecycle, TaskWasmRecycleProperties,
+            TaskWasmRunProperties,
         },
         TaintReason,
     },
@@ -91,7 +92,10 @@ pub async fn spawn_load_module(
     }
 }
 
-pub async fn spawn_union_fs(env: &WasiEnv, binary: &BinaryPackage) -> Result<(), SpawnError> {
+pub async fn spawn_union_fs(
+    env: &WasiEnv,
+    binary: &BinaryPackage,
+) -> Result<(), SpawnError> {
     // If the file system has not already been union'ed then do so
     env.state
         .fs
@@ -244,7 +248,13 @@ fn call_module(
             );
             if res != Errno::Success {
                 ctx.data().blocking_on_exit(Some(res.into()));
-                unsafe { run_recycle(recycle, WasiFunctionEnv { env: ctx.as_ref() }, store) };
+                unsafe {
+                    run_recycle(
+                        recycle,
+                        WasiFunctionEnv { env: ctx.as_ref() },
+                        store,
+                    )
+                };
                 return;
             }
         } else {
@@ -257,7 +267,13 @@ fn call_module(
             );
             if res != Errno::Success {
                 ctx.data().blocking_on_exit(Some(res.into()));
-                unsafe { run_recycle(recycle, WasiFunctionEnv { env: ctx.as_ref() }, store) };
+                unsafe {
+                    run_recycle(
+                        recycle,
+                        WasiFunctionEnv { env: ctx.as_ref() },
+                        store,
+                    )
+                };
                 return;
             }
         };
@@ -278,7 +294,9 @@ fn call_module(
 
         if let Err(err) = call_ret {
             match err.downcast::<WasiError>() {
-                Ok(WasiError::Exit(code)) if code.is_success() => Ok(Errno::Success),
+                Ok(WasiError::Exit(code)) if code.is_success() => {
+                    Ok(Errno::Success)
+                }
                 Ok(WasiError::ThreadExit) => Ok(Errno::Success),
                 Ok(WasiError::Exit(code)) => {
                     runtime.on_taint(TaintReason::NonZeroExitCode(code));
@@ -294,7 +312,12 @@ fn call_module(
                                 ctx,
                                 store,
                                 handle,
-                                Some((rewind, RewindResultType::RewindWithResult(rewind_result))),
+                                Some((
+                                    rewind,
+                                    RewindResultType::RewindWithResult(
+                                        rewind_result,
+                                    ),
+                                )),
                                 recycle,
                             );
                         }
@@ -302,7 +325,12 @@ fn call_module(
 
                     // Spawns the WASM process after a trigger
                     if let Err(err) = unsafe {
-                        tasks.resume_wasm_after_poller(Box::new(respawn), ctx, store, deep.trigger)
+                        tasks.resume_wasm_after_poller(
+                            Box::new(respawn),
+                            ctx,
+                            store,
+                            deep.trigger,
+                        )
                     } {
                         debug!("failed to go into deep sleep - {}", err);
                     }

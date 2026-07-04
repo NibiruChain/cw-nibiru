@@ -269,9 +269,11 @@ impl GlobalId {
         }
 
         let ty_raw = values.get(2).cloned().ok_or(ErrorKind::MissingNodeType)?;
-        let ty_parsed = NodeKind::from_num(ty_raw).ok_or(ErrorKind::UnknownNodeType(ty_raw))?;
+        let ty_parsed = NodeKind::from_num(ty_raw)
+            .ok_or(ErrorKind::UnknownNodeType(ty_raw))?;
 
-        let db_id = values.get(3).cloned().ok_or(ErrorKind::MissingDatabaseId)?;
+        let db_id =
+            values.get(3).cloned().ok_or(ErrorKind::MissingDatabaseId)?;
 
         Ok(Self {
             kind: ty_parsed,
@@ -281,26 +283,34 @@ impl GlobalId {
 
     /// Parse a prefixed global id.
     pub fn parse_prefixed(hash: &str) -> Result<Self, GlobalIdParseError> {
-        let (prefix, value) = hash
-            .split_once('_')
-            .ok_or_else(|| GlobalIdParseError::new(hash, ErrorKind::MissingPrefix))?;
+        let (prefix, value) = hash.split_once('_').ok_or_else(|| {
+            GlobalIdParseError::new(hash, ErrorKind::MissingPrefix)
+        })?;
 
         if prefix.is_empty() {
             return Err(GlobalIdParseError::new(hash, ErrorKind::MissingPrefix));
         }
 
         let ty_prefix = NodeKind::parse_prefix(prefix).ok_or_else(|| {
-            GlobalIdParseError::new(hash, ErrorKind::UnknownPrefix(prefix.to_string()))
+            GlobalIdParseError::new(
+                hash,
+                ErrorKind::UnknownPrefix(prefix.to_string()),
+            )
         })?;
 
-        let values = Self::build_harsh_prefixed()
-            .decode(value)
-            .map_err(|err| GlobalIdParseError::new(hash, ErrorKind::Decode(err.to_string())))?;
+        let values =
+            Self::build_harsh_prefixed().decode(value).map_err(|err| {
+                GlobalIdParseError::new(hash, ErrorKind::Decode(err.to_string()))
+            })?;
 
-        let s = Self::parse_values(&values).map_err(|kind| GlobalIdParseError::new(hash, kind))?;
+        let s = Self::parse_values(&values)
+            .map_err(|kind| GlobalIdParseError::new(hash, kind))?;
 
         if ty_prefix != s.kind {
-            return Err(GlobalIdParseError::new(hash, ErrorKind::PrefixTypeMismatch));
+            return Err(GlobalIdParseError::new(
+                hash,
+                ErrorKind::PrefixTypeMismatch,
+            ));
         }
 
         Ok(s)
@@ -324,11 +334,12 @@ impl GlobalId {
     ///
     /// Note: URL ids use a different alphabet than prefixed ids.
     pub fn parse_url(hash: &str) -> Result<Self, GlobalIdParseError> {
-        let values = Self::build_harsh_url()
-            .decode(hash)
-            .map_err(|err| GlobalIdParseError::new(hash, ErrorKind::Decode(err.to_string())))?;
+        let values = Self::build_harsh_url().decode(hash).map_err(|err| {
+            GlobalIdParseError::new(hash, ErrorKind::Decode(err.to_string()))
+        })?;
 
-        Self::parse_values(&values).map_err(|kind| GlobalIdParseError::new(hash, kind))
+        Self::parse_values(&values)
+            .map_err(|kind| GlobalIdParseError::new(hash, kind))
     }
 }
 

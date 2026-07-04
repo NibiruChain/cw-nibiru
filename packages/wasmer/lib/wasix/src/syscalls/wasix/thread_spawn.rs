@@ -65,7 +65,8 @@ pub fn thread_spawn_internal_from_wasi<M: MemorySize>(
 
     // Read the properties about the stack which we will use for asyncify
     let layout = {
-        let start: ThreadStart<M> = start_ptr.read(&memory).map_err(mem_error_to_wasi)?;
+        let start: ThreadStart<M> =
+            start_ptr.read(&memory).map_err(mem_error_to_wasi)?;
         let stack_upper: u64 = start.stack_upper.into();
         let stack_size: u64 = start.stack_size.into();
         let guard_size: u64 = start.guard_size.into();
@@ -89,22 +90,29 @@ pub fn thread_spawn_internal_from_wasi<M: MemorySize>(
     let thread_start = ThreadStartType::ThreadSpawn {
         start_ptr: start_ptr_offset.into(),
     };
-    let mut thread_handle = match env.process.new_thread(layout.clone(), thread_start) {
-        Ok(h) => Arc::new(h),
-        Err(err) => {
-            error!(
-                stack_base = layout.stack_lower,
-                "failed to create thread handle",
-            );
-            // TODO: evaluate the appropriate error code, document it in the spec.
-            return Err(Errno::Access);
-        }
-    };
+    let mut thread_handle =
+        match env.process.new_thread(layout.clone(), thread_start) {
+            Ok(h) => Arc::new(h),
+            Err(err) => {
+                error!(
+                    stack_base = layout.stack_lower,
+                    "failed to create thread handle",
+                );
+                // TODO: evaluate the appropriate error code, document it in the spec.
+                return Err(Errno::Access);
+            }
+        };
     let thread_id: Tid = thread_handle.id().into();
     Span::current().record("tid", thread_id);
 
     // Spawn the thread
-    thread_spawn_internal_using_layout::<M>(ctx, thread_handle, layout, start_ptr_offset, None)?;
+    thread_spawn_internal_using_layout::<M>(
+        ctx,
+        thread_handle,
+        layout,
+        start_ptr_offset,
+        None,
+    )?;
 
     // Success
     Ok(thread_id)
@@ -143,7 +151,13 @@ pub fn thread_spawn_internal_using_layout<M: MemorySize>(
         let thread_handle = thread_handle;
         move |ctx: WasiFunctionEnv, mut store: Store| {
             // Call the thread
-            call_module::<M>(ctx, store, start_ptr_offset, thread_handle, rewind_state)
+            call_module::<M>(
+                ctx,
+                store,
+                start_ptr_offset,
+                thread_handle,
+                rewind_state,
+            )
         }
     };
 
@@ -155,8 +169,10 @@ pub fn thread_spawn_internal_using_layout<M: MemorySize>(
     }
     let thread_module = unsafe { env.inner() }.module_clone();
     let globals = capture_store_snapshot(&mut ctx.as_store_mut());
-    let spawn_type =
-        crate::runtime::SpawnMemoryType::ShareMemory(thread_memory, ctx.as_store_ref());
+    let spawn_type = crate::runtime::SpawnMemoryType::ShareMemory(
+        thread_memory,
+        ctx.as_store_ref(),
+    );
 
     // Now spawn a thread
     trace!("threading: spawning background thread");
@@ -187,75 +203,76 @@ fn call_module<M: MemorySize>(
     let tasks = env.tasks().clone();
 
     // This function calls into the module
-    let call_module_internal = move |env: &WasiFunctionEnv, store: &mut Store| {
-        // We either call the reactor callback or the thread spawn callback
-        //trace!("threading: invoking thread callback (reactor={})", reactor);
-        let spawn = unsafe { env.data(&store).inner() }
-            .thread_spawn
-            .clone()
-            .unwrap();
-        let tid = env.data(&store).tid();
-        let call_ret = spawn.call(
-            store,
-            tid.raw().try_into().map_err(|_| Errno::Overflow).unwrap(),
-            start_ptr_offset
-                .try_into()
-                .map_err(|_| Errno::Overflow)
-                .unwrap(),
-        );
-        trace!("callback finished (ret={:?})", call_ret);
+    let call_module_internal =
+        move |env: &WasiFunctionEnv, store: &mut Store| {
+            // We either call the reactor callback or the thread spawn callback
+            //trace!("threading: invoking thread callback (reactor={})", reactor);
+            let spawn = unsafe { env.data(&store).inner() }
+                .thread_spawn
+                .clone()
+                .unwrap();
+            let tid = env.data(&store).tid();
+            let call_ret = spawn.call(
+                store,
+                tid.raw().try_into().map_err(|_| Errno::Overflow).unwrap(),
+                start_ptr_offset
+                    .try_into()
+                    .map_err(|_| Errno::Overflow)
+                    .unwrap(),
+            );
+            trace!("callback finished (ret={:?})", call_ret);
 
-        let mut ret = Errno::Success;
-        let mut exit_code = None;
-        if let Err(err) = call_ret {
-            match err.downcast::<WasiError>() {
-                Ok(WasiError::ThreadExit) => {
-                    trace!("thread exited cleanly");
-                    ret = Errno::Success;
-                }
-                Ok(WasiError::Exit(code)) => {
-                    trace!(exit_code = ?code, "thread requested exit");
-                    exit_code = Some(code);
-                    ret = if code.is_success() {
-                        Errno::Success
-                    } else {
+            let mut ret = Errno::Success;
+            let mut exit_code = None;
+            if let Err(err) = call_ret {
+                match err.downcast::<WasiError>() {
+                    Ok(WasiError::ThreadExit) => {
+                        trace!("thread exited cleanly");
+                        ret = Errno::Success;
+                    }
+                    Ok(WasiError::Exit(code)) => {
+                        trace!(exit_code = ?code, "thread requested exit");
+                        exit_code = Some(code);
+                        ret = if code.is_success() {
+                            Errno::Success
+                        } else {
+                            env.data(&store)
+                                .runtime
+                                .on_taint(TaintReason::NonZeroExitCode(code));
+                            Errno::Noexec
+                        };
+                    }
+                    Ok(WasiError::DeepSleep(deep)) => {
+                        trace!("entered a deep sleep");
+                        return Err(deep);
+                    }
+                    Ok(WasiError::UnknownWasiVersion) => {
+                        debug!("failed as wasi version is unknown",);
                         env.data(&store)
                             .runtime
-                            .on_taint(TaintReason::NonZeroExitCode(code));
-                        Errno::Noexec
-                    };
+                            .on_taint(TaintReason::UnknownWasiVersion);
+                        ret = Errno::Noexec;
+                        exit_code = Some(ExitCode::from(128 + ret as i32));
+                    }
+                    Err(err) => {
+                        debug!("failed with runtime error: {}", err);
+                        env.data(&store)
+                            .runtime
+                            .on_taint(TaintReason::RuntimeError(err));
+                        ret = Errno::Noexec;
+                        exit_code = Some(ExitCode::from(128 + ret as i32));
+                    }
                 }
-                Ok(WasiError::DeepSleep(deep)) => {
-                    trace!("entered a deep sleep");
-                    return Err(deep);
-                }
-                Ok(WasiError::UnknownWasiVersion) => {
-                    debug!("failed as wasi version is unknown",);
-                    env.data(&store)
-                        .runtime
-                        .on_taint(TaintReason::UnknownWasiVersion);
-                    ret = Errno::Noexec;
-                    exit_code = Some(ExitCode::from(128 + ret as i32));
-                }
-                Err(err) => {
-                    debug!("failed with runtime error: {}", err);
-                    env.data(&store)
-                        .runtime
-                        .on_taint(TaintReason::RuntimeError(err));
-                    ret = Errno::Noexec;
-                    exit_code = Some(ExitCode::from(128 + ret as i32));
-                }
+            } else {
+                debug!("thread exited cleanly without calling thread_exit");
             }
-        } else {
-            debug!("thread exited cleanly without calling thread_exit");
-        }
 
-        // Clean up the environment
-        env.on_exit(store, exit_code);
+            // Clean up the environment
+            env.on_exit(store, exit_code);
 
-        // Return the result
-        Ok(ret as u32)
-    };
+            // Return the result
+            Ok(ret as u32)
+        };
 
     // If we need to rewind then do so
     if let Some((rewind_state, rewind_result)) = rewind_state {
@@ -294,14 +311,22 @@ fn call_module<M: MemorySize>(
                         store,
                         start_ptr_offset,
                         thread_handle,
-                        Some((rewind, RewindResultType::RewindWithResult(trigger_res))),
+                        Some((
+                            rewind,
+                            RewindResultType::RewindWithResult(trigger_res),
+                        )),
                     );
                 }
             };
 
             /// Spawns the WASM process after a trigger
             unsafe {
-                tasks.resume_wasm_after_poller(Box::new(respawn), ctx, store, deep.trigger)
+                tasks.resume_wasm_after_poller(
+                    Box::new(respawn),
+                    ctx,
+                    store,
+                    deep.trigger,
+                )
             };
             Err(Errno::Unknown)
         }

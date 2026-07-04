@@ -5,7 +5,9 @@ use std::{
 };
 
 use anyhow::{Context, Error};
-use wasmer_config::package::{NamedPackageId, PackageHash, PackageId, PackageIdent, PackageSource};
+use wasmer_config::package::{
+    NamedPackageId, PackageHash, PackageId, PackageIdent, PackageSource,
+};
 
 use crate::runtime::resolver::{PackageSummary, QueryError, Source};
 
@@ -41,18 +43,21 @@ impl InMemorySource {
             source: &mut InMemorySource,
             to_check: &mut VecDeque<PathBuf>,
         ) -> Result<(), Error> {
-            let metadata = std::fs::metadata(path).context("Unable to get filesystem metadata")?;
+            let metadata = std::fs::metadata(path)
+                .context("Unable to get filesystem metadata")?;
 
             if metadata.is_dir() {
-                for entry in path.read_dir().context("Unable to read the directory")? {
+                for entry in
+                    path.read_dir().context("Unable to read the directory")?
+                {
                     to_check.push_back(entry?.path());
                 }
             } else if metadata.is_file() {
                 let f = File::open(path).context("Unable to open the file")?;
                 if webc::detect(f).is_ok() {
-                    source
-                        .add_webc(path)
-                        .with_context(|| format!("Unable to load \"{}\"", path.display()))?;
+                    source.add_webc(path).with_context(|| {
+                        format!("Unable to load \"{}\"", path.display())
+                    })?;
                 }
             }
 
@@ -60,8 +65,9 @@ impl InMemorySource {
         }
 
         while let Some(path) = to_check.pop_front() {
-            process_entry(&path, &mut source, &mut to_check)
-                .with_context(|| format!("Unable to add entries from \"{}\"", path.display()))?;
+            process_entry(&path, &mut source, &mut to_check).with_context(
+                || format!("Unable to add entries from \"{}\"", path.display()),
+            )?;
         }
 
         Ok(source)
@@ -74,9 +80,10 @@ impl InMemorySource {
         match summary.pkg.id.clone() {
             PackageId::Named(ident) => {
                 // Also add the package as a hashed package.
-                let pkg_hash = PackageHash::Sha256(wasmer_config::hash::Sha256Hash(
-                    summary.dist.webc_sha256.as_bytes(),
-                ));
+                let pkg_hash =
+                    PackageHash::Sha256(wasmer_config::hash::Sha256Hash(
+                        summary.dist.webc_sha256.as_bytes(),
+                    ));
                 self.hash_packages
                     .entry(pkg_hash)
                     .or_insert_with(|| summary.clone());
@@ -87,8 +94,12 @@ impl InMemorySource {
                     .entry(ident.full_name.clone())
                     .or_default();
                 summaries.push(NamedPackageSummary { ident, summary });
-                summaries.sort_by(|left, right| left.ident.version.cmp(&right.ident.version));
-                summaries.dedup_by(|left, right| left.ident.version == right.ident.version);
+                summaries.sort_by(|left, right| {
+                    left.ident.version.cmp(&right.ident.version)
+                });
+                summaries.dedup_by(|left, right| {
+                    left.ident.version == right.ident.version
+                });
             }
             PackageId::Hash(hash) => {
                 self.hash_packages.insert(hash, summary);
@@ -105,16 +116,15 @@ impl InMemorySource {
 
     pub fn get(&self, id: &PackageId) -> Option<&PackageSummary> {
         match id {
-            PackageId::Named(ident) => {
-                self.named_packages
-                    .get(&ident.full_name)
-                    .and_then(|summaries| {
-                        summaries
-                            .iter()
-                            .find(|s| s.ident.version == ident.version)
-                            .map(|s| &s.summary)
-                    })
-            }
+            PackageId::Named(ident) => self
+                .named_packages
+                .get(&ident.full_name)
+                .and_then(|summaries| {
+                    summaries
+                        .iter()
+                        .find(|s| s.ident.version == ident.version)
+                        .map(|s| &s.summary)
+                }),
             PackageId::Hash(hash) => self.hash_packages.get(hash),
         }
     }
@@ -134,7 +144,10 @@ impl InMemorySource {
 #[async_trait::async_trait]
 impl Source for InMemorySource {
     #[tracing::instrument(level = "debug", skip_all, fields(%package))]
-    async fn query(&self, package: &PackageSource) -> Result<Vec<PackageSummary>, QueryError> {
+    async fn query(
+        &self,
+        package: &PackageSource,
+    ) -> Result<Vec<PackageSummary>, QueryError> {
         match package {
             PackageSource::Ident(PackageIdent::Named(named)) => {
                 match self.named_packages.get(&named.full_name()) {
@@ -142,7 +155,9 @@ impl Source for InMemorySource {
                         let matches: Vec<_> = summaries
                             .iter()
                             .filter(|summary| {
-                                named.version_or_default().matches(&summary.ident.version)
+                                named
+                                    .version_or_default()
+                                    .matches(&summary.ident.version)
                             })
                             .map(|n| n.summary.clone())
                             .collect();
@@ -177,9 +192,11 @@ impl Source for InMemorySource {
                     query: package.clone(),
                     archived_versions: Vec::new(),
                 }),
-            PackageSource::Url(_) | PackageSource::Path(_) => Err(QueryError::Unsupported {
-                query: package.clone(),
-            }),
+            PackageSource::Url(_) | PackageSource::Path(_) => {
+                Err(QueryError::Unsupported {
+                    query: package.clone(),
+                })
+            }
         }
     }
 }
@@ -195,7 +212,8 @@ mod tests {
 
     use super::*;
 
-    const PYTHON: &[u8] = include_bytes!("../../../../c-api/examples/assets/python-0.1.0.wasmer");
+    const PYTHON: &[u8] =
+        include_bytes!("../../../../c-api/examples/assets/python-0.1.0.wasmer");
     const COREUTILS_16: &[u8] = include_bytes!("../../../../../tests/integration/cli/tests/webc/coreutils-1.0.16-e27dbb4f-2ef2-4b44-b46a-ddd86497c6d7.webc");
     const COREUTILS_11: &[u8] = include_bytes!("../../../../../tests/integration/cli/tests/webc/coreutils-1.0.11-9d7746ca-694f-11ed-b932-dead3543c068.webc");
     const BASH: &[u8] = include_bytes!("../../../../../tests/integration/cli/tests/webc/bash-1.0.16-f097441a-a80b-4e0d-87d7-684918ef4bb6.webc");
@@ -204,8 +222,10 @@ mod tests {
     fn load_a_directory_tree() {
         let temp = TempDir::new().unwrap();
         std::fs::write(temp.path().join("python-0.1.0.webc"), PYTHON).unwrap();
-        std::fs::write(temp.path().join("coreutils-1.0.16.webc"), COREUTILS_16).unwrap();
-        std::fs::write(temp.path().join("coreutils-1.0.11.webc"), COREUTILS_11).unwrap();
+        std::fs::write(temp.path().join("coreutils-1.0.16.webc"), COREUTILS_16)
+            .unwrap();
+        std::fs::write(temp.path().join("coreutils-1.0.11.webc"), COREUTILS_11)
+            .unwrap();
         let nested = temp.path().join("nested");
         std::fs::create_dir(&nested).unwrap();
         let bash = nested.join("bash-1.0.12.webc");
@@ -227,7 +247,8 @@ mod tests {
             PackageSummary {
                 pkg: PackageInfo {
                     id: PackageId::Named(
-                        NamedPackageId::try_new("sharrattj/bash", "1.0.16").unwrap()
+                        NamedPackageId::try_new("sharrattj/bash", "1.0.16")
+                            .unwrap()
                     ),
                     dependencies: vec![Dependency {
                         alias: "coreutils".to_string(),
@@ -250,8 +271,9 @@ mod tests {
                     )
                     .unwrap(),
                     webc_sha256: WebcHash::from_bytes([
-                        161, 101, 23, 194, 244, 92, 186, 213, 143, 33, 200, 128, 238, 23, 185, 174,
-                        180, 195, 144, 145, 78, 17, 227, 159, 118, 64, 83, 153, 0, 205, 253, 215,
+                        161, 101, 23, 194, 244, 92, 186, 213, 143, 33, 200, 128,
+                        238, 23, 185, 174, 180, 195, 144, 145, 78, 17, 227, 159,
+                        118, 64, 83, 153, 0, 205, 253, 215,
                     ]),
                 },
             }

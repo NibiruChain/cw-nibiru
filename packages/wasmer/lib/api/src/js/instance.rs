@@ -38,7 +38,11 @@ impl Instance {
     ) -> Result<(Self, Exports), InstantiationError> {
         let mut imports = Imports::new();
         for (import_ty, extern_ty) in module.imports().zip(externs.iter()) {
-            imports.define(import_ty.module(), import_ty.name(), extern_ty.clone());
+            imports.define(
+                import_ty.module(),
+                import_ty.name(),
+                extern_ty.clone(),
+            );
         }
         Self::new(store, module, &imports)
     }
@@ -58,11 +62,14 @@ impl Instance {
                 let extern_type = export_type.ty();
                 // Annotation is here to prevent spurious IDE warnings.
                 #[allow(unused_unsafe)]
-                let js_export =
-                    unsafe { js_sys::Reflect::get(&instance_exports, &name.into()).unwrap() };
-                let extern_ = Extern::from_jsvalue(&mut store, extern_type, &js_export)
-                    .map_err(|e| wasm_bindgen::JsValue::from(e))
-                    .unwrap();
+                let js_export = unsafe {
+                    js_sys::Reflect::get(&instance_exports, &name.into())
+                        .unwrap()
+                };
+                let extern_ =
+                    Extern::from_jsvalue(&mut store, extern_type, &js_export)
+                        .map_err(|e| wasm_bindgen::JsValue::from(e))
+                        .unwrap();
                 Ok((name.to_string(), extern_))
             })
             .collect::<Result<Exports, InstantiationError>>()?;

@@ -21,7 +21,8 @@ impl<'a, 'c> JournalSyscallPlayer<'a, 'c> {
             line_feeds,
         };
 
-        JournalEffector::apply_tty_set(&mut self.ctx, state).map_err(anyhow_err_to_runtime_err)?;
+        JournalEffector::apply_tty_set(&mut self.ctx, state)
+            .map_err(anyhow_err_to_runtime_err)?;
         Ok(())
     }
 }

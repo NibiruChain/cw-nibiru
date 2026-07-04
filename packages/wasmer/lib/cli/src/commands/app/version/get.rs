@@ -40,7 +40,9 @@ impl AsyncCliCommand for CmdAppVersionGet {
             self.name.clone(),
         )
         .await?
-        .with_context(|| format!("Could not find app version '{}'", self.name))?;
+        .with_context(|| {
+            format!("Could not find app version '{}'", self.name)
+        })?;
 
         println!(
             "{}",

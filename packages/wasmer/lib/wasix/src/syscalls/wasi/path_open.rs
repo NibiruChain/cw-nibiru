@@ -153,15 +153,16 @@ pub(crate) fn path_open_internal(
             let write_permission = adjusted_rights.contains(Rights::FD_WRITE);
 
             // append, truncate, and create all require the permission to write
-            let (append_permission, truncate_permission, create_permission) = if write_permission {
-                (
-                    fs_flags.contains(Fdflags::APPEND),
-                    o_flags.contains(Oflags::TRUNC),
-                    o_flags.contains(Oflags::CREATE),
-                )
-            } else {
-                (false, false, false)
-            };
+            let (append_permission, truncate_permission, create_permission) =
+                if write_permission {
+                    (
+                        fs_flags.contains(Fdflags::APPEND),
+                        o_flags.contains(Oflags::TRUNC),
+                        o_flags.contains(Oflags::CREATE),
+                    )
+                } else {
+                    (false, false, false)
+                };
 
             virtual_fs::OpenOptionsConfig {
                 read: fs_rights_base.contains(Rights::FD_READ),
@@ -176,7 +177,8 @@ pub(crate) fn path_open_internal(
             append: fs_flags.contains(Fdflags::APPEND),
             write: fs_rights_base.contains(Rights::FD_WRITE),
             read: fs_rights_base.contains(Rights::FD_READ),
-            create_new: o_flags.contains(Oflags::CREATE) && o_flags.contains(Oflags::EXCL),
+            create_new: o_flags.contains(Oflags::CREATE)
+                && o_flags.contains(Oflags::EXCL),
             create: o_flags.contains(Oflags::CREATE),
             truncate: o_flags.contains(Oflags::TRUNC),
         },
@@ -222,7 +224,9 @@ pub(crate) fn path_open_internal(
                     assert!(handle.is_some());
                     return Ok(Ok(*special_fd));
                 }
-                if o_flags.contains(Oflags::DIRECTORY) || orig_path.ends_with('/') {
+                if o_flags.contains(Oflags::DIRECTORY)
+                    || orig_path.ends_with('/')
+                {
                     return Ok(Err(Errno::Notdir));
                 }
 
@@ -244,9 +248,10 @@ pub(crate) fn path_open_internal(
                 if minimum_rights.truncate {
                     open_flags |= Fd::TRUNCATE;
                 }
-                *handle = Some(Arc::new(std::sync::RwLock::new(wasi_try_ok_ok!(
-                    open_options.open(&path).map_err(fs_error_into_wasi_err)
-                ))));
+                *handle =
+                    Some(Arc::new(std::sync::RwLock::new(wasi_try_ok_ok!(
+                        open_options.open(&path).map_err(fs_error_into_wasi_err)
+                    ))));
 
                 if let Some(handle) = handle {
                     let handle = handle.read().unwrap();
@@ -264,7 +269,9 @@ pub(crate) fn path_open_internal(
                     }
                 }
             }
-            Kind::Buffer { .. } => unimplemented!("wasi::path_open for Buffer type files"),
+            Kind::Buffer { .. } => {
+                unimplemented!("wasi::path_open for Buffer type files")
+            }
             Kind::Root { .. } => {
                 if !o_flags.contains(Oflags::DIRECTORY) {
                     return Ok(Err(Errno::Notcapable));
@@ -372,9 +379,12 @@ pub(crate) fn path_open_internal(
                     path: new_file_host_path,
                     fd: None,
                 };
-                wasi_try_ok_ok!(state
-                    .fs
-                    .create_inode(inodes, kind, false, new_entity_name.clone()))
+                wasi_try_ok_ok!(state.fs.create_inode(
+                    inodes,
+                    kind,
+                    false,
+                    new_entity_name.clone()
+                ))
             };
 
             {

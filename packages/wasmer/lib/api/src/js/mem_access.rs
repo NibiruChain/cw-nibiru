@@ -7,7 +7,9 @@ impl<'a, T> WasmSliceAccess<'a, T>
 where
     T: wasmer_types::ValueType,
 {
-    pub(crate) fn new(slice: WasmSlice<'a, T>) -> Result<Self, MemoryAccessError> {
+    pub(crate) fn new(
+        slice: WasmSlice<'a, T>,
+    ) -> Result<Self, MemoryAccessError> {
         let buf = slice.read_to_vec()?;
         Ok(Self {
             slice,
@@ -22,8 +24,12 @@ where
 {
     pub(crate) fn new(ptr: WasmRef<'a, T>) -> Result<Self, MemoryAccessError> {
         let mut out = MaybeUninit::uninit();
-        let buf =
-            unsafe { slice::from_raw_parts_mut(out.as_mut_ptr() as *mut u8, mem::size_of::<T>()) };
+        let buf = unsafe {
+            slice::from_raw_parts_mut(
+                out.as_mut_ptr() as *mut u8,
+                mem::size_of::<T>(),
+            )
+        };
         ptr.buffer.read(ptr.offset, buf)?;
         let val = unsafe { out.assume_init() };
 
@@ -59,7 +65,9 @@ where
             )
         };
         val.zero_padding_bytes(data);
-        let data = unsafe { slice::from_raw_parts(data.as_ptr() as *const _, data.len()) };
+        let data = unsafe {
+            slice::from_raw_parts(data.as_ptr() as *const _, data.len())
+        };
         self.ptr.buffer.write(self.ptr.offset, data).unwrap()
     }
 }

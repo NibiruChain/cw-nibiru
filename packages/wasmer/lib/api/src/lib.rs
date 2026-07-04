@@ -427,10 +427,14 @@ compile_error!(
 );
 
 #[cfg(all(feature = "sys", target_arch = "wasm32"))]
-compile_error!("The `sys` feature must be enabled only for non-`wasm32` target.");
+compile_error!(
+    "The `sys` feature must be enabled only for non-`wasm32` target."
+);
 
 #[cfg(all(feature = "jsc", target_arch = "wasm32"))]
-compile_error!("The `jsc` feature must be enabled only for non-`wasm32` target.");
+compile_error!(
+    "The `jsc` feature must be enabled only for non-`wasm32` target."
+);
 
 #[cfg(all(feature = "js", not(target_arch = "wasm32")))]
 compile_error!(
@@ -489,7 +493,8 @@ mod c_api;
 pub use c_api::*;
 
 pub use crate::externals::{
-    Extern, Function, Global, HostFunction, Memory, MemoryLocation, MemoryView, SharedMemory, Table,
+    Extern, Function, Global, HostFunction, Memory, MemoryLocation, MemoryView,
+    SharedMemory, Table,
 };
 pub use access::WasmSliceAccess;
 pub use engine::{AsEngineRef, Engine, EngineRef};
@@ -505,12 +510,15 @@ pub use module::{IoCompileError, Module};
 pub use native_type::{FromToNativeWasmType, NativeWasmTypeInto, WasmTypeList};
 pub use ptr::{Memory32, Memory64, MemorySize, WasmPtr, WasmPtr64};
 pub use store::{
-    AsStoreMut, AsStoreRef, OnCalledHandler, Store, StoreId, StoreMut, StoreObjects, StoreRef,
+    AsStoreMut, AsStoreRef, OnCalledHandler, Store, StoreId, StoreMut,
+    StoreObjects, StoreRef,
 };
 #[cfg(feature = "sys")]
 pub use store::{TrapHandlerFn, Tunables};
 #[cfg(any(feature = "sys", feature = "jsc", feature = "wasm-c-api"))]
-pub use target_lexicon::{Architecture, CallingConvention, OperatingSystem, Triple, HOST};
+pub use target_lexicon::{
+    Architecture, CallingConvention, OperatingSystem, Triple, HOST,
+};
 pub use typed_function::TypedFunction;
 pub use value::Value;
 
@@ -523,10 +531,11 @@ pub use wasmer_compiler::types::target::{CpuFeature, Target};
 
 // TODO: OnCalledAction is needed for asyncify. It will be refactored with https://github.com/wasmerio/wasmer/issues/3451
 pub use wasmer_types::{
-    is_wasm, Bytes, CompileError, DeserializeError, ExportIndex, ExportType, ExternType, FrameInfo,
-    FunctionType, GlobalInit, GlobalType, ImportType, LocalFunctionIndex, MemoryError, MemoryType,
-    MiddlewareError, Mutability, OnCalledAction, Pages, ParseCpuFeatureError, SerializeError,
-    TableType, Type, ValueType, WasmError, WasmResult, WASM_MAX_PAGES, WASM_MIN_PAGES,
+    is_wasm, Bytes, CompileError, DeserializeError, ExportIndex, ExportType,
+    ExternType, FrameInfo, FunctionType, GlobalInit, GlobalType, ImportType,
+    LocalFunctionIndex, MemoryError, MemoryType, MiddlewareError, Mutability,
+    OnCalledAction, Pages, ParseCpuFeatureError, SerializeError, TableType,
+    Type, ValueType, WasmError, WasmResult, WASM_MAX_PAGES, WASM_MIN_PAGES,
     WASM_PAGE_SIZE,
 };
 #[cfg(feature = "wat")]

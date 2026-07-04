@@ -45,7 +45,10 @@ pub fn proc_exit<M: MemorySize>(
             ) {
                 Errno::Success => OnCalledAction::InvokeAgain,
                 err => {
-                    warn!("fork failed - could not rewind the stack - errno={}", err);
+                    warn!(
+                        "fork failed - could not rewind the stack - errno={}",
+                        err
+                    );
                     OnCalledAction::Trap(Box::new(WasiError::Exit(err.into())))
                 }
             }

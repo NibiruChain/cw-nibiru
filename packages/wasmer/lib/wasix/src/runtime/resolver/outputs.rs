@@ -83,7 +83,8 @@ impl DependencyGraph {
     /// dependency mappings.
     pub fn iter_dependencies(
         &self,
-    ) -> impl Iterator<Item = (&'_ PackageId, BTreeMap<&'_ str, &'_ PackageId>)> + '_ {
+    ) -> impl Iterator<Item = (&'_ PackageId, BTreeMap<&'_ str, &'_ PackageId>)> + '_
+    {
         self.packages.iter().map(move |(id, index)| {
             let dependencies: BTreeMap<_, _> = self
                 .graph
@@ -159,7 +160,12 @@ impl PartialEq for DependencyGraph {
         // Most importantly, the graphs should be "the same" (i.e. if a node
         // in one graph is a
         // nodes are connected to the same nodes in both)
-        petgraph::algo::is_isomorphic_matching(graph, &other.graph, Node::eq, Edge::eq)
+        petgraph::algo::is_isomorphic_matching(
+            graph,
+            &other.graph,
+            Node::eq,
+            Edge::eq,
+        )
     }
 }
 

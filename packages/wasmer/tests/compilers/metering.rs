@@ -32,7 +32,11 @@ fn run_add_with_limit(mut config: crate::Config, limit: u64) -> Result<()> {
     Ok(())
 }
 
-fn run_loop(mut config: crate::Config, limit: u64, iter_count: i32) -> Result<()> {
+fn run_loop(
+    mut config: crate::Config,
+    limit: u64,
+    iter_count: i32,
+) -> Result<()> {
     config
         .middlewares
         .push(Arc::new(Metering::new(limit, cost_always_one)));
@@ -58,7 +62,8 @@ fn run_loop(mut config: crate::Config, limit: u64, iter_count: i32) -> Result<()
 
     let instance = Instance::new(&mut store, &module, &import_object)?;
 
-    let f: TypedFunction<i32, ()> = instance.exports.get_typed_function(&mut store, "test")?;
+    let f: TypedFunction<i32, ()> =
+        instance.exports.get_typed_function(&mut store, "test")?;
     f.call(&mut store, iter_count)?;
     Ok(())
 }

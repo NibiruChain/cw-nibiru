@@ -30,18 +30,28 @@ pub enum AppIdent {
 
 impl AppIdent {
     /// Resolve an app identifier through the API.
-    pub async fn resolve(&self, client: &WasmerClient) -> Result<DeployApp, anyhow::Error> {
+    pub async fn resolve(
+        &self,
+        client: &WasmerClient,
+    ) -> Result<DeployApp, anyhow::Error> {
         match self {
             AppIdent::AppId(app_id) => {
                 wasmer_backend_api::query::get_app_by_id(client, app_id.clone())
                     .await
-                    .with_context(|| format!("Could not find app with id '{}'", app_id))
+                    .with_context(|| {
+                        format!("Could not find app with id '{}'", app_id)
+                    })
             }
             AppIdent::AppVersionId(id) => {
                 let (app, _version) =
-                    wasmer_backend_api::query::get_app_version_by_id_with_app(client, id.clone())
-                        .await
-                        .with_context(|| format!("Could not query for app version id '{}'", id))?;
+                    wasmer_backend_api::query::get_app_version_by_id_with_app(
+                        client,
+                        id.clone(),
+                    )
+                    .await
+                    .with_context(|| {
+                        format!("Could not query for app version id '{}'", id)
+                    })?;
                 Ok(app)
             }
             AppIdent::Name(name) => {
@@ -52,14 +62,24 @@ impl AppIdent {
                     .await?
                     .context("not logged in")?;
 
-                wasmer_backend_api::query::get_app(client, user.username, name.clone())
-                    .await?
-                    .with_context(|| format!("Could not find app with name '{name}'"))
+                wasmer_backend_api::query::get_app(
+                    client,
+                    user.username,
+                    name.clone(),
+                )
+                .await?
+                .with_context(|| {
+                    format!("Could not find app with name '{name}'")
+                })
             }
             AppIdent::NamespacedName(owner, name) => {
-                wasmer_backend_api::query::get_app(client, owner.clone(), name.clone())
-                    .await?
-                    .with_context(|| format!("Could not find app '{owner}/{name}'"))
+                wasmer_backend_api::query::get_app(
+                    client,
+                    owner.clone(),
+                    name.clone(),
+                )
+                .await?
+                .with_context(|| format!("Could not find app '{owner}/{name}'"))
             }
         }
     }
@@ -71,7 +91,9 @@ impl std::str::FromStr for AppIdent {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if let Some((namespace, name)) = s.split_once('/') {
             if namespace.is_empty() {
-                bail!("invalid app identifier '{s}': namespace can not be empty");
+                bail!(
+                    "invalid app identifier '{s}': namespace can not be empty"
+                );
             }
             if name.is_empty() {
                 bail!("invalid app identifier '{s}': name can not be empty");
@@ -84,7 +106,9 @@ impl std::str::FromStr for AppIdent {
         } else if let Ok(id) = GlobalId::parse_prefixed(s) {
             match id.kind() {
                 NodeKind::DeployApp => Ok(Self::AppId(s.to_string())),
-                NodeKind::DeployAppVersion => Ok(Self::AppVersionId(s.to_string())),
+                NodeKind::DeployAppVersion => {
+                    Ok(Self::AppVersionId(s.to_string()))
+                }
                 _ => {
                     bail!(
                         "invalid app identifier '{s}': expected an app id, but id is of type {kind}",
@@ -157,7 +181,9 @@ impl AppIdentOpts {
                 config.name.clone().context("App name was not specified")?,
             )
         } else {
-            AppIdent::Name(config.name.clone().context("App name was not specified")?)
+            AppIdent::Name(
+                config.name.clone().context("App name was not specified")?,
+            )
         };
 
         Ok(ResolvedAppIdent::Config {
@@ -281,7 +307,9 @@ pub fn get_app_config_from_dir(
     }
     // read the app.yaml
     let raw_app_config = std::fs::read_to_string(&app_config_path)
-        .with_context(|| format!("Could not read file '{}'", app_config_path.display()))?;
+        .with_context(|| {
+            format!("Could not read file '{}'", app_config_path.display())
+        })?;
 
     // parse the app.yaml
     let config = AppConfigV1::parse_yaml(&raw_app_config)
@@ -290,15 +318,17 @@ pub fn get_app_config_from_dir(
     Ok((config, app_config_path))
 }
 
-pub fn get_app_config_from_current_dir() -> Result<(AppConfigV1, std::path::PathBuf), anyhow::Error>
-{
+pub fn get_app_config_from_current_dir(
+) -> Result<(AppConfigV1, std::path::PathBuf), anyhow::Error> {
     let current_dir = std::env::current_dir()?;
     get_app_config_from_dir(&current_dir)
 }
 
 /// Prompt for an app ident.
 #[allow(dead_code)]
-pub(crate) fn prompt_app_ident(message: &str) -> Result<AppIdent, anyhow::Error> {
+pub(crate) fn prompt_app_ident(
+    message: &str,
+) -> Result<AppIdent, anyhow::Error> {
     let theme = ColorfulTheme::default();
     loop {
         let ident: String = dialoguer::Input::with_theme(&theme)

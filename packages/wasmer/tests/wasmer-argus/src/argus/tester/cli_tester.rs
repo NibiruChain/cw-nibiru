@@ -4,7 +4,10 @@ use std::{fs::File, io::BufReader, path::Path, process::Command, sync::Arc};
 use tokio::time::{self, Instant};
 use tracing::*;
 use wasmer_backend_api::types::PackageVersionWithPackage;
-use webc::{v2::read::OwnedReader, v3::read::OwnedReader as OwnedReaderV3, Container, Version};
+use webc::{
+    v2::read::OwnedReader, v3::read::OwnedReader as OwnedReaderV3, Container,
+    Version,
+};
 
 use super::{TestReport, Tester};
 
@@ -84,7 +87,11 @@ impl<'a> CLIRunner<'a> {
         })
     }
 
-    fn ok(&self, version: String, start_time: Instant) -> anyhow::Result<TestReport> {
+    fn ok(
+        &self,
+        version: String,
+        start_time: Instant,
+    ) -> anyhow::Result<TestReport> {
         Ok(TestReport::new(
             self.package,
             String::from("wasmer_cli"),
@@ -137,7 +144,9 @@ impl<'a> CLIRunner<'a> {
                 .replace("wasmer", "")
                 .trim()
                 .to_string()),
-            Err(e) => anyhow::bail!("failed to launch cli program {cli_path}: {e}"),
+            Err(e) => {
+                anyhow::bail!("failed to launch cli program {cli_path}: {e}")
+            }
         }
     }
 }
@@ -164,9 +173,19 @@ impl<'a> Tester for CLIRunner<'a> {
         let webc_v2 = match webc::detect(v2_bytes.as_slice()) {
             Ok(Version::V2) => Container::from(OwnedReader::parse(v2_bytes)?),
             Ok(other) => {
-                return self.err(version, start_time, format!("Unsupported version, {other}"))
+                return self.err(
+                    version,
+                    start_time,
+                    format!("Unsupported version, {other}"),
+                )
             }
-            Err(e) => return self.err(version, start_time, format!("An error occurred: {e}")),
+            Err(e) => {
+                return self.err(
+                    version,
+                    start_time,
+                    format!("An error occurred: {e}"),
+                )
+            }
         };
 
         for (i, atom) in webc_v2.atoms().iter().enumerate() {
@@ -189,9 +208,19 @@ impl<'a> Tester for CLIRunner<'a> {
         let webc_v3 = match webc::detect(v3_bytes.as_slice()) {
             Ok(Version::V3) => Container::from(OwnedReaderV3::parse(v3_bytes)?),
             Ok(other) => {
-                return self.err(version, start_time, format!("Unsupported version, {other}"))
+                return self.err(
+                    version,
+                    start_time,
+                    format!("Unsupported version, {other}"),
+                )
             }
-            Err(e) => return self.err(version, start_time, format!("An error occurred: {e}")),
+            Err(e) => {
+                return self.err(
+                    version,
+                    start_time,
+                    format!("An error occurred: {e}"),
+                )
+            }
         };
 
         for (i, atom) in webc_v3.atoms().iter().enumerate() {

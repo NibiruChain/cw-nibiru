@@ -6,7 +6,10 @@ use self::tester::{TestReport, Tester};
 pub use config::*;
 use indicatif::{MultiProgress, ProgressBar};
 use reqwest::header::CONTENT_TYPE;
-use std::{fs::OpenOptions, io::Write as _, ops::AddAssign, path::Path, sync::Arc, time::Duration};
+use std::{
+    fs::OpenOptions, io::Write as _, ops::AddAssign, path::Path, sync::Arc,
+    time::Duration,
+};
 use tokio::{
     sync::{
         mpsc::{self, UnboundedSender},
@@ -28,7 +31,10 @@ impl TryFrom<ArgusConfig> for Argus {
     type Error = anyhow::Error;
 
     fn try_from(config: ArgusConfig) -> Result<Self, Self::Error> {
-        let client = WasmerClient::new(Url::parse(&config.registry_url)?, "wasmer-argus")?;
+        let client = WasmerClient::new(
+            Url::parse(&config.registry_url)?,
+            "wasmer-argus",
+        )?;
 
         let client = client.with_auth_token(config.auth_token.clone());
         Ok(Argus { client, config })
@@ -75,7 +81,9 @@ impl Argus {
 
             pool.spawn(async move {
                 let _permit = permit;
-                match Argus::test(count, c, &pkg, bar, successes_sx, failures_sx).await {
+                match Argus::test(count, c, &pkg, bar, successes_sx, failures_sx)
+                    .await
+                {
                     Err(e) => {
                         failures.lock().await.add_assign(1);
                         Err(e)
@@ -138,7 +146,8 @@ impl Argus {
         p.enable_steady_tick(Duration::from_millis(100));
 
         let package_name = Argus::get_package_id(package);
-        let webc_v2_url: Url = match &package.distribution_v2.pirita_download_url {
+        let webc_v2_url: Url = match &package.distribution_v2.pirita_download_url
+        {
             Some(url) => url.parse().unwrap(),
             None => {
                 info!("package {} has no download url, skipping", package_name);
@@ -147,7 +156,8 @@ impl Argus {
             }
         };
 
-        let webc_v3_url: Url = match &package.distribution_v3.pirita_download_url {
+        let webc_v3_url: Url = match &package.distribution_v3.pirita_download_url
+        {
             Some(url) => url.parse().unwrap(),
             None => {
                 info!("package {} has no download url, skipping", package_name);
@@ -184,7 +194,8 @@ impl Argus {
             return Ok(true);
         }
 
-        Argus::download_webcs(test_id, &path, &webc_v2_url, &webc_v3_url, &p).await?;
+        Argus::download_webcs(test_id, &path, &webc_v2_url, &webc_v3_url, &p)
+            .await?;
 
         info!("package downloaded!");
 
@@ -239,7 +250,10 @@ impl Argus {
     }
 
     #[tracing::instrument]
-    async fn write_report(path: &Path, result: TestReport) -> anyhow::Result<()> {
+    async fn write_report(
+        path: &Path,
+        result: TestReport,
+    ) -> anyhow::Result<()> {
         let test_results_path = path.join(format!(
             "result-{}-{}--{}-{}.json",
             result.runner_id,

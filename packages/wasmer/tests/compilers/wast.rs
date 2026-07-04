@@ -16,7 +16,10 @@ use wasmer_wast::Wast;
 // }
 include!(concat!(env!("OUT_DIR"), "/generated_spectests.rs"));
 
-pub fn run_wast(mut config: crate::Config, wast_path: &str) -> anyhow::Result<()> {
+pub fn run_wast(
+    mut config: crate::Config,
+    wast_path: &str,
+) -> anyhow::Result<()> {
     println!("Running wast `{}`", wast_path);
     let try_nan_canonicalization = wast_path.contains("nan-canonicalization");
     let mut features = Features::default();
@@ -45,7 +48,10 @@ pub fn run_wast(mut config: crate::Config, wast_path: &str) -> anyhow::Result<()
     // shepherd that information out.
     wast.allow_trap_message("uninitialized element 2", "uninitialized element");
     // `liking.wast` has different wording but the same meaning
-    wast.allow_trap_message("out of bounds memory access", "memory out of bounds");
+    wast.allow_trap_message(
+        "out of bounds memory access",
+        "memory out of bounds",
+    );
     if cfg!(feature = "coverage") {
         wast.disable_assert_and_exhaustion();
     }
@@ -59,7 +65,9 @@ pub fn run_wast(mut config: crate::Config, wast_path: &str) -> anyhow::Result<()
     }
     if is_threads {
         // We allow this, so tests can be run properly for `simd_const` test.
-        wast.allow_instantiation_failures(&["Validation error: multiple tables"]);
+        wast.allow_instantiation_failures(&[
+            "Validation error: multiple tables",
+        ]);
     }
     if config.compiler == crate::Compiler::Singlepass {
         // We don't support multivalue yet in singlepass

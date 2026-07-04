@@ -79,7 +79,9 @@ impl schemars::JsonSchema for PackageHash {
         "PackageHash".to_string()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(
+        gen: &mut schemars::gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
         String::json_schema(gen)
     }
 }
@@ -98,8 +100,9 @@ mod tests {
         assert_eq!(
             h1.as_sha256().unwrap().as_bytes(),
             &[
-                195, 85, 205, 83, 121, 91, 155, 72, 31, 126, 178, 181, 244, 246, 200, 207, 115, 99,
-                27, 220, 52, 55, 35, 165, 121, 214, 113, 227, 45, 183, 11, 60
+                195, 85, 205, 83, 121, 91, 155, 72, 31, 126, 178, 181, 244, 246,
+                200, 207, 115, 99, 27, 220, 52, 55, 35, 165, 121, 214, 113, 227,
+                45, 183, 11, 60
             ],
         );
 

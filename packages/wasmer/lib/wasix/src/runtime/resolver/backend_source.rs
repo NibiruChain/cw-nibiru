@@ -8,13 +8,16 @@ use anyhow::{Context, Error};
 use http::{HeaderMap, Method};
 use semver::{Version, VersionReq};
 use url::Url;
-use wasmer_config::package::{NamedPackageId, PackageHash, PackageId, PackageIdent, PackageSource};
+use wasmer_config::package::{
+    NamedPackageId, PackageHash, PackageId, PackageIdent, PackageSource,
+};
 use webc::metadata::Manifest;
 
 use crate::{
     http::{HttpClient, HttpRequest, USER_AGENT},
     runtime::resolver::{
-        DistributionInfo, PackageInfo, PackageSummary, QueryError, Source, WebcHash,
+        DistributionInfo, PackageInfo, PackageSummary, QueryError, Source,
+        WebcHash,
     },
 };
 
@@ -30,10 +33,15 @@ pub struct BackendSource {
 }
 
 impl BackendSource {
-    pub const WASMER_DEV_ENDPOINT: &'static str = "https://registry.wasmer.wtf/graphql";
-    pub const WASMER_PROD_ENDPOINT: &'static str = "https://registry.wasmer.io/graphql";
+    pub const WASMER_DEV_ENDPOINT: &'static str =
+        "https://registry.wasmer.wtf/graphql";
+    pub const WASMER_PROD_ENDPOINT: &'static str =
+        "https://registry.wasmer.io/graphql";
 
-    pub fn new(registry_endpoint: Url, client: Arc<dyn HttpClient + Send + Sync>) -> Self {
+    pub fn new(
+        registry_endpoint: Url,
+        client: Arc<dyn HttpClient + Send + Sync>,
+    ) -> Self {
         BackendSource {
             registry_endpoint,
             client,
@@ -44,7 +52,11 @@ impl BackendSource {
     }
 
     /// Cache query results locally.
-    pub fn with_local_cache(self, cache_dir: impl Into<PathBuf>, timeout: Duration) -> Self {
+    pub fn with_local_cache(
+        self,
+        cache_dir: impl Into<PathBuf>,
+        timeout: Duration,
+    ) -> Self {
         BackendSource {
             cache: Some(FileSystemCache::new(cache_dir, timeout)),
             ..self
@@ -70,7 +82,10 @@ impl BackendSource {
     }
 
     #[tracing::instrument(level = "debug", skip_all)]
-    async fn query_graphql_named(&self, package_name: &str) -> Result<WebQuery, Error> {
+    async fn query_graphql_named(
+        &self,
+        package_name: &str,
+    ) -> Result<WebQuery, Error> {
         #[derive(serde::Serialize)]
         struct Body {
             query: String,
@@ -122,8 +137,8 @@ impl BackendSource {
             "Received a response from GraphQL",
         );
 
-        let response: WebQuery =
-            serde_json::from_slice(&body).context("Unable to deserialize the response")?;
+        let response: WebQuery = serde_json::from_slice(&body)
+            .context("Unable to deserialize the response")?;
 
         Ok(response)
     }
@@ -185,7 +200,8 @@ impl BackendSource {
         );
 
         let response: Reply<GetPackageRelease> =
-            serde_json::from_slice(&body).context("Unable to deserialize the response")?;
+            serde_json::from_slice(&body)
+                .context("Unable to deserialize the response")?;
 
         Ok(response.data.get_package_release)
     }
@@ -233,7 +249,10 @@ impl BackendSource {
 #[async_trait::async_trait]
 impl Source for BackendSource {
     #[tracing::instrument(level = "debug", skip_all, fields(%package))]
-    async fn query(&self, package: &PackageSource) -> Result<Vec<PackageSummary>, QueryError> {
+    async fn query(
+        &self,
+        package: &PackageSource,
+    ) -> Result<Vec<PackageSummary>, QueryError> {
         let (package_name, version_constraint) = match package {
             PackageSource::Ident(PackageIdent::Named(n)) => (
                 n.full_name(),
@@ -436,7 +455,8 @@ fn decode_summary(
     let manifest: Manifest = serde_json::from_slice(manifest.as_bytes())
         .context("Unable to deserialize the manifest")?;
 
-    let webc_sha256 = WebcHash::parse_hex(&hash).context("invalid webc sha256 hash in manifest")?;
+    let webc_sha256 = WebcHash::parse_hex(&hash)
+        .context("invalid webc sha256 hash in manifest")?;
 
     Ok(PackageSummary {
         pkg: PackageInfo::from_manifest(id, &manifest, version)?,
@@ -463,7 +483,10 @@ impl FileSystemCache {
         self.cache_dir.join(package_name)
     }
 
-    fn lookup_cached_query(&self, package_name: &str) -> Result<Option<WebQuery>, Error> {
+    fn lookup_cached_query(
+        &self,
+        package_name: &str,
+    ) -> Result<Option<WebQuery>, Error> {
         let filename = self.path(package_name);
 
         let _span =
@@ -477,9 +500,10 @@ impl FileSystemCache {
                 return Ok(None);
             }
             Err(e) => {
-                return Err(
-                    Error::new(e).context(format!("Unable to read \"{}\"", filename.display()))
-                );
+                return Err(Error::new(e).context(format!(
+                    "Unable to read \"{}\"",
+                    filename.display()
+                )));
             }
         };
 
@@ -490,12 +514,17 @@ impl FileSystemCache {
                 // in the future
                 let _ = std::fs::remove_file(&filename);
 
-                return Err(Error::new(e).context("Unable to parse the cached query"));
+                return Err(
+                    Error::new(e).context("Unable to parse the cached query")
+                );
             }
         };
 
         if !entry.is_still_valid(self.timeout) {
-            tracing::debug!(timestamp = entry.unix_timestamp, "Cached entry is stale");
+            tracing::debug!(
+                timestamp = entry.unix_timestamp,
+                "Cached entry is stale"
+            );
             let _ = std::fs::remove_file(&filename);
             return Ok(None);
         }
@@ -513,7 +542,11 @@ impl FileSystemCache {
         Ok(Some(entry.response))
     }
 
-    fn update(&self, package_name: &str, response: &WebQuery) -> Result<(), Error> {
+    fn update(
+        &self,
+        package_name: &str,
+        response: &WebQuery,
+    ) -> Result<(), Error> {
         let entry = CacheEntry {
             unix_timestamp: SystemTime::UNIX_EPOCH
                 .elapsed()
@@ -575,7 +608,8 @@ struct HashCacheEntry {
 
 impl CacheEntry {
     fn is_still_valid(&self, timeout: Duration) -> bool {
-        let timestamp = SystemTime::UNIX_EPOCH + Duration::from_secs(self.unix_timestamp);
+        let timestamp =
+            SystemTime::UNIX_EPOCH + Duration::from_secs(self.unix_timestamp);
 
         match timestamp.elapsed() {
             Ok(duration) if duration <= timeout => true,
@@ -648,7 +682,10 @@ struct PackageWebc {
 }
 
 impl PackageWebc {
-    fn try_into_summary(self, hash: PackageHash) -> Result<PackageSummary, anyhow::Error> {
+    fn try_into_summary(
+        self,
+        hash: PackageHash,
+    ) -> Result<PackageSummary, anyhow::Error> {
         let manifest: Manifest = serde_json::from_str(&self.pirita_manifest)
             .context("Unable to deserialize the manifest")?;
 
@@ -662,7 +699,9 @@ impl PackageWebc {
             dist: DistributionInfo {
                 webc: self.webc_url,
                 // TODO: replace with different hash type?
-                webc_sha256: WebcHash(hash.as_sha256().context("invalid hash")?.0),
+                webc_sha256: WebcHash(
+                    hash.as_sha256().context("invalid hash")?.0,
+                ),
             },
         })
     }
@@ -910,7 +949,8 @@ mod tests {
         fn request(
             &self,
             request: HttpRequest,
-        ) -> futures::future::BoxFuture<'_, Result<HttpResponse, anyhow::Error>> {
+        ) -> futures::future::BoxFuture<'_, Result<HttpResponse, anyhow::Error>>
+        {
             self.requests.lock().unwrap().push(request);
             let response = self.responses.lock().unwrap().remove(0);
             Box::pin(async { Ok(response) })
@@ -926,8 +966,10 @@ mod tests {
             headers: HeaderMap::new(),
         };
         let client = Arc::new(DummyClient::new(vec![response]));
-        let registry_endpoint = BackendSource::WASMER_PROD_ENDPOINT.parse().unwrap();
-        let request = PackageSource::from_str("wasmer/wasmer-pack-cli@^0.6").unwrap();
+        let registry_endpoint =
+            BackendSource::WASMER_PROD_ENDPOINT.parse().unwrap();
+        let request =
+            PackageSource::from_str("wasmer/wasmer-pack-cli@^0.6").unwrap();
         let source = BackendSource::new(registry_endpoint, client.clone());
 
         let summaries = source.query(&request).await.unwrap();
@@ -1048,7 +1090,8 @@ mod tests {
             headers: HeaderMap::new(),
         };
         let client = Arc::new(DummyClient::new(vec![response]));
-        let registry_endpoint = BackendSource::WASMER_PROD_ENDPOINT.parse().unwrap();
+        let registry_endpoint =
+            BackendSource::WASMER_PROD_ENDPOINT.parse().unwrap();
         let request = PackageSource::from_str("_/cowsay").unwrap();
         let source = BackendSource::new(registry_endpoint, client.clone());
 
@@ -1127,7 +1170,8 @@ mod tests {
             headers: HeaderMap::new(),
         };
         let client = Arc::new(DummyClient::new(vec![response]));
-        let registry_endpoint = BackendSource::WASMER_PROD_ENDPOINT.parse().unwrap();
+        let registry_endpoint =
+            BackendSource::WASMER_PROD_ENDPOINT.parse().unwrap();
         let request = PackageSource::from_str("wasmer/python").unwrap();
         let source = BackendSource::new(registry_endpoint, client.clone());
 
@@ -1218,7 +1262,8 @@ mod tests {
             headers: HeaderMap::new(),
         };
         let client = Arc::new(DummyClient::new(vec![response]));
-        let registry_endpoint = BackendSource::WASMER_PROD_ENDPOINT.parse().unwrap();
+        let registry_endpoint =
+            BackendSource::WASMER_PROD_ENDPOINT.parse().unwrap();
         let request = PackageSource::from_str("wasmer/python@4.0.0").unwrap();
         let temp = tempfile::tempdir().unwrap();
         let source = BackendSource::new(registry_endpoint, client.clone())

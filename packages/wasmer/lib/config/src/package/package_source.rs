@@ -1,7 +1,8 @@
 use std::str::FromStr;
 
 use super::{
-    NamedPackageId, NamedPackageIdent, PackageHash, PackageId, PackageIdent, PackageParseError,
+    NamedPackageId, NamedPackageIdent, PackageHash, PackageId, PackageIdent,
+    PackageParseError,
 };
 
 /// Source location of a package.
@@ -76,7 +77,9 @@ impl From<PackageId> for PackageSource {
     fn from(value: PackageId) -> Self {
         match value {
             PackageId::Hash(hash) => Self::from(hash),
-            PackageId::Named(named) => Self::Ident(PackageIdent::Named(named.into())),
+            PackageId::Named(named) => {
+                Self::Ident(PackageIdent::Named(named.into()))
+            }
         }
     }
 }
@@ -141,7 +144,8 @@ impl<'de> serde::Deserialize<'de> for PackageSource {
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        PackageSource::from_str(&s).map_err(|e| serde::de::Error::custom(e.to_string()))
+        PackageSource::from_str(&s)
+            .map_err(|e| serde::de::Error::custom(e.to_string()))
     }
 }
 
@@ -150,7 +154,9 @@ impl schemars::JsonSchema for PackageSource {
         "PackageSource".to_string()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(
+        gen: &mut schemars::gen::SchemaGenerator,
+    ) -> schemars::schema::Schema {
         String::json_schema(gen)
     }
 }
@@ -305,7 +311,10 @@ mod tests {
         ];
         for want in wants {
             let spec = PackageSource::from_str(want).unwrap();
-            assert_eq!(spec, PackageSource::from_str(&spec.to_string()).unwrap());
+            assert_eq!(
+                spec,
+                PackageSource::from_str(&spec.to_string()).unwrap()
+            );
         }
     }
 
@@ -350,7 +359,9 @@ mod tests {
             ),
             (
                 "https://wapm/io/namespace/package@1.0.0",
-                PackageSource::Url("https://wapm/io/namespace/package@1.0.0".parse().unwrap()),
+                PackageSource::Url(
+                    "https://wapm/io/namespace/package@1.0.0".parse().unwrap(),
+                ),
             ),
             (
                 "/path/to/some/file.webc",

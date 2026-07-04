@@ -6,7 +6,10 @@ pub struct PackageParseError {
 }
 
 impl PackageParseError {
-    pub(crate) fn new(value: impl Into<String>, message: impl Into<String>) -> Self {
+    pub(crate) fn new(
+        value: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
         Self {
             value: value.into(),
             message: message.into(),

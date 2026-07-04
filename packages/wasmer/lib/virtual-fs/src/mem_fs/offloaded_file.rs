@@ -146,7 +146,10 @@ impl<'a> OffloadWrite<'a> {
 }
 
 impl OffloadedFile {
-    pub fn new(limiter: Option<DynFsMemoryLimiter>, backing: OffloadBackingStore) -> Self {
+    pub fn new(
+        limiter: Option<DynFsMemoryLimiter>,
+        backing: OffloadBackingStore,
+    ) -> Self {
         Self {
             backing,
             limiter,
@@ -155,7 +158,11 @@ impl OffloadedFile {
         }
     }
 
-    pub fn seek(&self, position: io::SeekFrom, cursor: &mut u64) -> io::Result<u64> {
+    pub fn seek(
+        &self,
+        position: io::SeekFrom,
+        cursor: &mut u64,
+    ) -> io::Result<u64> {
         let to_err = |_| io::ErrorKind::InvalidInput;
 
         // Calculate the next cursor.
@@ -182,7 +189,11 @@ impl OffloadedFile {
         Ok(*cursor)
     }
 
-    pub fn read(&self, mut buf: &mut [u8], cursor: &mut u64) -> io::Result<usize> {
+    pub fn read(
+        &self,
+        mut buf: &mut [u8],
+        cursor: &mut u64,
+    ) -> io::Result<usize> {
         let cursor_start = *cursor;
 
         let mut extent_offset = cursor_start;
@@ -205,14 +216,16 @@ impl OffloadedFile {
                     let mmap_offset_plus_extent = mmap_offset + extent_offset;
                     let data = backing.get_slice(
                         mmap_offset_plus_extent
-                            ..(mmap_offset_plus_extent + *extent_size - extent_offset),
+                            ..(mmap_offset_plus_extent + *extent_size
+                                - extent_offset),
                     )?;
                     let data_len = cmp::min(buf.len(), data.len());
                     buf[..data_len].copy_from_slice(&data[..data_len]);
                     data_len
                 }
                 FileExtent::RepeatingBytes { value, cnt } => {
-                    let cnt = cmp::min(buf.len() as u64, cnt - extent_offset) as usize;
+                    let cnt =
+                        cmp::min(buf.len() as u64, cnt - extent_offset) as usize;
                     buf[..cnt].iter_mut().for_each(|d| {
                         *d = *value;
                     });
@@ -234,7 +247,11 @@ impl OffloadedFile {
         Ok((*cursor - cursor_start) as usize)
     }
 
-    pub fn write(&mut self, data: OffloadWrite<'_>, cursor: &mut u64) -> io::Result<usize> {
+    pub fn write(
+        &mut self,
+        data: OffloadWrite<'_>,
+        cursor: &mut u64,
+    ) -> io::Result<usize> {
         let original_extent_offset = *cursor;
         let mut extent_offset = original_extent_offset;
         let mut data_len = data.len() as u64;
@@ -267,9 +284,11 @@ impl OffloadedFile {
                             value: *other_value,
                             cnt: *other_cnt - split_at,
                         },
-                        FileExtent::InMemory { data: other_data } => FileExtent::InMemory {
-                            data: other_data.slice((split_at as usize)..),
-                        },
+                        FileExtent::InMemory { data: other_data } => {
+                            FileExtent::InMemory {
+                                data: other_data.slice((split_at as usize)..),
+                            }
+                        }
                     };
                     extent.resize(split_at);
                     self.extents.insert(index + 1, new_extent);
@@ -340,16 +359,17 @@ impl OffloadedFile {
 
                 // If the data is within the mmap buffer then we use a extent range
                 // to represent the data, otherwise we fall back on copying the data
-                let new_extent = if data_start >= mmap_start && data_end <= mmap_end {
-                    FileExtent::MmapOffload {
-                        offset: data_start - mmap_start,
-                        size: data_end - data_start,
-                    }
-                } else {
-                    FileExtent::InMemory {
-                        data: data.to_vec().into(),
-                    }
-                };
+                let new_extent =
+                    if data_start >= mmap_start && data_end <= mmap_end {
+                        FileExtent::MmapOffload {
+                            offset: data_start - mmap_start,
+                            size: data_end - data_start,
+                        }
+                    } else {
+                        FileExtent::InMemory {
+                            data: data.to_vec().into(),
+                        }
+                    };
                 self.extents.insert(index, new_extent);
             }
         }
@@ -401,7 +421,9 @@ mod tests {
     #[test]
     #[tracing_test::traced_test]
     pub fn test_offload_file() -> anyhow::Result<()> {
-        let buffer = OwnedBuffer::from_bytes(std::iter::repeat(12u8).take(100).collect::<Vec<_>>());
+        let buffer = OwnedBuffer::from_bytes(
+            std::iter::repeat(12u8).take(100).collect::<Vec<_>>(),
+        );
         let test_data2 = buffer.clone();
 
         let backing = OffloadBackingStore::new(buffer, None);

@@ -20,10 +20,15 @@ pub fn fd_renumber(
     if ret == Errno::Success {
         #[cfg(feature = "journal")]
         if env.enable_journal {
-            JournalEffector::save_fd_renumber(&mut ctx, from, to).map_err(|err| {
-                tracing::error!("failed to save file descriptor renumber event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            })?;
+            JournalEffector::save_fd_renumber(&mut ctx, from, to).map_err(
+                |err| {
+                    tracing::error!(
+                        "failed to save file descriptor renumber event - {}",
+                        err
+                    );
+                    WasiError::Exit(ExitCode::from(Errno::Fault))
+                },
+            )?;
         }
     }
     Ok(ret)

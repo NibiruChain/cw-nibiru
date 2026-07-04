@@ -59,7 +59,10 @@ pub(super) fn sock_recv_from_internal<M: MemorySize>(
         let mut max_size = 0usize;
         for iovs in iovs_arr.iter() {
             let iovs = wasi_try_mem_ok!(iovs.read());
-            let buf_len: usize = wasi_try_ok!(iovs.buf_len.try_into().map_err(|_| Errno::Overflow));
+            let buf_len: usize = wasi_try_ok!(iovs
+                .buf_len
+                .try_into()
+                .map_err(|_| Errno::Overflow));
             max_size += buf_len;
         }
         max_size
@@ -67,7 +70,8 @@ pub(super) fn sock_recv_from_internal<M: MemorySize>(
 
     let (bytes_read, peer) = {
         if max_size <= 10240 {
-            let mut buf: [MaybeUninit<u8>; 10240] = unsafe { MaybeUninit::uninit().assume_init() };
+            let mut buf: [MaybeUninit<u8>; 10240] =
+                unsafe { MaybeUninit::uninit().assume_init() };
             let writer = &mut buf[..max_size];
             let (amt, peer) = wasi_try_ok!(__sock_asyncify(
                 env,
@@ -81,7 +85,12 @@ pub(super) fn sock_recv_from_internal<M: MemorySize>(
                         .flatten()
                         .unwrap_or(Duration::from_secs(30));
                     socket
-                        .recv_from(env.tasks().deref(), writer, Some(timeout), nonblocking)
+                        .recv_from(
+                            env.tasks().deref(),
+                            writer,
+                            Some(timeout),
+                            nonblocking,
+                        )
                         .await
                 },
             ));
@@ -89,7 +98,9 @@ pub(super) fn sock_recv_from_internal<M: MemorySize>(
             if amt > 0 {
                 let buf: &[MaybeUninit<u8>] = &buf[..amt];
                 let buf: &[u8] = unsafe { std::mem::transmute(buf) };
-                wasi_try_ok!(copy_from_slice(buf, &memory, iovs_arr).map(|_| (amt, peer)))
+                wasi_try_ok!(
+                    copy_from_slice(buf, &memory, iovs_arr).map(|_| (amt, peer))
+                )
             } else {
                 (amt, peer)
             }
@@ -111,13 +122,19 @@ pub(super) fn sock_recv_from_internal<M: MemorySize>(
                         buf.set_len(max_size);
                     }
                     socket
-                        .recv_from(env.tasks().deref(), &mut buf, Some(timeout), nonblocking)
+                        .recv_from(
+                            env.tasks().deref(),
+                            &mut buf,
+                            Some(timeout),
+                            nonblocking,
+                        )
                         .await
                         .map(|(amt, addr)| {
                             unsafe {
                                 buf.set_len(amt);
                             }
-                            let buf: Vec<u8> = unsafe { std::mem::transmute(buf) };
+                            let buf: Vec<u8> =
+                                unsafe { std::mem::transmute(buf) };
                             (buf, addr)
                         })
                 }
@@ -126,7 +143,8 @@ pub(super) fn sock_recv_from_internal<M: MemorySize>(
             let data_len = data.len();
             if data_len > 0 {
                 let mut reader = &data[..];
-                wasi_try_ok!(read_bytes(reader, &memory, iovs_arr).map(|_| (data_len, peer)))
+                wasi_try_ok!(read_bytes(reader, &memory, iovs_arr)
+                    .map(|_| (data_len, peer)))
             } else {
                 (0, peer)
             }
@@ -138,7 +156,8 @@ pub(super) fn sock_recv_from_internal<M: MemorySize>(
 
     wasi_try_ok!(write_ip_port(&memory, ro_addr, peer.ip(), peer.port()));
 
-    let bytes_read: M::Offset = wasi_try_ok!(bytes_read.try_into().map_err(|_| Errno::Overflow));
+    let bytes_read: M::Offset =
+        wasi_try_ok!(bytes_read.try_into().map_err(|_| Errno::Overflow));
     wasi_try_mem_ok!(ro_flags.write(&memory, 0));
     wasi_try_mem_ok!(ro_data_len.write(&memory, bytes_read));
 

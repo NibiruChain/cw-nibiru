@@ -226,8 +226,9 @@ impl std::io::Write for Pipe {
 impl std::io::Write for PipeTx {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let tx = self.tx.lock().unwrap();
-        tx.send(buf.to_vec())
-            .map_err(|_| Into::<std::io::Error>::into(std::io::ErrorKind::BrokenPipe))?;
+        tx.send(buf.to_vec()).map_err(|_| {
+            Into::<std::io::Error>::into(std::io::ErrorKind::BrokenPipe)
+        })?;
         Ok(buf.len())
     }
 
@@ -237,12 +238,18 @@ impl std::io::Write for PipeTx {
 }
 
 impl AsyncSeek for Pipe {
-    fn start_seek(mut self: Pin<&mut Self>, position: SeekFrom) -> io::Result<()> {
+    fn start_seek(
+        mut self: Pin<&mut Self>,
+        position: SeekFrom,
+    ) -> io::Result<()> {
         let this = Pin::new(&mut self.recv);
         this.start_seek(position)
     }
 
-    fn poll_complete(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         let this = Pin::new(&mut self.recv);
         this.poll_complete(cx)
     }
@@ -252,7 +259,10 @@ impl AsyncSeek for PipeRx {
     fn start_seek(self: Pin<&mut Self>, _position: SeekFrom) -> io::Result<()> {
         Ok(())
     }
-    fn poll_complete(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         Poll::Ready(Ok(0))
     }
 }
@@ -261,7 +271,10 @@ impl AsyncSeek for PipeTx {
     fn start_seek(self: Pin<&mut Self>, _position: SeekFrom) -> io::Result<()> {
         Ok(())
     }
-    fn poll_complete(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         Poll::Ready(Ok(0))
     }
 }
@@ -276,7 +289,10 @@ impl AsyncWrite for Pipe {
         this.poll_write(cx, buf)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+    fn poll_flush(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<(), io::Error>> {
         let this = Pin::new(&mut self.send);
         this.poll_flush(cx)
     }
@@ -314,11 +330,17 @@ impl AsyncWrite for PipeTx {
         }
     }
 
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
     }
 
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         self.close();
         Poll::Ready(Ok(()))
     }
@@ -409,7 +431,10 @@ impl VirtualFile for Pipe {
     }
 
     /// Polls the file for when there is data to be read
-    fn poll_read_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         let mut rx = self.recv.rx.lock().unwrap();
         loop {
             {
@@ -433,7 +458,10 @@ impl VirtualFile for Pipe {
     }
 
     /// Polls the file for when it is available for writing
-    fn poll_write_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         let tx = self.send.tx.lock().unwrap();
         if tx.is_closed() {
             Poll::Ready(Ok(0))

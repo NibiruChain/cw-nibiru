@@ -9,7 +9,9 @@ macro_rules! wasm_unsupported {
 }
 
 /// Make a [`WasmError`] out of a [`BinaryReaderError`].
-pub fn from_binaryreadererror_wasmerror(original: BinaryReaderError) -> WasmError {
+pub fn from_binaryreadererror_wasmerror(
+    original: BinaryReaderError,
+) -> WasmError {
     WasmError::InvalidWebAssembly {
         message: original.message().into(),
         offset: original.offset(),
@@ -18,7 +20,9 @@ pub fn from_binaryreadererror_wasmerror(original: BinaryReaderError) -> WasmErro
 
 /// Make a [`CompileError`] out of a [`BinaryReaderError`].
 #[allow(dead_code)]
-pub fn from_binaryreadererror_compileerror(original: BinaryReaderError) -> CompileError {
+pub fn from_binaryreadererror_compileerror(
+    original: BinaryReaderError,
+) -> CompileError {
     // BinaryReaderError -> WasmError -> CompileError
     CompileError::Wasm(from_binaryreadererror_wasmerror(original))
 }
@@ -30,7 +34,8 @@ mod tests {
 
     #[test]
     fn can_convert_binary_reader_error_to_wasm_error() {
-        let mut reader = BinaryReader::new(b"\0\0\0\0", 0, WasmFeatures::default());
+        let mut reader =
+            BinaryReader::new(b"\0\0\0\0", 0, WasmFeatures::default());
         let binary_reader_error = reader.read_bytes(10).unwrap_err();
         match from_binaryreadererror_wasmerror(binary_reader_error) {
             WasmError::InvalidWebAssembly { message, offset } => {
@@ -43,10 +48,14 @@ mod tests {
 
     #[test]
     fn can_convert_binary_reader_error_to_compile_error() {
-        let mut reader = BinaryReader::new(b"\0\0\0\0", 0, WasmFeatures::default());
+        let mut reader =
+            BinaryReader::new(b"\0\0\0\0", 0, WasmFeatures::default());
         let binary_reader_error = reader.read_bytes(10).unwrap_err();
         match from_binaryreadererror_compileerror(binary_reader_error) {
-            CompileError::Wasm(WasmError::InvalidWebAssembly { message, offset }) => {
+            CompileError::Wasm(WasmError::InvalidWebAssembly {
+                message,
+                offset,
+            }) => {
                 assert_eq!(message, "unexpected end-of-file");
                 assert_eq!(offset, 0);
             }

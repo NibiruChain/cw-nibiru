@@ -14,7 +14,8 @@ use webc::{
         self,
         write::{DirEntry, Directory, FileEntry},
     },
-    AbstractVolume, Metadata, PathSegment, PathSegments, Timestamps, ToPathSegments,
+    AbstractVolume, Metadata, PathSegment, PathSegments, Timestamps,
+    ToPathSegments,
 };
 
 use crate::package::Strictness;
@@ -99,9 +100,9 @@ impl FsVolume {
 
         let mut volumes = BTreeMap::new();
         for entry in manifest.fs.values() {
-            let name = entry
-                .to_str()
-                .ok_or_else(|| anyhow::anyhow!("Failed to convert path to str"))?;
+            let name = entry.to_str().ok_or_else(|| {
+                anyhow::anyhow!("Failed to convert path to str")
+            })?;
 
             let name = sanitize_path(name);
 
@@ -222,7 +223,8 @@ impl FsVolume {
                 continue;
             }
 
-            let segment: PathSegment = entry.file_name()?.to_str()?.parse().ok()?;
+            let segment: PathSegment =
+                entry.file_name()?.to_str()?.parse().ok()?;
 
             let path = path.join(segment.clone());
             let metadata = self.metadata(&path)?;
@@ -255,7 +257,10 @@ impl FsVolume {
         }
     }
 
-    pub(crate) fn as_directory_tree(&self, strictness: Strictness) -> Result<Directory<'_>, Error> {
+    pub(crate) fn as_directory_tree(
+        &self,
+        strictness: Strictness,
+    ) -> Result<Directory<'_>, Error> {
         if self.name() == "metadata" {
             let mut root = Directory::default();
 
@@ -273,7 +278,8 @@ impl FsVolume {
                 let segments = path.to_path_segments()?;
                 let segments: Vec<_> = segments.iter().collect();
 
-                let file_entry = DirEntry::File(FileEntry::from_path(file_path)?);
+                let file_entry =
+                    DirEntry::File(FileEntry::from_path(file_path)?);
 
                 let mut curr_dir = &mut root;
                 for (index, segment) in segments.iter().enumerate() {
@@ -282,7 +288,9 @@ impl FsVolume {
                         break;
                     } else {
                         if index == segments.len() - 1 {
-                            curr_dir.children.insert((*segment).clone(), file_entry);
+                            curr_dir
+                                .children
+                                .insert((*segment).clone(), file_entry);
                             break;
                         }
 
@@ -301,14 +309,18 @@ impl FsVolume {
 
             Ok(root)
         } else {
-            let paths: Vec<_> = self.mapped_directories.iter().cloned().collect();
+            let paths: Vec<_> =
+                self.mapped_directories.iter().cloned().collect();
             directory_tree(paths, &self.base_dir, strictness)
         }
     }
 }
 
 impl AbstractVolume for FsVolume {
-    fn read_file(&self, path: &PathSegments) -> Option<(OwnedBuffer, Option<[u8; 32]>)> {
+    fn read_file(
+        &self,
+        path: &PathSegments,
+    ) -> Option<(OwnedBuffer, Option<[u8; 32]>)> {
         self.read_file(path).map(|c| (c, None))
     }
 
@@ -325,7 +337,10 @@ impl AbstractVolume for FsVolume {
 }
 
 impl WasmerPackageVolume for FsVolume {
-    fn as_directory_tree(&self, strictness: Strictness) -> Result<Directory<'_>, Error> {
+    fn as_directory_tree(
+        &self,
+        strictness: Strictness,
+    ) -> Result<Directory<'_>, Error> {
         self.as_directory_tree(strictness)
     }
 }
@@ -352,12 +367,16 @@ fn directory_tree(
 
     for path in paths {
         if path.is_file() {
-            let dir_entry = v3::write::DirEntry::File(v3::write::FileEntry::from_path(&path)?);
+            let dir_entry = v3::write::DirEntry::File(
+                v3::write::FileEntry::from_path(&path)?,
+            );
             let path = path.strip_prefix(base_dir)?;
             let path_segment = PathSegment::try_from(path.as_os_str())?;
 
             if root.children.insert(path_segment, dir_entry).is_some() {
-                println!("Warning: {path:?} already exists. Overriding the old entry");
+                println!(
+                    "Warning: {path:?} already exists. Overriding the old entry"
+                );
             }
         } else {
             match create_directory_tree(&path) {
@@ -380,7 +399,9 @@ fn directory_tree(
     Ok(root)
 }
 
-fn create_directory_tree(absolute: &Path) -> Result<webc::v3::write::Directory<'static>, Error> {
+fn create_directory_tree(
+    absolute: &Path,
+) -> Result<webc::v3::write::Directory<'static>, Error> {
     let mut children = BTreeMap::new();
 
     for entry in absolute.read_dir()? {
@@ -443,7 +464,9 @@ mod tests {
         std::fs::write(temp.path().join("browser.wai"), "imports").unwrap();
         let manifest: Manifest = toml::from_str(wasmer_toml).unwrap();
 
-        let volume = FsVolume::new_metadata(&manifest, temp.path().to_path_buf()).unwrap();
+        let volume =
+            FsVolume::new_metadata(&manifest, temp.path().to_path_buf())
+                .unwrap();
 
         let entries = volume.read_dir(&PathSegments::ROOT).unwrap();
         let expected = [
@@ -460,7 +483,8 @@ mod tests {
 
         let license: PathSegments = "/path/to/LICENSE".parse().unwrap();
         assert_eq!(
-            String::from_utf8(volume.read_file(&license).unwrap().into()).unwrap(),
+            String::from_utf8(volume.read_file(&license).unwrap().into())
+                .unwrap(),
             "license"
         );
     }
@@ -511,7 +535,8 @@ mod tests {
 
         let man_page: PathSegments = "/share/package.1".parse().unwrap();
         assert_eq!(
-            String::from_utf8(volume.read_file(&man_page).unwrap().into()).unwrap(),
+            String::from_utf8(volume.read_file(&man_page).unwrap().into())
+                .unwrap(),
             "man page"
         );
     }

@@ -5,7 +5,8 @@ use wasmer_backend_api::types::DeployApp;
 use super::util::AppIdentOpts;
 
 use crate::{
-    commands::AsyncCliCommand, config::WasmerEnv, opts::ItemFormatOpts, utils::render::ItemFormat,
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ItemFormatOpts,
+    utils::render::ItemFormat,
 };
 
 /// Retrieve detailed informations about an app

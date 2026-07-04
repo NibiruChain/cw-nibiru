@@ -40,7 +40,10 @@ impl ReadableJournal for PrintingJournal {
 }
 
 impl WritableJournal for PrintingJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         match self.mode {
             JournalPrintingMode::Text => println!("{}", entry),
             JournalPrintingMode::Json => {

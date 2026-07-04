@@ -62,10 +62,12 @@ impl LinkCode {
         if !output.status.success() {
             bail!(
                 "linking failed with: stdout: {}\n\nstderr: {}",
-                std::str::from_utf8(&output.stdout)
-                    .expect("stdout is not utf8! need to handle arbitrary bytes"),
-                std::str::from_utf8(&output.stderr)
-                    .expect("stderr is not utf8! need to handle arbitrary bytes")
+                std::str::from_utf8(&output.stdout).expect(
+                    "stdout is not utf8! need to handle arbitrary bytes"
+                ),
+                std::str::from_utf8(&output.stderr).expect(
+                    "stderr is not utf8! need to handle arbitrary bytes"
+                )
             );
         }
         Ok(())

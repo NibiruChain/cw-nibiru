@@ -20,16 +20,17 @@ use std::vec::Vec;
 use wasmer_types::entity::packed_option::ReservedValue;
 use wasmer_types::entity::EntityRef;
 use wasmer_types::{
-    DataIndex, ElemIndex, FunctionIndex, FunctionType, GlobalIndex, GlobalInit, GlobalType,
-    MemoryIndex, MemoryType, Pages, SignatureIndex, TableIndex, TableType, Type, V128,
+    DataIndex, ElemIndex, FunctionIndex, FunctionType, GlobalIndex, GlobalInit,
+    GlobalType, MemoryIndex, MemoryType, Pages, SignatureIndex, TableIndex,
+    TableType, Type, V128,
 };
 use wasmer_types::{WasmError, WasmResult};
 use wasmparser::{
     self, Data, DataKind, DataSectionReader, Element, ElementItems, ElementKind,
-    ElementSectionReader, Export, ExportSectionReader, ExternalKind, FunctionSectionReader,
-    GlobalSectionReader, GlobalType as WPGlobalType, ImportSectionReader, MemorySectionReader,
-    MemoryType as WPMemoryType, NameSectionReader, Operator, TableSectionReader, TypeRef,
-    TypeSectionReader,
+    ElementSectionReader, Export, ExportSectionReader, ExternalKind,
+    FunctionSectionReader, GlobalSectionReader, GlobalType as WPGlobalType,
+    ImportSectionReader, MemorySectionReader, MemoryType as WPMemoryType,
+    NameSectionReader, Operator, TableSectionReader, TypeRef, TypeSectionReader,
 };
 
 /// Helper function translating wasmparser types to Wasm Type.
@@ -61,7 +62,9 @@ pub fn wpheaptype_to_type(ty: wasmparser::HeapType) -> WasmResult<Type> {
         wasmparser::HeapType::Abstract { ty, .. } => match ty {
             wasmparser::AbstractHeapType::Func => Ok(Type::FuncRef),
             wasmparser::AbstractHeapType::Extern => Ok(Type::ExternRef),
-            other => Err(wasm_unsupported!("unsupported reference type: {other:?}")),
+            other => {
+                Err(wasm_unsupported!("unsupported reference type: {other:?}"))
+            }
         },
         other => Err(wasm_unsupported!("unsupported reference type: {other:?}")),
     }
@@ -84,15 +87,17 @@ pub fn parse_type_section(
         let sig_params: Box<[Type]> = params
             .iter()
             .map(|ty| {
-                wptype_to_type(*ty)
-                    .expect("only numeric types are supported in function signatures")
+                wptype_to_type(*ty).expect(
+                    "only numeric types are supported in function signatures",
+                )
             })
             .collect();
         let sig_returns: Box<[Type]> = returns
             .iter()
             .map(|ty| {
-                wptype_to_type(*ty)
-                    .expect("only numeric types are supported in function signatures")
+                wptype_to_type(*ty).expect(
+                    "only numeric types are supported in function signatures",
+                )
             })
             .collect();
         let sig = FunctionType::new(sig_params, sig_returns);
@@ -268,9 +273,15 @@ pub fn parse_global_section(
         {
             Operator::I32Const { value } => GlobalInit::I32Const(value),
             Operator::I64Const { value } => GlobalInit::I64Const(value),
-            Operator::F32Const { value } => GlobalInit::F32Const(f32::from_bits(value.bits())),
-            Operator::F64Const { value } => GlobalInit::F64Const(f64::from_bits(value.bits())),
-            Operator::V128Const { value } => GlobalInit::V128Const(V128::from(*value.bytes())),
+            Operator::F32Const { value } => {
+                GlobalInit::F32Const(f32::from_bits(value.bits()))
+            }
+            Operator::F64Const { value } => {
+                GlobalInit::F64Const(f64::from_bits(value.bits()))
+            }
+            Operator::V128Const { value } => {
+                GlobalInit::V128Const(V128::from(*value.bytes()))
+            }
             Operator::RefNull { hty: _ } => {
                 // TODO: Do we need to handle different heap types here?
                 GlobalInit::RefNullConst
@@ -317,8 +328,12 @@ pub fn parse_export_section<'data>(
         // becomes a concern here.
         let index = index as usize;
         match *kind {
-            ExternalKind::Func => environ.declare_func_export(FunctionIndex::new(index), field)?,
-            ExternalKind::Table => environ.declare_table_export(TableIndex::new(index), field)?,
+            ExternalKind::Func => {
+                environ.declare_func_export(FunctionIndex::new(index), field)?
+            }
+            ExternalKind::Table => {
+                environ.declare_table_export(TableIndex::new(index), field)?
+            }
             ExternalKind::Memory => {
                 environ.declare_memory_export(MemoryIndex::new(index), field)?
             }
@@ -336,7 +351,10 @@ pub fn parse_export_section<'data>(
 }
 
 /// Parses the Start section of the wasm module.
-pub fn parse_start_section(index: u32, environ: &mut ModuleEnvironment) -> WasmResult<()> {
+pub fn parse_start_section(
+    index: u32,
+    environ: &mut ModuleEnvironment,
+) -> WasmResult<()> {
     environ.declare_start_function(FunctionIndex::from_u32(index))?;
     Ok(())
 }
@@ -347,7 +365,8 @@ fn read_elems(items: &ElementItems) -> WasmResult<Box<[FunctionIndex]>> {
     match items {
         ElementItems::Functions(funcs) => {
             for res in funcs.clone().into_iter() {
-                let func_index = res.map_err(from_binaryreadererror_wasmerror)?;
+                let func_index =
+                    res.map_err(from_binaryreadererror_wasmerror)?;
                 out.push(FunctionIndex::from_u32(func_index));
             }
         }
@@ -368,7 +387,9 @@ fn read_elems(items: &ElementItems) -> WasmResult<Box<[FunctionIndex]>> {
                     .read_operator()
                     .map_err(from_binaryreadererror_wasmerror)?;
                 match op {
-                    Operator::RefNull { .. } => out.push(FunctionIndex::reserved_value()),
+                    Operator::RefNull { .. } => {
+                        out.push(FunctionIndex::reserved_value())
+                    }
                     Operator::RefFunc { function_index } => {
                         out.push(FunctionIndex::from_u32(function_index))
                     }
@@ -412,7 +433,9 @@ pub fn parse_element_section(
                     .read_operator()
                     .map_err(from_binaryreadererror_wasmerror)?
                 {
-                    Operator::I32Const { value } => (None, value as u32 as usize),
+                    Operator::I32Const { value } => {
+                        (None, value as u32 as usize)
+                    }
                     Operator::GlobalGet { global_index } => {
                         (Some(GlobalIndex::from_u32(global_index)), 0)
                     }
@@ -423,7 +446,12 @@ pub fn parse_element_section(
                         ));
                     }
                 };
-                environ.declare_table_initializers(table_index, base, offset, segments)?
+                environ.declare_table_initializers(
+                    table_index,
+                    base,
+                    offset,
+                    segments,
+                )?
             }
             ElementKind::Passive => {
                 let index = ElemIndex::from_u32(index as u32);
@@ -458,7 +486,9 @@ pub fn parse_data_section<'data>(
                     .read_operator()
                     .map_err(from_binaryreadererror_wasmerror)?
                 {
-                    Operator::I32Const { value } => (None, value as u32 as usize),
+                    Operator::I32Const { value } => {
+                        (None, value as u32 as usize)
+                    }
                     Operator::GlobalGet { global_index } => {
                         (Some(GlobalIndex::from_u32(global_index)), 0)
                     }

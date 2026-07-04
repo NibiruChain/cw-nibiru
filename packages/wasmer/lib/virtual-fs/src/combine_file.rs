@@ -30,7 +30,11 @@ impl VirtualFile for CombineFile {
         self.tx.created_time()
     }
 
-    fn set_times(&mut self, atime: Option<u64>, mtime: Option<u64>) -> crate::Result<()> {
+    fn set_times(
+        &mut self,
+        atime: Option<u64>,
+        mtime: Option<u64>,
+    ) -> crate::Result<()> {
         self.tx.set_times(atime, mtime)
     }
 
@@ -46,11 +50,17 @@ impl VirtualFile for CombineFile {
         self.tx.unlink()
     }
 
-    fn poll_read_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Pin::new(self.rx.as_mut()).poll_read_ready(cx)
     }
 
-    fn poll_write_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Pin::new(self.tx.as_mut()).poll_write_ready(cx)
     }
 }
@@ -64,11 +74,17 @@ impl AsyncWrite for CombineFile {
         Pin::new(&mut self.tx).poll_write(cx, buf)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_flush(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         Pin::new(&mut self.tx).poll_flush(cx)
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_shutdown(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         Pin::new(&mut self.tx).poll_shutdown(cx)
     }
 }
@@ -84,7 +100,10 @@ impl AsyncRead for CombineFile {
 }
 
 impl AsyncSeek for CombineFile {
-    fn start_seek(mut self: Pin<&mut Self>, position: io::SeekFrom) -> io::Result<()> {
+    fn start_seek(
+        mut self: Pin<&mut Self>,
+        position: io::SeekFrom,
+    ) -> io::Result<()> {
         Pin::new(&mut self.tx).start_seek(position)?;
         Pin::new(&mut self.rx).start_seek(position)
     }

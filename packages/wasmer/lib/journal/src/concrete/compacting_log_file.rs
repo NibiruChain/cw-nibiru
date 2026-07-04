@@ -38,7 +38,10 @@ pub struct CompactingLogFileJournalRx {
 }
 
 impl CompactingLogFileJournalRx {
-    pub fn swap_inner(&mut self, with: Box<DynReadableJournal>) -> Box<DynReadableJournal> {
+    pub fn swap_inner(
+        &mut self,
+        with: Box<DynReadableJournal>,
+    ) -> Box<DynReadableJournal> {
         self.inner.swap_inner(with)
     }
 }
@@ -132,7 +135,9 @@ impl CompactingLogFileJournal {
 }
 
 impl CompactingLogFileJournalTx {
-    pub fn compact_now(&self) -> anyhow::Result<(CompactResult, CompactingJournalRx)> {
+    pub fn compact_now(
+        &self,
+    ) -> anyhow::Result<(CompactResult, CompactingJournalRx)> {
         // Reset the counters
         self.reset_counters();
 
@@ -199,7 +204,10 @@ impl ReadableJournal for CompactingLogFileJournalRx {
 }
 
 impl WritableJournal for CompactingLogFileJournalTx {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         let res = self.inner.write(entry)?;
 
         let triggered = {
@@ -262,7 +270,10 @@ impl ReadableJournal for CompactingLogFileJournal {
 }
 
 impl WritableJournal for CompactingLogFileJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 

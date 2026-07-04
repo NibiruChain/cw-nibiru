@@ -18,7 +18,10 @@ impl ReadableJournal for UnsupportedJournal {
 }
 
 impl WritableJournal for UnsupportedJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         tracing::debug!("journal event: {:?}", entry);
         Err(anyhow::format_err!("unsupported"))
     }

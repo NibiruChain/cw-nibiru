@@ -22,7 +22,8 @@ pub(super) enum TokenStatus {
 }
 
 #[inline]
-pub(super) async fn setup_listener() -> Result<(TcpListener, String), anyhow::Error> {
+pub(super) async fn setup_listener(
+) -> Result<(TcpListener, String), anyhow::Error> {
     let listener = TcpListener::bind("127.0.0.1:0").await?;
     let addr = listener.local_addr()?;
     let port = addr.port();
@@ -54,7 +55,9 @@ pub(super) async fn service_router(
     }
 }
 
-async fn preflight(_: Request<Incoming>) -> Result<Response<Body>, anyhow::Error> {
+async fn preflight(
+    _: Request<Incoming>,
+) -> Result<Response<Body>, anyhow::Error> {
     let response = Response::builder()
         .status(http::StatusCode::OK)
         .header("Access-Control-Allow-Origin", "*") // FIXME: this is not secure, Don't allow all origins. @syrusakbary

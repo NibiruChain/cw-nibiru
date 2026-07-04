@@ -1,7 +1,9 @@
 //! This module mainly outputs the `Compiler` trait that custom
 //! compilers will need to implement.
 
-use crate::types::{module::CompileModuleInfo, symbols::SymbolRegistry, target::Target};
+use crate::types::{
+    module::CompileModuleInfo, symbols::SymbolRegistry, target::Target,
+};
 use crate::{
     lib::std::{boxed::Box, sync::Arc},
     translator::ModuleMiddleware,
@@ -9,7 +11,9 @@ use crate::{
     FunctionBodyData, ModuleTranslationState,
 };
 use enumset::EnumSet;
-use wasmer_types::{entity::PrimaryMap, error::CompileError, Features, LocalFunctionIndex};
+use wasmer_types::{
+    entity::PrimaryMap, error::CompileError, Features, LocalFunctionIndex,
+};
 use wasmparser::{Validator, WasmFeatures};
 
 /// The compiler configuration options.
@@ -73,11 +77,16 @@ pub trait Compiler: Send {
     /// Validates a module.
     ///
     /// It returns the a succesful Result in case is valid, `CompileError` in case is not.
-    fn validate_module(&self, features: &Features, data: &[u8]) -> Result<(), CompileError> {
+    fn validate_module(
+        &self,
+        features: &Features,
+        data: &[u8],
+    ) -> Result<(), CompileError> {
         let mut wasm_features = WasmFeatures::default();
         wasm_features.set(WasmFeatures::BULK_MEMORY, features.bulk_memory);
         wasm_features.set(WasmFeatures::THREADS, features.threads);
-        wasm_features.set(WasmFeatures::REFERENCE_TYPES, features.reference_types);
+        wasm_features
+            .set(WasmFeatures::REFERENCE_TYPES, features.reference_types);
         wasm_features.set(WasmFeatures::MULTI_VALUE, features.multi_value);
         wasm_features.set(WasmFeatures::SIMD, features.simd);
         wasm_features.set(WasmFeatures::TAIL_CALL, features.tail_call);
@@ -116,7 +125,10 @@ pub trait Compiler: Send {
         module: &CompileModuleInfo,
         module_translation: &ModuleTranslationState,
         // The list of function bodies
-        function_body_inputs: PrimaryMap<LocalFunctionIndex, FunctionBodyData<'_>>,
+        function_body_inputs: PrimaryMap<
+            LocalFunctionIndex,
+            FunctionBodyData<'_>,
+        >,
     ) -> Result<Compilation, CompileError>;
 
     /// Compiles a module into a native object file.
@@ -128,7 +140,10 @@ pub trait Compiler: Send {
         _module: &CompileModuleInfo,
         _module_translation: &ModuleTranslationState,
         // The list of function bodies
-        _function_body_inputs: &PrimaryMap<LocalFunctionIndex, FunctionBodyData<'_>>,
+        _function_body_inputs: &PrimaryMap<
+            LocalFunctionIndex,
+            FunctionBodyData<'_>,
+        >,
         _symbol_registry: &dyn SymbolRegistry,
         // The metadata to inject into the wasmer_metadata section of the object file.
         _wasmer_metadata: &[u8],
@@ -140,7 +155,10 @@ pub trait Compiler: Send {
     fn get_middlewares(&self) -> &[Arc<dyn ModuleMiddleware>];
 
     /// Get the CpuFeatues used by the compiler
-    fn get_cpu_features_used(&self, cpu_features: &EnumSet<CpuFeature>) -> EnumSet<CpuFeature> {
+    fn get_cpu_features_used(
+        &self,
+        cpu_features: &EnumSet<CpuFeature>,
+    ) -> EnumSet<CpuFeature> {
         *cpu_features
     }
 }

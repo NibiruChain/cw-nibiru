@@ -1,5 +1,6 @@
 use crate::bindings::{
-    wasm_byte_vec_new, wasm_byte_vec_new_empty, wasm_byte_vec_t, wasm_trap_message,
+    wasm_byte_vec_new, wasm_byte_vec_new_empty, wasm_byte_vec_t,
+    wasm_trap_message,
 };
 use crate::c_api::bindings::{wasm_message_t, wasm_trap_new, wasm_trap_t};
 use crate::{AsStoreMut, RuntimeError};
@@ -34,7 +35,9 @@ impl Trap {
     pub fn downcast<T: Error + 'static>(self) -> Result<T, Self> {
         match self.inner {
             // We only try to downcast user errors
-            InnerTrap::User(err) if err.is::<T>() => Ok(*err.downcast::<T>().unwrap()),
+            InnerTrap::User(err) if err.is::<T>() => {
+                Ok(*err.downcast::<T>().unwrap())
+            }
             _ => Err(self),
         }
     }
@@ -56,7 +59,10 @@ impl Trap {
         }
     }
 
-    pub unsafe fn into_wasm_trap(self, store: &mut impl AsStoreMut) -> *mut wasm_trap_t {
+    pub unsafe fn into_wasm_trap(
+        self,
+        store: &mut impl AsStoreMut,
+    ) -> *mut wasm_trap_t {
         match self.inner {
             InnerTrap::CApi(t) => t,
             InnerTrap::User(err) => {

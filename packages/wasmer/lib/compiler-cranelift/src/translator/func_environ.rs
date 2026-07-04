@@ -16,8 +16,8 @@ use cranelift_frontend::FunctionBuilder;
 use wasmer_compiler::wasmparser::{HeapType, Operator};
 use wasmer_types::entity::PrimaryMap;
 use wasmer_types::{
-    FunctionIndex, FunctionType, GlobalIndex, LocalFunctionIndex, MemoryIndex, SignatureIndex,
-    TableIndex, Type as WasmerType, WasmResult,
+    FunctionIndex, FunctionType, GlobalIndex, LocalFunctionIndex, MemoryIndex,
+    SignatureIndex, TableIndex, Type as WasmerType, WasmResult,
 };
 
 /// The value of a WebAssembly global variable.
@@ -90,7 +90,11 @@ pub trait FuncEnvironment: TargetEnvironment {
 
     /// Is the given parameter of the given function a wasm-level parameter, as opposed to a hidden
     /// parameter added for use by the implementation?
-    fn is_wasm_parameter(&self, signature: &ir::Signature, index: usize) -> bool {
+    fn is_wasm_parameter(
+        &self,
+        signature: &ir::Signature,
+        index: usize,
+    ) -> bool {
         signature.params[index].purpose == ir::ArgumentPurpose::Normal
     }
 
@@ -142,7 +146,11 @@ pub trait FuncEnvironment: TargetEnvironment {
     /// by `index`.
     ///
     /// The index space covers both imported and locally declared memories.
-    fn make_heap(&mut self, func: &mut ir::Function, index: MemoryIndex) -> WasmResult<Heap>;
+    fn make_heap(
+        &mut self,
+        func: &mut ir::Function,
+        index: MemoryIndex,
+    ) -> WasmResult<Heap>;
 
     /// Set up a signature definition in the preamble of `func` that can be used for an indirect
     /// call with signature `index`.
@@ -292,11 +300,18 @@ pub trait FuncEnvironment: TargetEnvironment {
     ) -> WasmResult<()>;
 
     /// Translate a `data.drop` WebAssembly instruction.
-    fn translate_data_drop(&mut self, pos: FuncCursor, seg_index: u32) -> WasmResult<()>;
+    fn translate_data_drop(
+        &mut self,
+        pos: FuncCursor,
+        seg_index: u32,
+    ) -> WasmResult<()>;
 
     /// Translate a `table.size` WebAssembly instruction.
-    fn translate_table_size(&mut self, pos: FuncCursor, index: TableIndex)
-        -> WasmResult<ir::Value>;
+    fn translate_table_size(
+        &mut self,
+        pos: FuncCursor,
+        index: TableIndex,
+    ) -> WasmResult<ir::Value>;
 
     /// Translate a `table.grow` WebAssembly instruction.
     fn translate_table_grow(
@@ -359,7 +374,11 @@ pub trait FuncEnvironment: TargetEnvironment {
     ) -> WasmResult<()>;
 
     /// Translate a `elem.drop` WebAssembly instruction.
-    fn translate_elem_drop(&mut self, pos: FuncCursor, seg_index: u32) -> WasmResult<()>;
+    fn translate_elem_drop(
+        &mut self,
+        pos: FuncCursor,
+        seg_index: u32,
+    ) -> WasmResult<()>;
 
     /// Translate a `ref.null T` WebAssembly instruction.
     ///
@@ -370,7 +389,11 @@ pub trait FuncEnvironment: TargetEnvironment {
     /// null sentinel is not a null reference type pointer for your type. If you
     /// override this method, then you should also override
     /// `translate_ref_is_null` as well.
-    fn translate_ref_null(&mut self, pos: FuncCursor, ty: HeapType) -> WasmResult<ir::Value>;
+    fn translate_ref_null(
+        &mut self,
+        pos: FuncCursor,
+        ty: HeapType,
+    ) -> WasmResult<ir::Value>;
     // {
     //     let _ = ty;
     //     Ok(pos.ins().null(self.reference_type(ty)))
@@ -512,14 +535,25 @@ pub trait FuncEnvironment: TargetEnvironment {
 
     /// Get the type of the local at the given index.
     #[allow(dead_code)]
-    fn get_function_type(&self, function_index: FunctionIndex) -> Option<&FunctionType>;
+    fn get_function_type(
+        &self,
+        function_index: FunctionIndex,
+    ) -> Option<&FunctionType>;
 
     /// Get the type of a function with the given signature index.
     #[allow(dead_code)]
-    fn get_function_sig(&self, sig_index: SignatureIndex) -> Option<&FunctionType>;
+    fn get_function_sig(
+        &self,
+        sig_index: SignatureIndex,
+    ) -> Option<&FunctionType>;
 
     /// Inserts code before a function return.
-    fn handle_before_return(&mut self, _retvals: &[ir::Value], _builder: &mut FunctionBuilder) {}
+    fn handle_before_return(
+        &mut self,
+        _retvals: &[ir::Value],
+        _builder: &mut FunctionBuilder,
+    ) {
+    }
 
     /// Inserts code before a load.
     fn before_load(

@@ -23,7 +23,8 @@ pub(super) fn thread_join_internal<M: MemorySize + 'static>(
     join_tid: Tid,
 ) -> Result<Errno, WasiError> {
     wasi_try_ok!(WasiEnv::process_signals_and_exit(&mut ctx)?);
-    if let Some(_child_exit_code) = unsafe { handle_rewind::<M, i32>(&mut ctx) } {
+    if let Some(_child_exit_code) = unsafe { handle_rewind::<M, i32>(&mut ctx) }
+    {
         return Ok(Errno::Success);
     }
 
@@ -37,7 +38,9 @@ pub(super) fn thread_join_internal<M: MemorySize + 'static>(
             other_thread
                 .join()
                 .await
-                .map_err(|err| err.as_exit_code().unwrap_or(ExitCode::from(Errno::Unknown)))
+                .map_err(|err| {
+                    err.as_exit_code().unwrap_or(ExitCode::from(Errno::Unknown))
+                })
                 .unwrap_or_else(|a| a)
                 .raw()
         })?;

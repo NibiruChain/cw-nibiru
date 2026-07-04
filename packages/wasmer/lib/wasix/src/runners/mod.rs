@@ -16,13 +16,17 @@ mod body {
     pub type Body = BoxBody<bytes::Bytes, anyhow::Error>;
 
     pub fn body_from_data(data: impl Into<bytes::Bytes>) -> Body {
-        BoxBody::new(Full::new(data.into()).map_err(|_| -> anyhow::Error { unreachable!() }))
+        BoxBody::new(
+            Full::new(data.into())
+                .map_err(|_| -> anyhow::Error { unreachable!() }),
+        )
     }
 
     pub fn body_from_stream<S>(s: S) -> Body
     where
-        S: futures::stream::Stream<Item = Result<hyper::body::Frame<bytes::Bytes>, anyhow::Error>>
-            + Send
+        S: futures::stream::Stream<
+                Item = Result<hyper::body::Frame<bytes::Bytes>, anyhow::Error>,
+            > + Send
             + Sync
             + 'static,
     {
@@ -30,13 +34,17 @@ mod body {
     }
 }
 
-#[cfg(any(feature = "webc_runner_rt_wcgi", feature = "webc_runner_rt_dproxy"))]
+#[cfg(any(
+    feature = "webc_runner_rt_wcgi",
+    feature = "webc_runner_rt_dproxy"
+))]
 pub use self::body::*;
 
 pub use self::{
     runner::Runner,
     wasi_common::{
-        MappedCommand, MappedDirectory, MountedDirectory, MAPPED_CURRENT_DIR_DEFAULT_PATH,
+        MappedCommand, MappedDirectory, MountedDirectory,
+        MAPPED_CURRENT_DIR_DEFAULT_PATH,
     },
 };
 
@@ -57,7 +65,10 @@ mod response_tracing {
             _latency: std::time::Duration,
             span: &tracing::Span,
         ) {
-            span.record("status_code", tracing::field::display(response.status()));
+            span.record(
+                "status_code",
+                tracing::field::display(response.status()),
+            );
             tracing::info!("response generated")
         }
     }

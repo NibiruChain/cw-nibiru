@@ -33,18 +33,22 @@ pub fn port_addr_list<M: MemorySize>(
     let memory = unsafe { env.memory_view(&ctx) };
     Span::current().record("naddrs", addrs.len());
 
-    let addrs_len: M::Offset = wasi_try_ok!(addrs.len().try_into().map_err(|_| Errno::Overflow));
+    let addrs_len: M::Offset =
+        wasi_try_ok!(addrs.len().try_into().map_err(|_| Errno::Overflow));
     wasi_try_mem_ok!(naddrs_ptr.write(&memory, addrs_len));
     if addrs.len() as u64 > max_addrs {
         return Ok(Errno::Overflow);
     }
 
-    let ref_addrs = wasi_try_mem_ok!(
-        addrs_ptr.slice(&memory, wasi_try_ok!(to_offset::<M>(max_addrs as usize)))
-    );
+    let ref_addrs = wasi_try_mem_ok!(addrs_ptr
+        .slice(&memory, wasi_try_ok!(to_offset::<M>(max_addrs as usize))));
     for n in 0..addrs.len() {
         let nip = ref_addrs.index(n as u64);
-        crate::net::write_cidr(&memory, nip.as_ptr::<M>(), *addrs.get(n).unwrap());
+        crate::net::write_cidr(
+            &memory,
+            nip.as_ptr::<M>(),
+            *addrs.get(n).unwrap(),
+        );
     }
 
     Ok(Errno::Success)

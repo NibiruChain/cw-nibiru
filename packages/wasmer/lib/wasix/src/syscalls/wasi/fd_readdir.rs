@@ -51,7 +51,8 @@ pub fn fd_readdir<M: MemorySize>(
                 let mut entry_vec = wasi_try!(fs_info
                     .into_iter()
                     .map(|entry| {
-                        let filename = entry.file_name().to_string_lossy().to_string();
+                        let filename =
+                            entry.file_name().to_string_lossy().to_string();
                         trace!("getting file: {:?}", filename);
                         let filetype = virtual_file_type_to_wasi_file_type(
                             entry.file_type().map_err(fs_error_into_wasi_err)?,
@@ -61,16 +62,18 @@ pub fn fd_readdir<M: MemorySize>(
                         ))
                     })
                     .collect::<Result<Vec<(String, Filetype, u64)>, _>>());
-                entry_vec.extend(entries.iter().filter(|(_, inode)| inode.is_preopened).map(
-                    |(name, inode)| {
-                        let stat = inode.stat.read().unwrap();
-                        (
-                            inode.name.read().unwrap().to_string(),
-                            stat.st_filetype,
-                            stat.st_ino,
-                        )
-                    },
-                ));
+                entry_vec.extend(
+                    entries.iter().filter(|(_, inode)| inode.is_preopened).map(
+                        |(name, inode)| {
+                            let stat = inode.stat.read().unwrap();
+                            (
+                                inode.name.read().unwrap().to_string(),
+                                stat.st_filetype,
+                                stat.st_ino,
+                            )
+                        },
+                    ),
+                );
                 // adding . and .. special folders
                 // TODO: inode
                 entry_vec.push((".".to_string(), Filetype::Directory, 0));
@@ -110,7 +113,9 @@ pub fn fd_readdir<M: MemorySize>(
         }
     };
 
-    for (entry_path_str, wasi_file_type, ino) in entries.iter().skip(cookie as usize) {
+    for (entry_path_str, wasi_file_type, ino) in
+        entries.iter().skip(cookie as usize)
+    {
         cur_cookie += 1;
         let namlen = entry_path_str.len();
         trace!("returning dirent for {}", entry_path_str);
@@ -133,7 +138,8 @@ pub fn fd_readdir<M: MemorySize>(
         if upper_limit != std::mem::size_of::<Dirent>() {
             break;
         }
-        let upper_limit = std::cmp::min((buf_len - buf_idx as u64) as usize, namlen);
+        let upper_limit =
+            std::cmp::min((buf_len - buf_idx as u64) as usize, namlen);
         for (i, b) in entry_path_str.bytes().take(upper_limit).enumerate() {
             wasi_try_mem!(buf_arr.index((i + buf_idx) as u64).write(b));
         }
@@ -143,7 +149,8 @@ pub fn fd_readdir<M: MemorySize>(
         }
     }
 
-    let buf_idx: M::Offset = wasi_try!(buf_idx.try_into().map_err(|_| Errno::Overflow));
+    let buf_idx: M::Offset =
+        wasi_try!(buf_idx.try_into().map_err(|_| Errno::Overflow));
     wasi_try_mem!(bufused_ref.write(buf_idx));
     Errno::Success
 }

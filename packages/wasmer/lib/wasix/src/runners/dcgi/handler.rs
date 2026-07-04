@@ -65,7 +65,8 @@ pub(crate) struct SharedState {
 impl tower::Service<Request<hyper::body::Incoming>> for Handler {
     type Response = Response<Body>;
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Response<Body>, Error>> + Send>>;
+    type Future =
+        Pin<Box<dyn Future<Output = Result<Response<Body>, Error>> + Send>>;
 
     fn poll_ready(
         &mut self,

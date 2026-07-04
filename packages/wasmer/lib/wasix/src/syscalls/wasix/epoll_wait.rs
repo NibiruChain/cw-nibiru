@@ -5,7 +5,10 @@ use wasmer_wasix_types::wasi::{
 
 use super::*;
 use crate::{
-    fs::{EpollFd, InodeValFilePollGuard, InodeValFilePollGuardJoin, POLL_GUARD_MAX_RET},
+    fs::{
+        EpollFd, InodeValFilePollGuard, InodeValFilePollGuardJoin,
+        POLL_GUARD_MAX_RET,
+    },
     state::PollEventSet,
     syscalls::*,
     WasiInodes,
@@ -94,7 +97,8 @@ pub fn epoll_wait<'a, M: MemorySize + 'static>(
 
                         // Record the event
                         ret.push((fd.clone(), readiness));
-                        if ret.len() + POLL_GUARD_MAX_RET >= (maxevents as usize) {
+                        if ret.len() + POLL_GUARD_MAX_RET >= (maxevents as usize)
+                        {
                             break;
                         }
                     }
@@ -156,19 +160,26 @@ pub fn epoll_wait<'a, M: MemorySize + 'static>(
 
                     let event_array = wasi_try_mem!(events_out.slice(
                         &memory,
-                        wasi_try!(maxevents.try_into().map_err(|_| Errno::Overflow))
+                        wasi_try!(maxevents
+                            .try_into()
+                            .map_err(|_| Errno::Overflow))
                     ));
                     for (event, readiness) in evts {
                         tracing::trace!(fd = event.fd, readiness = ?readiness, "triggered");
-                        wasi_try_mem!(event_array.index(nevents as u64).write(EpollEvent {
-                            events: readiness,
-                            data: EpollData {
-                                ptr: wasi_try!(event.ptr.try_into().map_err(|_| Errno::Overflow)),
-                                fd: event.fd,
-                                data1: event.data1,
-                                data2: event.data2
+                        wasi_try_mem!(event_array.index(nevents as u64).write(
+                            EpollEvent {
+                                events: readiness,
+                                data: EpollData {
+                                    ptr: wasi_try!(event
+                                        .ptr
+                                        .try_into()
+                                        .map_err(|_| Errno::Overflow)),
+                                    fd: event.fd,
+                                    data1: event.data1,
+                                    data2: event.data2
+                                }
                             }
-                        }));
+                        ));
                         nevents += 1;
                         if nevents >= maxevents {
                             break;
@@ -177,7 +188,9 @@ pub fn epoll_wait<'a, M: MemorySize + 'static>(
                     tracing::trace!("{} events triggered", nevents);
                     wasi_try_mem!(ret_nevents.write(
                         &memory,
-                        wasi_try!(nevents.try_into().map_err(|_| Errno::Overflow))
+                        wasi_try!(nevents
+                            .try_into()
+                            .map_err(|_| Errno::Overflow))
                     ));
                     Errno::Success
                 }
@@ -187,7 +200,10 @@ pub fn epoll_wait<'a, M: MemorySize + 'static>(
                     Errno::Success
                 }
                 Err(err) => {
-                    tracing::warn!("failed to epoll during deep sleep - {}", err);
+                    tracing::warn!(
+                        "failed to epoll during deep sleep - {}",
+                        err
+                    );
                     err
                 }
             }
@@ -195,17 +211,18 @@ pub fn epoll_wait<'a, M: MemorySize + 'static>(
     };
 
     // If we are rewound then its time to process them
-    if let Some(events) =
-        unsafe { handle_rewind::<M, Result<Vec<(EpollFd, EpollType)>, Errno>>(&mut ctx) }
-    {
+    if let Some(events) = unsafe {
+        handle_rewind::<M, Result<Vec<(EpollFd, EpollType)>, Errno>>(&mut ctx)
+    } {
         return Ok(process_events(&ctx, events));
     }
 
     // We use asyncify with a deep sleep to wait on new IO events
-    let res = __asyncify_with_deep_sleep::<M, Result<Vec<(EpollFd, EpollType)>, Errno>, _>(
-        ctx,
-        Box::pin(trigger),
-    )?;
+    let res = __asyncify_with_deep_sleep::<
+        M,
+        Result<Vec<(EpollFd, EpollType)>, Errno>,
+        _,
+    >(ctx, Box::pin(trigger))?;
     if let AsyncifyAction::Finish(mut ctx, events) = res {
         Ok(process_events(&ctx, events))
     } else {

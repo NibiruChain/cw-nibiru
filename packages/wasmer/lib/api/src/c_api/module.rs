@@ -20,8 +20,9 @@ use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, warn};
 use wasmer_types::{
-    CompileError, DeserializeError, ExportsIterator, ExternType, FunctionType, GlobalType,
-    ImportsIterator, MemoryType, ModuleInfo, Mutability, Pages, SerializeError, TableType, Type,
+    CompileError, DeserializeError, ExportsIterator, ExternType, FunctionType,
+    GlobalType, ImportsIterator, MemoryType, ModuleInfo, Mutability, Pages,
+    SerializeError, TableType, Type,
 };
 
 pub(crate) struct ModuleHandle {
@@ -39,7 +40,10 @@ impl PartialEq for ModuleHandle {
 impl Eq for ModuleHandle {}
 
 impl ModuleHandle {
-    fn new(engine: &impl AsEngineRef, binary: &[u8]) -> Result<Self, CompileError> {
+    fn new(
+        engine: &impl AsEngineRef,
+        binary: &[u8],
+    ) -> Result<Self, CompileError> {
         #[cfg(feature = "wamr")]
         let bytes = wasm_byte_vec_t {
             size: binary.len(),
@@ -55,9 +59,12 @@ impl ModuleHandle {
             data: binary.as_ptr() as _,
         };
 
-        let store = crate::store::Store::new(engine.as_engine_ref().engine().clone());
+        let store =
+            crate::store::Store::new(engine.as_engine_ref().engine().clone());
 
-        let inner = unsafe { wasm_module_new(store.inner.store.inner, &bytes as *const _) };
+        let inner = unsafe {
+            wasm_module_new(store.inner.store.inner, &bytes as *const _)
+        };
         let store = std::sync::Mutex::new(store);
 
         if inner.is_null() {
@@ -111,7 +118,10 @@ impl Module {
         })
     }
 
-    pub fn validate(engine: &impl AsEngineRef, binary: &[u8]) -> Result<(), CompileError> {
+    pub fn validate(
+        engine: &impl AsEngineRef,
+        binary: &[u8],
+    ) -> Result<(), CompileError> {
         let engine = engine.as_engine_ref();
         unimplemented!();
     }
@@ -162,15 +172,22 @@ impl Module {
         true
     }
 
-    pub fn imports<'a>(&'a self) -> ImportsIterator<impl Iterator<Item = ImportType> + 'a> {
+    pub fn imports<'a>(
+        &'a self,
+    ) -> ImportsIterator<impl Iterator<Item = ImportType> + 'a> {
         self.info().imports()
     }
 
-    pub fn exports<'a>(&'a self) -> ExportsIterator<impl Iterator<Item = ExportType> + 'a> {
+    pub fn exports<'a>(
+        &'a self,
+    ) -> ExportsIterator<impl Iterator<Item = ExportType> + 'a> {
         self.info().exports()
     }
 
-    pub fn custom_sections<'a>(&'a self, name: &'a str) -> impl Iterator<Item = Box<[u8]>> + 'a {
+    pub fn custom_sections<'a>(
+        &'a self,
+        name: &'a str,
+    ) -> impl Iterator<Item = Box<[u8]>> + 'a {
         self.info().custom_sections(name)
     }
 

@@ -4,7 +4,9 @@ use anyhow::{Context, Error};
 use futures::{stream::FuturesUnordered, StreamExt};
 use http::Request;
 use tower::ServiceBuilder;
-use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer, trace::TraceLayer};
+use tower_http::{
+    catch_panic::CatchPanicLayer, cors::CorsLayer, trace::TraceLayer,
+};
 use webc::metadata::Command;
 
 use crate::{
@@ -61,15 +63,19 @@ impl crate::runners::Runner for DProxyRunner {
         let service = ServiceBuilder::new()
             .layer(
                 TraceLayer::new_for_http()
-                    .make_span_with(|request: &Request<hyper::body::Incoming>| {
-                        tracing::info_span!(
-                            "request",
-                            method = %request.method(),
-                            uri = %request.uri(),
-                            status_code = tracing::field::Empty,
-                        )
-                    })
-                    .on_response(super::super::response_tracing::OnResponseTracer),
+                    .make_span_with(
+                        |request: &Request<hyper::body::Incoming>| {
+                            tracing::info_span!(
+                                "request",
+                                method = %request.method(),
+                                uri = %request.uri(),
+                                status_code = tracing::field::Empty,
+                            )
+                        },
+                    )
+                    .on_response(
+                        super::super::response_tracing::OnResponseTracer,
+                    ),
             )
             .layer(CatchPanicLayer::new())
             .layer(CorsLayer::permissive())

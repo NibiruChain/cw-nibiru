@@ -7,7 +7,8 @@ use futures::{
 
 use super::WasmerClient;
 
-type PaginationFuture<I, P> = BoxFuture<'static, Result<(Vec<I>, Option<P>), anyhow::Error>>;
+type PaginationFuture<I, P> =
+    BoxFuture<'static, Result<(Vec<I>, Option<P>), anyhow::Error>>;
 
 pub trait PaginatedQuery {
     type Vars;

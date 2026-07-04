@@ -82,46 +82,56 @@ pub fn proc_fork<M: MemorySize>(
     // actually occurs
     if copy_memory == Bool::False {
         // Perform the unwind action
-        return unwind::<M, _>(ctx, move |mut ctx, mut memory_stack, rewind_stack| {
-            // Grab all the globals and serialize them
-            let store_data = crate::utils::store::capture_store_snapshot(&mut ctx.as_store_mut())
+        return unwind::<M, _>(
+            ctx,
+            move |mut ctx, mut memory_stack, rewind_stack| {
+                // Grab all the globals and serialize them
+                let store_data = crate::utils::store::capture_store_snapshot(
+                    &mut ctx.as_store_mut(),
+                )
                 .serialize()
                 .unwrap();
-            let store_data = Bytes::from(store_data);
+                let store_data = Bytes::from(store_data);
 
-            // We first fork the environment and replace the current environment
-            // so that the process can continue to prepare for the real fork as
-            // if it had actually forked
-            child_env.swap_inner(ctx.data_mut());
-            std::mem::swap(ctx.data_mut(), &mut child_env);
-            ctx.data_mut().vfork.replace(WasiVFork {
-                rewind_stack: rewind_stack.clone(),
-                memory_stack: memory_stack.clone(),
-                store_data: store_data.clone(),
-                env: Box::new(child_env),
-                handle: child_handle,
-            });
+                // We first fork the environment and replace the current environment
+                // so that the process can continue to prepare for the real fork as
+                // if it had actually forked
+                child_env.swap_inner(ctx.data_mut());
+                std::mem::swap(ctx.data_mut(), &mut child_env);
+                ctx.data_mut().vfork.replace(WasiVFork {
+                    rewind_stack: rewind_stack.clone(),
+                    memory_stack: memory_stack.clone(),
+                    store_data: store_data.clone(),
+                    env: Box::new(child_env),
+                    handle: child_handle,
+                });
 
-            // Carry on as if the fork had taken place (which basically means
-            // it prevents to be the new process with the old one suspended)
-            // Rewind the stack and carry on
-            match rewind::<M, _>(
-                ctx,
-                memory_stack.freeze(),
-                rewind_stack.freeze(),
-                store_data,
-                ForkResult {
-                    pid: 0,
-                    ret: Errno::Success,
-                },
-            ) {
-                Errno::Success => OnCalledAction::InvokeAgain,
-                err => {
-                    warn!("failed - could not rewind the stack - errno={}", err);
-                    OnCalledAction::Trap(Box::new(WasiError::Exit(err.into())))
+                // Carry on as if the fork had taken place (which basically means
+                // it prevents to be the new process with the old one suspended)
+                // Rewind the stack and carry on
+                match rewind::<M, _>(
+                    ctx,
+                    memory_stack.freeze(),
+                    rewind_stack.freeze(),
+                    store_data,
+                    ForkResult {
+                        pid: 0,
+                        ret: Errno::Success,
+                    },
+                ) {
+                    Errno::Success => OnCalledAction::InvokeAgain,
+                    err => {
+                        warn!(
+                            "failed - could not rewind the stack - errno={}",
+                            err
+                        );
+                        OnCalledAction::Trap(Box::new(WasiError::Exit(
+                            err.into(),
+                        )))
+                    }
                 }
-            }
-        });
+            },
+        );
     }
 
     // Create the thread that will back this forked process
@@ -291,7 +301,9 @@ fn run<M: MemorySize>(
                             child_handle,
                             Some((
                                 rewind_state,
-                                RewindResultType::RewindWithResult(rewind_result),
+                                RewindResultType::RewindWithResult(
+                                    rewind_result,
+                                ),
                             )),
                         );
                     }
@@ -299,7 +311,12 @@ fn run<M: MemorySize>(
 
                 /// Spawns the WASM process after a trigger
                 unsafe {
-                    tasks.resume_wasm_after_poller(Box::new(respawn), ctx, store, deep.trigger)
+                    tasks.resume_wasm_after_poller(
+                        Box::new(respawn),
+                        ctx,
+                        store,
+                        deep.trigger,
+                    )
                 };
                 return Errno::Success.into();
             }

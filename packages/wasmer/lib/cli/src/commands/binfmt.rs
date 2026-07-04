@@ -42,11 +42,13 @@ fn seccheck(path: &Path) -> Result<()> {
     if let Some(parent) = path.parent() {
         seccheck(parent)?;
     }
-    let m = std::fs::metadata(path)
-        .with_context(|| format!("Can't check permissions of {}", path.to_string_lossy()))?;
+    let m = std::fs::metadata(path).with_context(|| {
+        format!("Can't check permissions of {}", path.to_string_lossy())
+    })?;
     use unix_mode::*;
     anyhow::ensure!(
-        !is_allowed(Accessor::Other, Access::Write, m.mode()) || is_sticky(m.mode()),
+        !is_allowed(Accessor::Other, Access::Write, m.mode())
+            || is_sticky(m.mode()),
         "{} is world writeable and not sticky",
         path.to_string_lossy()
     );
@@ -65,19 +67,22 @@ impl Binfmt {
         let temp_dir;
         let specs = match self.action {
             Register | Reregister => {
-                temp_dir = tempfile::tempdir().context("Make temporary directory")?;
+                temp_dir =
+                    tempfile::tempdir().context("Make temporary directory")?;
                 seccheck(temp_dir.path())?;
                 let bin_path_orig: PathBuf = env::current_exe()
                     .and_then(|p| p.canonicalize())
                     .context("Cannot get path to wasmer executable")?;
                 let bin_path = temp_dir.path().join(Binfmt::FILENAME);
-                fs::copy(bin_path_orig, &bin_path).context("Copy wasmer binary to temp folder")?;
-                let bin_path = fs::canonicalize(&bin_path).with_context(|| {
-                    format!(
-                        "Couldn't get absolute path for {}",
-                        bin_path.to_string_lossy()
-                    )
-                })?;
+                fs::copy(bin_path_orig, &bin_path)
+                    .context("Copy wasmer binary to temp folder")?;
+                let bin_path =
+                    fs::canonicalize(&bin_path).with_context(|| {
+                        format!(
+                            "Couldn't get absolute path for {}",
+                            bin_path.to_string_lossy()
+                        )
+                    })?;
                 Some([
                     [
                         b":wasm32:M::\\x00asm\\x01\\x00\\x00::".as_ref(),
@@ -106,10 +111,12 @@ impl Binfmt {
                             let mut registration = fs::OpenOptions::new()
                                 .write(true)
                                 .open(registration)
-                                .context("Open existing binfmt entry to remove")?;
-                            registration
-                                .write_all(b"-1")
-                                .context("Couldn't write binfmt unregister request")?;
+                                .context(
+                                    "Open existing binfmt entry to remove",
+                                )?;
+                            registration.write_all(b"-1").context(
+                                "Couldn't write binfmt unregister request",
+                            )?;
                             Ok(true)
                         } else {
                             eprintln!(
@@ -122,7 +129,9 @@ impl Binfmt {
                     .collect::<Vec<_>>()
                     .into_iter()
                     .collect::<Result<Vec<_>>>()?;
-                if let (Unregister, false) = (self.action, unregister.into_iter().any(|b| b)) {
+                if let (Unregister, false) =
+                    (self.action, unregister.into_iter().any(|b| b))
+                {
                     bail!("Nothing unregistered");
                 }
             }

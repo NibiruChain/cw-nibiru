@@ -57,7 +57,10 @@ impl ReadableJournal for MemFileJournal {
 }
 
 impl WritableJournal for MemFileJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         let estimated_size = entry.estimate_size() as u64;
         match entry {
             JournalEntry::UpdateMemoryRegionV1 {
@@ -66,13 +69,15 @@ impl WritableJournal for MemFileJournal {
             } => {
                 let (uncompressed_size, compressed_data) =
                     block::uncompressed_size(&compressed_data)?;
-                let decompressed_data = decompress(compressed_data, uncompressed_size)?;
+                let decompressed_data =
+                    decompress(compressed_data, uncompressed_size)?;
 
                 let mut file = self.file.write().unwrap();
                 file.seek(std::io::SeekFrom::Start(region.start))?;
                 file.write_all(&decompressed_data)?;
             }
-            JournalEntry::ProcessExitV1 { .. } | JournalEntry::InitModuleV1 { .. } => {
+            JournalEntry::ProcessExitV1 { .. }
+            | JournalEntry::InitModuleV1 { .. } => {
                 let file = self.file.read().unwrap();
                 file.set_len(0)?;
             }

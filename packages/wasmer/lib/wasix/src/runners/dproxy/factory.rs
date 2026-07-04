@@ -14,8 +14,9 @@ use crate::{
 };
 
 use super::{
-    handler::Handler, hyper_proxy::HyperProxyConnectorBuilder, instance::DProxyInstance,
-    networking::LocalWithLoopbackNetworking, shard::Shard, socket_manager::SocketManager,
+    handler::Handler, hyper_proxy::HyperProxyConnectorBuilder,
+    instance::DProxyInstance, networking::LocalWithLoopbackNetworking,
+    shard::Shard, socket_manager::SocketManager,
 };
 
 #[derive(Debug, Default)]
@@ -35,7 +36,11 @@ impl DProxyInstanceFactory {
         Default::default()
     }
 
-    pub async fn acquire(&self, handler: &Handler, shard: Shard) -> anyhow::Result<DProxyInstance> {
+    pub async fn acquire(
+        &self,
+        handler: &Handler,
+        shard: Shard,
+    ) -> anyhow::Result<DProxyInstance> {
         loop {
             {
                 let state = self.state.lock().unwrap();
@@ -51,7 +56,11 @@ impl DProxyInstanceFactory {
         }
     }
 
-    pub async fn spin_up(&self, handler: &Handler, shard: Shard) -> anyhow::Result<DProxyInstance> {
+    pub async fn spin_up(
+        &self,
+        handler: &Handler,
+        shard: Shard,
+    ) -> anyhow::Result<DProxyInstance> {
         // Get the runtime with its already wired local networking
         let runtime = handler.runtime.clone();
 
@@ -68,7 +77,8 @@ impl DProxyInstanceFactory {
                 anyhow::Result::Ok(Arc::new(combined) as Arc<DynJournal>)
             })
             .collect::<anyhow::Result<Vec<_>>>()?;
-        let mut runtime = OverriddenRuntime::new(runtime).with_journals(journals);
+        let mut runtime =
+            OverriddenRuntime::new(runtime).with_journals(journals);
 
         // We attach a composite networking to the runtime which includes a loopback
         // networking implementation connected to a socket manager
@@ -105,7 +115,9 @@ impl DProxyInstanceFactory {
             .task_dedicated(Box::new(move || {
                 #[cfg(feature = "sys")]
                 let _guard = handle.enter();
-                if let Err(err) = runner.run_command(&command_name, &pkg, runtime) {
+                if let Err(err) =
+                    runner.run_command(&command_name, &pkg, runtime)
+                {
                     tracing::error!("Instance Exited: {}", err);
                 } else {
                     tracing::info!("Instance Exited: Nominal");
@@ -121,8 +133,10 @@ impl DProxyInstanceFactory {
         Ok(DProxyInstance {
             last_used: Arc::new(Mutex::new(Instant::now())),
             socket_manager,
-            client: hyper_util::client::legacy::Client::builder(TokioExecutor::new())
-                .build(connector),
+            client: hyper_util::client::legacy::Client::builder(
+                TokioExecutor::new(),
+            )
+            .build(connector),
         })
     }
 }

@@ -40,7 +40,9 @@ impl CliCommand for CmdJournalImport {
                             break;
                         }
                     }
-                    Err(err) if err.kind() == ErrorKind::UnexpectedEof => return Ok(()),
+                    Err(err) if err.kind() == ErrorKind::UnexpectedEof => {
+                        return Ok(())
+                    }
                     Err(err) => return Err(err.into()),
                 }
             }

@@ -66,7 +66,9 @@ impl CmdAppSecretsUpdate {
         }
 
         if self.non_interactive {
-            anyhow::bail!("No secret name given. Provide one as a positional argument.")
+            anyhow::bail!(
+                "No secret name given. Provide one as a positional argument."
+            )
         } else {
             let theme = ColorfulTheme::default();
             Ok(dialoguer::Input::with_theme(&theme)
@@ -81,7 +83,9 @@ impl CmdAppSecretsUpdate {
         }
 
         if self.non_interactive {
-            anyhow::bail!("No secret value given. Provide one as a positional argument.")
+            anyhow::bail!(
+                "No secret value given. Provide one as a positional argument."
+            )
         } else {
             let theme = ColorfulTheme::default();
             Ok(dialoguer::Input::with_theme(&theme)
@@ -100,8 +104,13 @@ impl CmdAppSecretsUpdate {
     ) -> anyhow::Result<Vec<Secret>> {
         let names = secrets.iter().map(|s| &s.name);
         let app_secrets =
-            wasmer_backend_api::query::get_all_app_secrets_filtered(client, app_id, names).await?;
-        let sset = HashSet::<&str>::from_iter(app_secrets.iter().map(|s| s.name.as_str()));
+            wasmer_backend_api::query::get_all_app_secrets_filtered(
+                client, app_id, names,
+            )
+            .await?;
+        let sset = HashSet::<&str>::from_iter(
+            app_secrets.iter().map(|s| s.name.as_str()),
+        );
 
         let mut ret = vec![];
 
@@ -167,7 +176,10 @@ impl CmdAppSecretsUpdate {
                 };
 
                 if should_redeploy {
-                    wasmer_backend_api::query::redeploy_app_by_id(client, app_id).await?;
+                    wasmer_backend_api::query::redeploy_app_by_id(
+                        client, app_id,
+                    )
+                    .await?;
                     eprintln!("{} Deployment complete", "𖥔".yellow().bold());
                 } else {
                     eprintln!(

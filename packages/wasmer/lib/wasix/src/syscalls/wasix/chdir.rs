@@ -28,7 +28,10 @@ pub fn chdir<M: MemorySize>(
     Ok(Errno::Success)
 }
 
-pub fn chdir_internal(ctx: &mut FunctionEnvMut<'_, WasiEnv>, path: &str) -> Result<(), Errno> {
+pub fn chdir_internal(
+    ctx: &mut FunctionEnvMut<'_, WasiEnv>,
+    path: &str,
+) -> Result<(), Errno> {
     let env = ctx.data();
     let (memory, mut state) = unsafe { env.get_memory_and_wasi_state(ctx, 0) };
 

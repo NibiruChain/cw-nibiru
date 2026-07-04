@@ -91,7 +91,8 @@ impl BinaryPackage {
 
         // since each package must be in its own directory, hash of the `dir` should provide a good enough
         // unique identifier for the package
-        let hash = sha2::Sha256::digest(dir.display().to_string().as_bytes()).into();
+        let hash =
+            sha2::Sha256::digest(dir.display().to_string().as_bytes()).into();
         let id = PackageId::Hash(PackageHash::from_sha256_bytes(hash));
 
         let manifest_path = dir.join("wasmer.toml");
@@ -99,10 +100,12 @@ impl BinaryPackage {
         let container = Container::from(webc);
         let manifest = container.manifest();
 
-        let root = PackageInfo::from_manifest(id, manifest, container.version())?;
+        let root =
+            PackageInfo::from_manifest(id, manifest, container.version())?;
         let root_id = root.id.clone();
 
-        let resolution = crate::runtime::resolver::resolve(&root_id, &root, &*source).await?;
+        let resolution =
+            crate::runtime::resolver::resolve(&root_id, &root, &*source).await?;
         let mut pkg = rt
             .package_loader()
             .load_package_tree(&container, &resolution, true)
@@ -112,7 +115,8 @@ impl BinaryPackage {
         // HACK: webc has no way to return its deserialized manifest to us, so we need to do it again here
         // We already read and parsed the manifest once, so it'll succeed again. Unwrapping is safe at this point.
         let wasmer_toml = std::fs::read_to_string(&manifest_path).unwrap();
-        let wasmer_toml: wasmer_config::package::Manifest = toml::from_str(&wasmer_toml).unwrap();
+        let wasmer_toml: wasmer_config::package::Manifest =
+            toml::from_str(&wasmer_toml).unwrap();
         pkg.additional_host_mapped_directories.extend(
             wasmer_toml
                 .fs
@@ -142,16 +146,20 @@ impl BinaryPackage {
         let manifest = container.manifest();
         let id = PackageInfo::package_id_from_manifest(manifest)?
             .or_else(|| {
-                container
-                    .webc_hash()
-                    .map(|hash| PackageId::Hash(PackageHash::from_sha256_bytes(hash)))
+                container.webc_hash().map(|hash| {
+                    PackageId::Hash(PackageHash::from_sha256_bytes(hash))
+                })
             })
-            .ok_or_else(|| anyhow::Error::msg("webc file did not provide its hash"))?;
+            .ok_or_else(|| {
+                anyhow::Error::msg("webc file did not provide its hash")
+            })?;
 
-        let root = PackageInfo::from_manifest(id, manifest, container.version())?;
+        let root =
+            PackageInfo::from_manifest(id, manifest, container.version())?;
         let root_id = root.id.clone();
 
-        let resolution = crate::runtime::resolver::resolve(&root_id, &root, &*source).await?;
+        let resolution =
+            crate::runtime::resolver::resolve(&root_id, &root, &*source).await?;
         let pkg = rt
             .package_loader()
             .load_package_tree(container, &resolution, false)
@@ -168,20 +176,19 @@ impl BinaryPackage {
         runtime: &(dyn Runtime + Send + Sync),
     ) -> Result<Self, anyhow::Error> {
         let source = runtime.source();
-        let root_summary =
-            source
-                .latest(specifier)
-                .await
-                .map_err(|error| ResolveError::Registry {
-                    package: specifier.clone(),
-                    error,
-                })?;
+        let root_summary = source.latest(specifier).await.map_err(|error| {
+            ResolveError::Registry {
+                package: specifier.clone(),
+                error,
+            }
+        })?;
         let root = runtime.package_loader().load(&root_summary).await?;
         let id = root_summary.package_id();
 
-        let resolution = crate::runtime::resolver::resolve(&id, &root_summary.pkg, &source)
-            .await
-            .context("Dependency resolution failed")?;
+        let resolution =
+            crate::runtime::resolver::resolve(&id, &root_summary.pkg, &source)
+                .await
+                .context("Dependency resolution failed")?;
         let pkg = runtime
             .package_loader()
             .load_package_tree(&root, &resolution, false)
@@ -230,10 +237,13 @@ impl BinaryPackage {
         }
 
         match self.commands.as_slice() {
-            [] => anyhow::bail!("The package doesn't contain any executable commands"),
+            [] => anyhow::bail!(
+                "The package doesn't contain any executable commands"
+            ),
             [one] => Ok(one.name()),
             [..] => {
-                let mut commands: Vec<_> = self.commands.iter().map(|cmd| cmd.name()).collect();
+                let mut commands: Vec<_> =
+                    self.commands.iter().map(|cmd| cmd.name()).collect();
                 commands.sort();
                 anyhow::bail!(
                     "Unable to determine the package's entrypoint. Please choose one of {:?}",
@@ -252,7 +262,10 @@ mod tests {
     use wasmer_package::utils::from_disk;
 
     use crate::{
-        runtime::{package_loader::BuiltinPackageLoader, task_manager::VirtualTaskManager},
+        runtime::{
+            package_loader::BuiltinPackageLoader,
+            task_manager::VirtualTaskManager,
+        },
         PluggableRuntime,
     };
 
@@ -302,9 +315,10 @@ mod tests {
         let webc_path = temp.path().join("package.webc");
         std::fs::write(&webc_path, data).unwrap();
 
-        let pkg = BinaryPackage::from_webc(&from_disk(&webc_path).unwrap(), &runtime)
-            .await
-            .unwrap();
+        let pkg =
+            BinaryPackage::from_webc(&from_disk(&webc_path).unwrap(), &runtime)
+                .await
+                .unwrap();
 
         // We should have mapped "./out/file.txt" on the host to
         // "/public/file.txt" on the guest.
@@ -362,7 +376,8 @@ mod tests {
 
         assert_eq!(pkg.commands.len(), 1);
         let command = pkg.get_command("cmd").unwrap();
-        let atom_sha256_hash: [u8; 32] = sha2::Sha256::digest(webc.get_atom("foo").unwrap()).into();
+        let atom_sha256_hash: [u8; 32] =
+            sha2::Sha256::digest(webc.get_atom("foo").unwrap()).into();
         let module_hash = ModuleHash::sha256_from_bytes(atom_sha256_hash);
         assert_eq!(command.hash(), &module_hash);
     }

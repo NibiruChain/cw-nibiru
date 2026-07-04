@@ -121,7 +121,9 @@ async fn acquire_ssh_token(
 }
 
 /// Create a new token for SSH access through the backend API.
-async fn create_ssh_token(client: &WasmerClient) -> Result<RawToken, anyhow::Error> {
+async fn create_ssh_token(
+    client: &WasmerClient,
+) -> Result<RawToken, anyhow::Error> {
     wasmer_backend_api::query::generate_deploy_config_token_raw(
         client,
         wasmer_backend_api::query::TokenKind::SSH,

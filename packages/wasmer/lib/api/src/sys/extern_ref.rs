@@ -16,7 +16,10 @@ impl ExternRef {
         T: Any + Send + Sync + 'static + Sized,
     {
         Self {
-            handle: StoreHandle::new(store.objects_mut(), VMExternObj::new(value)),
+            handle: StoreHandle::new(
+                store.objects_mut(),
+                VMExternObj::new(value),
+            ),
         }
     }
 
@@ -39,7 +42,10 @@ impl ExternRef {
         vm_externref: VMExternRef,
     ) -> Self {
         Self {
-            handle: StoreHandle::from_internal(store.objects_mut().id(), vm_externref.0),
+            handle: StoreHandle::from_internal(
+                store.objects_mut().id(),
+                vm_externref.0,
+            ),
         }
     }
 

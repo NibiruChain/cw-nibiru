@@ -19,10 +19,12 @@ pub fn fd_filestat_set_size(
 
     #[cfg(feature = "journal")]
     if env.enable_journal {
-        JournalEffector::save_fd_set_size(&mut ctx, fd, st_size).map_err(|err| {
-            tracing::error!("failed to save file set size event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_fd_set_size(&mut ctx, fd, st_size).map_err(
+            |err| {
+                tracing::error!("failed to save file set size event - {}", err);
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            },
+        )?;
     }
 
     Ok(Errno::Success)
@@ -59,7 +61,9 @@ pub(crate) fn fd_filestat_set_size_internal(
             Kind::Socket { .. } => return Err(Errno::Badf),
             Kind::Pipe { .. } => return Err(Errno::Badf),
             Kind::Symlink { .. } => return Err(Errno::Badf),
-            Kind::EventNotifications { .. } | Kind::Epoll { .. } => return Err(Errno::Badf),
+            Kind::EventNotifications { .. } | Kind::Epoll { .. } => {
+                return Err(Errno::Badf)
+            }
             Kind::Dir { .. } | Kind::Root { .. } => return Err(Errno::Isdir),
         }
     }

@@ -12,8 +12,8 @@ use wasmer_config::package::{PackageId, PackageSource};
 
 use crate::runtime::resolver::{
     outputs::{Edge, Node},
-    DependencyGraph, ItemLocation, PackageInfo, PackageSummary, QueryError, Resolution,
-    ResolvedPackage, Source,
+    DependencyGraph, ItemLocation, PackageInfo, PackageSummary, QueryError,
+    Resolution, ResolvedPackage, Source,
 };
 
 use super::ResolvedFileSystemMapping;
@@ -93,7 +93,9 @@ async fn resolve_dependency_graph(
         packages,
     } = discover_dependencies(root_id, root, source).await?;
 
-    check_for_duplicate_versions(indices.iter().copied().map(|ix| &graph[ix].id))?;
+    check_for_duplicate_versions(
+        indices.iter().copied().map(|ix| &graph[ix].id),
+    )?;
     log_dependencies(&graph, root);
 
     let graph = DependencyGraph::new(root, graph, packages);
@@ -128,13 +130,12 @@ async fn discover_dependencies(
             // down using existing requirements and trying to reuse the same
             // dependency when possible.
             let dep_summary =
-                source
-                    .latest(&dep.pkg)
-                    .await
-                    .map_err(|error| ResolveError::Registry {
+                source.latest(&dep.pkg).await.map_err(|error| {
+                    ResolveError::Registry {
                         package: dep.pkg.clone(),
                         error,
-                    })?;
+                    }
+                })?;
             let dep_id = dep_summary.package_id().clone();
 
             let PackageSummary { pkg, dist } = dep_summary;
@@ -169,7 +170,8 @@ async fn discover_dependencies(
         }
     }
 
-    let sorted_indices = petgraph::algo::toposort(&graph, None).map_err(|_| cycle_error(&graph))?;
+    let sorted_indices = petgraph::algo::toposort(&graph, None)
+        .map_err(|_| cycle_error(&graph))?;
 
     Ok(DiscoveredPackages {
         root: root_index,
@@ -189,7 +191,8 @@ fn cycle_error(graph: &petgraph::Graph<Node, Edge>) -> ResolveError {
     // we want the loop's starting node to be deterministic (for tests), and
     // nodes with lower indices are normally closer to the root of the
     // dependency tree.
-    let lowest_index_node = cycle.iter().copied().min().expect("Cycle is non-empty");
+    let lowest_index_node =
+        cycle.iter().copied().min().expect("Cycle is non-empty");
 
     // We want the cycle vector to start with that node, so let's do a bit of
     // shuffling
@@ -229,7 +232,9 @@ fn log_dependencies(graph: &DiGraph<Node, Edge>, root: NodeIndex) {
                 let package = &graph[n].id;
                 let dependencies: BTreeMap<_, _> = graph
                     .edges(n)
-                    .map(|edge_ref| (&edge_ref.weight().alias, &graph[edge_ref.target()].id))
+                    .map(|edge_ref| {
+                        (&edge_ref.weight().alias, &graph[edge_ref.target()].id)
+                    })
                     .collect();
 
                 tracing::trace!(%package, ?dependencies);
@@ -242,11 +247,14 @@ fn log_dependencies(graph: &DiGraph<Node, Edge>, root: NodeIndex) {
 /// only one copy of each package is in the dependency tree. If the same package
 /// is included in the tree multiple times, they all need to use the exact same
 /// version otherwise it's an error.
-fn check_for_duplicate_versions<'a, I>(package_ids: I) -> Result<(), ResolveError>
+fn check_for_duplicate_versions<'a, I>(
+    package_ids: I,
+) -> Result<(), ResolveError>
 where
     I: Iterator<Item = &'a PackageId>,
 {
-    let mut package_versions: BTreeMap<&str, HashSet<&Version>> = BTreeMap::new();
+    let mut package_versions: BTreeMap<&str, HashSet<&Version>> =
+        BTreeMap::new();
 
     for id in package_ids {
         let Some(id) = id.as_named() else {
@@ -274,7 +282,9 @@ where
 
 /// Given some [`DiscoveredPackages`], figure out how the resulting "package"
 /// would look when loaded at runtime.
-fn resolve_package(dependency_graph: &DependencyGraph) -> Result<ResolvedPackage, ResolveError> {
+fn resolve_package(
+    dependency_graph: &DependencyGraph,
+) -> Result<ResolvedPackage, ResolveError> {
     // FIXME: This code is all super naive and will break the moment there
     // are any conflicts or duplicate names.
     tracing::trace!("Resolving the package");
@@ -284,7 +294,9 @@ fn resolve_package(dependency_graph: &DependencyGraph) -> Result<ResolvedPackage
 
     let mut entrypoint = dependency_graph.root_info().entrypoint.clone();
 
-    for index in petgraph::algo::toposort(dependency_graph.graph(), None).expect("acyclic") {
+    for index in petgraph::algo::toposort(dependency_graph.graph(), None)
+        .expect("acyclic")
+    {
         let node = &dependency_graph[index];
         let id = &node.id;
         let pkg = &node.pkg;
@@ -398,7 +410,11 @@ mod tests {
             RegistryBuilder(InMemorySource::new())
         }
 
-        fn register(&mut self, name: &str, version: &str) -> AddPackageVersion<'_> {
+        fn register(
+            &mut self,
+            name: &str,
+            version: &str,
+        ) -> AddPackageVersion<'_> {
             let pkg = PackageInfo {
                 id: PackageId::new_named(name, version.parse().unwrap()),
                 dependencies: Vec::new(),
@@ -450,7 +466,11 @@ mod tests {
     }
 
     impl<'builder> AddPackageVersion<'builder> {
-        fn with_dependency(&mut self, name: &str, version_constraint: &str) -> &mut Self {
+        fn with_dependency(
+            &mut self,
+            name: &str,
+            version_constraint: &str,
+        ) -> &mut Self {
             self.with_aliased_dependency(name, name, version_constraint)
         }
 
@@ -461,8 +481,11 @@ mod tests {
             version_constraint: &str,
         ) -> &mut Self {
             let pkg = PackageSource::from(
-                NamedPackageIdent::try_from_full_name_and_version(name, version_constraint)
-                    .unwrap(),
+                NamedPackageIdent::try_from_full_name_and_version(
+                    name,
+                    version_constraint,
+                )
+                .unwrap(),
             );
 
             self.summary.pkg.dependencies.push(Dependency {
@@ -534,7 +557,10 @@ mod tests {
     }
 
     impl<'source> DependencyGraphBuilder<'source> {
-        fn insert(&mut self, id: PackageId) -> DependencyGraphEntryBuilder<'source, '_> {
+        fn insert(
+            &mut self,
+            id: PackageId,
+        ) -> DependencyGraphEntryBuilder<'source, '_> {
             let _ = self.source.get(&id).unwrap();
             DependencyGraphEntryBuilder {
                 builder: self,
@@ -598,7 +624,11 @@ mod tests {
             self.with_aliased_dependency(name, id)
         }
 
-        fn with_aliased_dependency(&mut self, alias: &str, id: &PackageId) -> &mut Self {
+        fn with_aliased_dependency(
+            &mut self,
+            alias: &str,
+            id: &PackageId,
+        ) -> &mut Self {
             let dep_id = self.builder.source.get(id).unwrap().package_id();
             self.dependencies.insert(alias.to_string(), dep_id);
             self
@@ -628,7 +658,9 @@ mod tests {
         }
     }
 
-    fn deps(resolution: &Resolution) -> BTreeMap<PackageId, BTreeMap<String, PackageId>> {
+    fn deps(
+        resolution: &Resolution,
+    ) -> BTreeMap<PackageId, BTreeMap<String, PackageId>> {
         resolution
             .graph
             .iter_dependencies()
@@ -843,7 +875,10 @@ mod tests {
                     ]
                 );
             }
-            _ => unreachable!("Expected a duplicate versions error, found {:?}", result),
+            _ => unreachable!(
+                "Expected a duplicate versions error, found {:?}",
+                result
+            ),
         }
     }
 
@@ -1059,7 +1094,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn infer_entrypoint_if_unspecified_and_only_one_command_in_root_package() {
+    async fn infer_entrypoint_if_unspecified_and_only_one_command_in_root_package(
+    ) {
         let root_id = PackageId::new_named("root", "1.0.0".parse().unwrap());
         let mut builder = RegistryBuilder::new();
         builder
@@ -1108,9 +1144,11 @@ mod tests {
     fn filesystem_with_one_package_and_one_fs_tables() {
         let root_id = PackageId::new_named("root", "1.0.0".parse().unwrap());
         let mut builder = RegistryBuilder::new();
-        builder
-            .register("root", "1.0.0")
-            .with_fs_mapping("atom", "/publisher/lib", "/lib");
+        builder.register("root", "1.0.0").with_fs_mapping(
+            "atom",
+            "/publisher/lib",
+            "/lib",
+        );
         let mut dep_builder = builder.start_dependency_graph();
         dep_builder.insert(root_id.clone());
         let graph = dep_builder.graph(root_id.clone());
@@ -1194,7 +1232,12 @@ mod tests {
         builder
             .register("root", "1.0.0")
             .with_dependency("dep", "=1.0.0")
-            .with_fs_mapping_from_dependency("dep-volume", "/root", "/root", "dep");
+            .with_fs_mapping_from_dependency(
+                "dep-volume",
+                "/root",
+                "/root",
+                "dep",
+            );
         builder.register("dep", "1.0.0");
         let mut dep_builder = builder.start_dependency_graph();
         dep_builder.insert(root_id.clone()).with_dependency(&dep_id);

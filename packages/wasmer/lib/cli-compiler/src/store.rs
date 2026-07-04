@@ -31,18 +31,20 @@ impl SubsetTunables {
     pub fn for_target(target: &Target) -> Self {
         let triple = target.triple();
         let pointer_width: PointerWidth = triple.pointer_width().unwrap();
-        let (static_memory_bound, static_memory_offset_guard_size): (Pages, u64) =
-            match pointer_width {
-                PointerWidth::U16 => (0x400.into(), 0x1000),
-                PointerWidth::U32 => (0x4000.into(), 0x1_0000),
-                // Static Memory Bound:
-                //   Allocating 4 GiB of address space let us avoid the
-                //   need for explicit bounds checks.
-                // Static Memory Guard size:
-                //   Allocating 2 GiB of address space lets us translate wasm
-                //   offsets into x86 offsets as aggressively as we can.
-                PointerWidth::U64 => (0x1_0000.into(), 0x8000_0000),
-            };
+        let (static_memory_bound, static_memory_offset_guard_size): (
+            Pages,
+            u64,
+        ) = match pointer_width {
+            PointerWidth::U16 => (0x400.into(), 0x1000),
+            PointerWidth::U32 => (0x4000.into(), 0x1_0000),
+            // Static Memory Bound:
+            //   Allocating 4 GiB of address space let us avoid the
+            //   need for explicit bounds checks.
+            // Static Memory Guard size:
+            //   Allocating 2 GiB of address space lets us translate wasm
+            //   offsets into x86 offsets as aggressively as we can.
+            PointerWidth::U64 => (0x1_0000.into(), 0x8000_0000),
+        };
 
         // Allocate a small guard to optimize common cases but without
         // wasting too much memory.
@@ -175,7 +177,9 @@ impl CompilerOptions {
         target: Target,
         compiler_config: Box<dyn CompilerConfig>,
     ) -> Result<EngineBuilder> {
-        let features = self.get_features(compiler_config.default_features_for_target(&target))?;
+        let features = self.get_features(
+            compiler_config.default_features_for_target(&target),
+        )?;
         let engine: EngineBuilder = EngineBuilder::new(compiler_config)
             .set_target(Some(target))
             .set_features(Some(features));
@@ -185,10 +189,14 @@ impl CompilerOptions {
 
     /// Get the Compiler Config for the current options
     #[allow(unused_variables)]
-    pub(crate) fn get_compiler_config(&self) -> Result<(Box<dyn CompilerConfig>, CompilerType)> {
+    pub(crate) fn get_compiler_config(
+        &self,
+    ) -> Result<(Box<dyn CompilerConfig>, CompilerType)> {
         let compiler = self.get_compiler()?;
         let compiler_config: Box<dyn CompilerConfig> = match compiler {
-            CompilerType::Headless => bail!("The headless engine can't be chosen"),
+            CompilerType::Headless => {
+                bail!("The headless engine can't be chosen")
+            }
             #[cfg(feature = "singlepass")]
             CompilerType::Singlepass => {
                 let mut config = wasmer_compiler_singlepass::Singlepass::new();
@@ -211,7 +219,8 @@ impl CompilerOptions {
                 use std::fs::File;
                 use std::io::Write;
                 use wasmer_compiler_llvm::{
-                    CompiledKind, InkwellMemoryBuffer, InkwellModule, LLVMCallbacks, LLVM,
+                    CompiledKind, InkwellMemoryBuffer, InkwellModule,
+                    LLVMCallbacks, LLVM,
                 };
                 use wasmer_types::entity::EntityRef;
                 let mut config = LLVM::new();
@@ -249,33 +258,51 @@ impl CompilerOptions {
                         CompiledKind::Local(local_index) => {
                             format!("function_{}", local_index.index())
                         }
-                        CompiledKind::FunctionCallTrampoline(func_type) => format!(
-                            "trampoline_call_{}_{}",
-                            types_to_signature(&func_type.params()),
-                            types_to_signature(&func_type.results())
-                        ),
-                        CompiledKind::DynamicFunctionTrampoline(func_type) => format!(
-                            "trampoline_dynamic_{}_{}",
-                            types_to_signature(&func_type.params()),
-                            types_to_signature(&func_type.results())
-                        ),
+                        CompiledKind::FunctionCallTrampoline(func_type) => {
+                            format!(
+                                "trampoline_call_{}_{}",
+                                types_to_signature(&func_type.params()),
+                                types_to_signature(&func_type.results())
+                            )
+                        }
+                        CompiledKind::DynamicFunctionTrampoline(func_type) => {
+                            format!(
+                                "trampoline_dynamic_{}_{}",
+                                types_to_signature(&func_type.params()),
+                                types_to_signature(&func_type.results())
+                            )
+                        }
                         CompiledKind::Module => "module".into(),
                     }
                 }
                 impl LLVMCallbacks for Callbacks {
-                    fn preopt_ir(&self, kind: &CompiledKind, module: &InkwellModule) {
+                    fn preopt_ir(
+                        &self,
+                        kind: &CompiledKind,
+                        module: &InkwellModule,
+                    ) {
                         let mut path = self.debug_dir.clone();
-                        path.push(format!("{}.preopt.ll", function_kind_to_filename(kind)));
+                        path.push(format!(
+                            "{}.preopt.ll",
+                            function_kind_to_filename(kind)
+                        ));
                         module
                             .print_to_file(&path)
                             .expect("Error while dumping pre optimized LLVM IR");
                     }
-                    fn postopt_ir(&self, kind: &CompiledKind, module: &InkwellModule) {
+                    fn postopt_ir(
+                        &self,
+                        kind: &CompiledKind,
+                        module: &InkwellModule,
+                    ) {
                         let mut path = self.debug_dir.clone();
-                        path.push(format!("{}.postopt.ll", function_kind_to_filename(kind)));
-                        module
-                            .print_to_file(&path)
-                            .expect("Error while dumping post optimized LLVM IR");
+                        path.push(format!(
+                            "{}.postopt.ll",
+                            function_kind_to_filename(kind)
+                        ));
+                        module.print_to_file(&path).expect(
+                            "Error while dumping post optimized LLVM IR",
+                        );
                     }
                     fn obj_memory_buffer(
                         &self,
@@ -283,7 +310,10 @@ impl CompilerOptions {
                         memory_buffer: &InkwellMemoryBuffer,
                     ) {
                         let mut path = self.debug_dir.clone();
-                        path.push(format!("{}.o", function_kind_to_filename(kind)));
+                        path.push(format!(
+                            "{}.o",
+                            function_kind_to_filename(kind)
+                        ));
                         let mem_buf_slice = memory_buffer.as_slice();
                         let mut file = File::create(path)
                             .expect("Error while creating debug object file from LLVM IR");
@@ -301,14 +331,20 @@ impl CompilerOptions {
                 }
 
                 if let Some(ref llvm_debug_dir) = self.llvm_debug_dir {
-                    config.callbacks(Some(Arc::new(Callbacks::new(llvm_debug_dir.clone())?)));
+                    config.callbacks(Some(Arc::new(Callbacks::new(
+                        llvm_debug_dir.clone(),
+                    )?)));
                 }
                 if self.enable_verifier {
                     config.enable_verifier();
                 }
                 Box::new(config)
             }
-            #[cfg(not(all(feature = "singlepass", feature = "cranelift", feature = "llvm",)))]
+            #[cfg(not(all(
+                feature = "singlepass",
+                feature = "cranelift",
+                feature = "llvm",
+            )))]
             compiler => {
                 bail!(
                     "The `{}` compiler is not included in this binary.",
@@ -367,8 +403,12 @@ impl std::fmt::Display for CompilerType {
 
 impl StoreOptions {
     /// Get a EngineBulder for the Target
-    pub fn get_engine_for_target(&self, target: Target) -> Result<(EngineBuilder, CompilerType)> {
-        let (compiler_config, compiler_type) = self.compiler.get_compiler_config()?;
+    pub fn get_engine_for_target(
+        &self,
+        target: Target,
+    ) -> Result<(EngineBuilder, CompilerType)> {
+        let (compiler_config, compiler_type) =
+            self.compiler.get_compiler_config()?;
         let engine = self.get_engine_with_compiler(target, compiler_config)?;
         Ok((engine, compiler_type))
     }
@@ -382,7 +422,10 @@ impl StoreOptions {
     }
 
     /// Get (Subset)Tunables for the Target
-    pub fn get_tunables_for_target(&self, target: &Target) -> Result<SubsetTunables> {
+    pub fn get_tunables_for_target(
+        &self,
+        target: &Target,
+    ) -> Result<SubsetTunables> {
         let tunables = SubsetTunables::for_target(target);
         Ok(tunables)
     }

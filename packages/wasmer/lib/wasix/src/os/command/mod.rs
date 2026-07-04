@@ -6,7 +6,8 @@ use wasmer::{FunctionEnvMut, Store};
 use wasmer_wasix_types::wasi::Errno;
 
 use crate::{
-    runtime::task_manager::InlineWaker, syscalls::stderr_write, Runtime, SpawnError, WasiEnv,
+    runtime::task_manager::InlineWaker, syscalls::stderr_write, Runtime,
+    SpawnError, WasiEnv,
 };
 
 use super::task::{OwnedTaskStatus, TaskJoinHandle, TaskStatus};
@@ -45,7 +46,9 @@ impl Commands {
     }
 
     // TODO: this method should be somewhere on the runtime, not here.
-    pub fn new_with_builtins(runtime: Arc<dyn Runtime + Send + Sync + 'static>) -> Self {
+    pub fn new_with_builtins(
+        runtime: Arc<dyn Runtime + Send + Sync + 'static>,
+    ) -> Self {
         let mut cmd = Self::new();
         let cmd_wasmer = builtins::cmd_wasmer::CmdWasmer::new(runtime.clone());
         cmd.register_command(cmd_wasmer);
@@ -56,13 +59,18 @@ impl Commands {
     /// Register a command.
     ///
     /// The command will be available with it's canonical name ([`VirtualCommand::name()`]) at /bin/NAME.
-    pub fn register_command<C: VirtualCommand + Send + Sync + 'static>(&mut self, cmd: C) {
+    pub fn register_command<C: VirtualCommand + Send + Sync + 'static>(
+        &mut self,
+        cmd: C,
+    ) {
         let path = format!("/bin/{}", cmd.name());
         self.register_command_with_path(cmd, path);
     }
 
     /// Register a command at a custom path.
-    pub fn register_command_with_path<C: VirtualCommand + Send + Sync + 'static>(
+    pub fn register_command_with_path<
+        C: VirtualCommand + Send + Sync + 'static,
+    >(
         &mut self,
         cmd: C,
         path: String,
@@ -77,7 +85,10 @@ impl Commands {
     }
 
     /// Get a command by its path.
-    pub fn get(&self, path: &str) -> Option<&Arc<dyn VirtualCommand + Send + Sync + 'static>> {
+    pub fn get(
+        &self,
+        path: &str,
+    ) -> Option<&Arc<dyn VirtualCommand + Send + Sync + 'static>> {
         self.commands.get(path)
     }
 
@@ -101,7 +112,9 @@ impl Commands {
             }
             .ok();
 
-            let res = OwnedTaskStatus::new(TaskStatus::Finished(Ok(Errno::Noent.into())));
+            let res = OwnedTaskStatus::new(TaskStatus::Finished(Ok(
+                Errno::Noent.into(),
+            )));
             Ok(res.handle())
         }
     }

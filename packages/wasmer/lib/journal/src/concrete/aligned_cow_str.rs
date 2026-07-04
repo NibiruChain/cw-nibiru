@@ -96,8 +96,16 @@ impl<'a> Archive for AlignedCowStr<'a> {
     type Resolver = VecResolver;
 
     #[inline]
-    fn resolve(&self, resolver: Self::Resolver, out: rkyv::Place<Self::Archived>) {
-        ArchivedVec::resolve_from_len(self.inner.as_bytes().len(), resolver, out);
+    fn resolve(
+        &self,
+        resolver: Self::Resolver,
+        out: rkyv::Place<Self::Archived>,
+    ) {
+        ArchivedVec::resolve_from_len(
+            self.inner.as_bytes().len(),
+            resolver,
+            out,
+        );
     }
 }
 
@@ -109,6 +117,9 @@ where
     #[inline]
     fn serialize(&self, serializer: &mut S) -> Result<Self::Resolver, S::Error> {
         serializer.align(Self::ALIGNMENT)?;
-        ArchivedVec::<Archived<u8>>::serialize_from_slice(self.inner.as_bytes(), serializer)
+        ArchivedVec::<Archived<u8>>::serialize_from_slice(
+            self.inner.as_bytes(),
+            serializer,
+        )
     }
 }

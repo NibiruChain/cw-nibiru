@@ -51,16 +51,23 @@ impl AsyncWrite for FailOnWrite {
         Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into()))
     }
 
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into()))
     }
 
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into()))
     }
 }
 
-pub(crate) type StreamSink<T> = Pin<Box<dyn Sink<T, Error = std::io::Error> + Send + 'static>>;
+pub(crate) type StreamSink<T> =
+    Pin<Box<dyn Sink<T, Error = std::io::Error> + Send + 'static>>;
 
 #[derive(derive_more::Debug)]
 pub(crate) enum RemoteTx<T>
@@ -83,7 +90,9 @@ where
         tx: Arc<
             tokio::sync::Mutex<
                 futures_util::stream::SplitSink<
-                    hyper_tungstenite::WebSocketStream<TokioIo<hyper::upgrade::Upgraded>>,
+                    hyper_tungstenite::WebSocketStream<
+                        TokioIo<hyper::upgrade::Upgraded>,
+                    >,
                     hyper_tungstenite::tungstenite::Message,
                 >,
             >,
@@ -138,13 +147,18 @@ where
             #[cfg(feature = "hyper")]
             RemoteTx::HyperWebSocket { tx, format, .. } => {
                 let data = match format {
-                    crate::meta::FrameSerializationFormat::Bincode => bincode::serialize(&req)
-                        .map_err(|err| {
-                            tracing::warn!("failed to serialize message - {err}");
+                    crate::meta::FrameSerializationFormat::Bincode => {
+                        bincode::serialize(&req).map_err(|err| {
+                            tracing::warn!(
+                                "failed to serialize message - {err}"
+                            );
                             NetworkError::IOError
-                        })?,
+                        })?
+                    }
                     format => {
-                        tracing::warn!("format not currently supported - {format:?}");
+                        tracing::warn!(
+                            "format not currently supported - {format:?}"
+                        );
                         return Err(NetworkError::IOError);
                     }
                 };
@@ -156,13 +170,18 @@ where
             #[cfg(feature = "tokio-tungstenite")]
             RemoteTx::TokioWebSocket { tx, format, .. } => {
                 let data = match format {
-                    crate::meta::FrameSerializationFormat::Bincode => bincode::serialize(&req)
-                        .map_err(|err| {
-                            tracing::warn!("failed to serialize message - {err}");
+                    crate::meta::FrameSerializationFormat::Bincode => {
+                        bincode::serialize(&req).map_err(|err| {
+                            tracing::warn!(
+                                "failed to serialize message - {err}"
+                            );
                             NetworkError::IOError
-                        })?,
+                        })?
+                    }
                     format => {
-                        tracing::warn!("format not currently supported - {format:?}");
+                        tracing::warn!(
+                            "format not currently supported - {format:?}"
+                        );
                         return Err(NetworkError::IOError);
                     }
                 };
@@ -174,11 +193,17 @@ where
         }
     }
 
-    pub(crate) fn poll_send(&self, cx: &mut Context<'_>, req: T) -> Poll<Result<()>> {
+    pub(crate) fn poll_send(
+        &self,
+        cx: &mut Context<'_>,
+        req: T,
+    ) -> Poll<Result<()>> {
         match self {
             RemoteTx::Mpsc { tx, wakers, .. } => match tx.try_send(req) {
                 Ok(()) => Poll::Ready(Ok(())),
-                Err(TrySendError::Closed(_)) => Poll::Ready(Err(NetworkError::ConnectionAborted)),
+                Err(TrySendError::Closed(_)) => {
+                    Poll::Ready(Err(NetworkError::ConnectionAborted))
+                }
                 Err(TrySendError::Full(_)) => {
                     wakers.add(cx.waker());
                     Poll::Pending
@@ -194,12 +219,19 @@ where
                 };
                 match tx_guard.poll_ready_unpin(cx) {
                     Poll::Ready(Ok(())) => {}
-                    Poll::Ready(Err(err)) => return Poll::Ready(Err(io_err_into_net_error(err))),
+                    Poll::Ready(Err(err)) => {
+                        return Poll::Ready(Err(io_err_into_net_error(err)))
+                    }
                     Poll::Pending => return Poll::Pending,
                 }
                 let mut job = Box::pin(async move {
-                    if let Err(err) = tx_guard.send(req).await.map_err(io_err_into_net_error) {
-                        tracing::error!("failed to send remaining bytes for request - {}", err);
+                    if let Err(err) =
+                        tx_guard.send(req).await.map_err(io_err_into_net_error)
+                    {
+                        tracing::error!(
+                            "failed to send remaining bytes for request - {}",
+                            err
+                        );
                     }
                 });
 
@@ -211,7 +243,10 @@ where
                 // Otherwise we push it to the driver which will block all future send
                 // operations until it finishes
                 work.send(job).map_err(|err| {
-                    tracing::error!("failed to send remaining bytes for request - {}", err);
+                    tracing::error!(
+                        "failed to send remaining bytes for request - {}",
+                        err
+                    );
                     NetworkError::ConnectionAborted
                 })?;
                 Poll::Ready(Ok(()))
@@ -234,30 +269,42 @@ where
                 match tx_guard.poll_ready_unpin(cx) {
                     Poll::Ready(Ok(())) => {}
                     Poll::Ready(Err(err)) => {
-                        tracing::warn!("failed to poll web socket for readiness - {err}");
+                        tracing::warn!(
+                            "failed to poll web socket for readiness - {err}"
+                        );
                         return Poll::Ready(Err(NetworkError::IOError));
                     }
                     Poll::Pending => return Poll::Pending,
                 }
 
                 let data = match format {
-                    crate::meta::FrameSerializationFormat::Bincode => bincode::serialize(&req)
-                        .map_err(|err| {
-                            tracing::warn!("failed to serialize message - {err}");
+                    crate::meta::FrameSerializationFormat::Bincode => {
+                        bincode::serialize(&req).map_err(|err| {
+                            tracing::warn!(
+                                "failed to serialize message - {err}"
+                            );
                             NetworkError::IOError
-                        })?,
+                        })?
+                    }
                     format => {
-                        tracing::warn!("format not currently supported - {format:?}");
+                        tracing::warn!(
+                            "format not currently supported - {format:?}"
+                        );
                         return Poll::Ready(Err(NetworkError::IOError));
                     }
                 };
 
                 let mut job = Box::pin(async move {
                     if let Err(err) = tx_guard
-                        .send(hyper_tungstenite::tungstenite::Message::Binary(data))
+                        .send(hyper_tungstenite::tungstenite::Message::Binary(
+                            data,
+                        ))
                         .await
                     {
-                        tracing::error!("failed to send remaining bytes for request - {}", err);
+                        tracing::error!(
+                            "failed to send remaining bytes for request - {}",
+                            err
+                        );
                     }
                 });
 
@@ -269,7 +316,10 @@ where
                 // Otherwise we push it to the driver which will block all future send
                 // operations until it finishes
                 work.send(job).map_err(|err| {
-                    tracing::error!("failed to send remaining bytes for request - {}", err);
+                    tracing::error!(
+                        "failed to send remaining bytes for request - {}",
+                        err
+                    );
                     NetworkError::ConnectionAborted
                 })?;
                 Poll::Ready(Ok(()))
@@ -292,30 +342,42 @@ where
                 match tx_guard.poll_ready_unpin(cx) {
                     Poll::Ready(Ok(())) => {}
                     Poll::Ready(Err(err)) => {
-                        tracing::warn!("failed to poll web socket for readiness - {err}");
+                        tracing::warn!(
+                            "failed to poll web socket for readiness - {err}"
+                        );
                         return Poll::Ready(Err(NetworkError::IOError));
                     }
                     Poll::Pending => return Poll::Pending,
                 }
 
                 let data = match format {
-                    crate::meta::FrameSerializationFormat::Bincode => bincode::serialize(&req)
-                        .map_err(|err| {
-                            tracing::warn!("failed to serialize message - {err}");
+                    crate::meta::FrameSerializationFormat::Bincode => {
+                        bincode::serialize(&req).map_err(|err| {
+                            tracing::warn!(
+                                "failed to serialize message - {err}"
+                            );
                             NetworkError::IOError
-                        })?,
+                        })?
+                    }
                     format => {
-                        tracing::warn!("format not currently supported - {format:?}");
+                        tracing::warn!(
+                            "format not currently supported - {format:?}"
+                        );
                         return Poll::Ready(Err(NetworkError::IOError));
                     }
                 };
 
                 let mut job = Box::pin(async move {
                     if let Err(err) = tx_guard
-                        .send(tokio_tungstenite::tungstenite::Message::Binary(data))
+                        .send(tokio_tungstenite::tungstenite::Message::Binary(
+                            data,
+                        ))
                         .await
                     {
-                        tracing::error!("failed to send remaining bytes for request - {}", err);
+                        tracing::error!(
+                            "failed to send remaining bytes for request - {}",
+                            err
+                        );
                     }
                 });
 
@@ -327,7 +389,10 @@ where
                 // Otherwise we push it to the driver which will block all future send
                 // operations until it finishes
                 work.send(job).map_err(|err| {
-                    tracing::error!("failed to send remaining bytes for request - {}", err);
+                    tracing::error!(
+                        "failed to send remaining bytes for request - {}",
+                        err
+                    );
                     NetworkError::ConnectionAborted
                 })?;
                 Poll::Ready(Ok(()))
@@ -339,7 +404,9 @@ where
         match self {
             RemoteTx::Mpsc { tx, work, .. } => match tx.try_send(req) {
                 Ok(()) => Ok(()),
-                Err(TrySendError::Closed(_)) => Err(NetworkError::ConnectionAborted),
+                Err(TrySendError::Closed(_)) => {
+                    Err(NetworkError::ConnectionAborted)
+                }
                 Err(TrySendError::Full(req)) => {
                     let tx = tx.clone();
                     work.send(Box::pin(async move {
@@ -368,8 +435,13 @@ where
                 let mut cx = Context::from_waker(&waker);
 
                 let mut job = Box::pin(async move {
-                    if let Err(err) = tx_guard.send(req).await.map_err(io_err_into_net_error) {
-                        tracing::error!("failed to send remaining bytes for request - {}", err);
+                    if let Err(err) =
+                        tx_guard.send(req).await.map_err(io_err_into_net_error)
+                    {
+                        tracing::error!(
+                            "failed to send remaining bytes for request - {}",
+                            err
+                        );
                     }
                 });
 
@@ -381,7 +453,10 @@ where
                 // Otherwise we push it to the driver which will block all future send
                 // operations until it finishes
                 work.send(job).map_err(|err| {
-                    tracing::error!("failed to send remaining bytes for request - {}", err);
+                    tracing::error!(
+                        "failed to send remaining bytes for request - {}",
+                        err
+                    );
                     NetworkError::ConnectionAborted
                 })?;
                 Ok(())
@@ -391,13 +466,18 @@ where
                 tx, format, work, ..
             } => {
                 let data = match format {
-                    crate::meta::FrameSerializationFormat::Bincode => bincode::serialize(&req)
-                        .map_err(|err| {
-                            tracing::warn!("failed to serialize message - {err}");
+                    crate::meta::FrameSerializationFormat::Bincode => {
+                        bincode::serialize(&req).map_err(|err| {
+                            tracing::warn!(
+                                "failed to serialize message - {err}"
+                            );
                             NetworkError::IOError
-                        })?,
+                        })?
+                    }
                     format => {
-                        tracing::warn!("format not currently supported - {format:?}");
+                        tracing::warn!(
+                            "format not currently supported - {format:?}"
+                        );
                         return Err(NetworkError::IOError);
                     }
                 };
@@ -424,10 +504,15 @@ where
 
                 let mut job = Box::pin(async move {
                     if let Err(err) = tx_guard
-                        .send(hyper_tungstenite::tungstenite::Message::Binary(data))
+                        .send(hyper_tungstenite::tungstenite::Message::Binary(
+                            data,
+                        ))
                         .await
                     {
-                        tracing::error!("failed to send remaining bytes for request - {}", err);
+                        tracing::error!(
+                            "failed to send remaining bytes for request - {}",
+                            err
+                        );
                     }
                 });
 
@@ -439,7 +524,10 @@ where
                 // Otherwise we push it to the driver which will block all future send
                 // operations until it finishes
                 work.send(job).map_err(|err| {
-                    tracing::error!("failed to send remaining bytes for request - {}", err);
+                    tracing::error!(
+                        "failed to send remaining bytes for request - {}",
+                        err
+                    );
                     NetworkError::ConnectionAborted
                 })?;
                 Ok(())
@@ -449,13 +537,18 @@ where
                 tx, format, work, ..
             } => {
                 let data = match format {
-                    crate::meta::FrameSerializationFormat::Bincode => bincode::serialize(&req)
-                        .map_err(|err| {
-                            tracing::warn!("failed to serialize message - {err}");
+                    crate::meta::FrameSerializationFormat::Bincode => {
+                        bincode::serialize(&req).map_err(|err| {
+                            tracing::warn!(
+                                "failed to serialize message - {err}"
+                            );
                             NetworkError::IOError
-                        })?,
+                        })?
+                    }
                     format => {
-                        tracing::warn!("format not currently supported - {format:?}");
+                        tracing::warn!(
+                            "format not currently supported - {format:?}"
+                        );
                         return Err(NetworkError::IOError);
                     }
                 };
@@ -482,10 +575,15 @@ where
 
                 let mut job = Box::pin(async move {
                     if let Err(err) = tx_guard
-                        .send(tokio_tungstenite::tungstenite::Message::Binary(data))
+                        .send(tokio_tungstenite::tungstenite::Message::Binary(
+                            data,
+                        ))
                         .await
                     {
-                        tracing::error!("failed to send remaining bytes for request - {}", err);
+                        tracing::error!(
+                            "failed to send remaining bytes for request - {}",
+                            err
+                        );
                     }
                 });
 
@@ -497,7 +595,10 @@ where
                 // Otherwise we push it to the driver which will block all future send
                 // operations until it finishes
                 work.send(job).map_err(|err| {
-                    tracing::error!("failed to send remaining bytes for request - {}", err);
+                    tracing::error!(
+                        "failed to send remaining bytes for request - {}",
+                        err
+                    );
                     NetworkError::ConnectionAborted
                 })?;
                 Ok(())
@@ -522,14 +623,18 @@ where
     #[cfg(feature = "hyper")]
     HyperWebSocket {
         rx: futures_util::stream::SplitStream<
-            hyper_tungstenite::WebSocketStream<TokioIo<hyper::upgrade::Upgraded>>,
+            hyper_tungstenite::WebSocketStream<
+                TokioIo<hyper::upgrade::Upgraded>,
+            >,
         >,
         format: crate::meta::FrameSerializationFormat,
     },
     #[cfg(feature = "tokio-tungstenite")]
     TokioWebSocket {
         rx: futures_util::stream::SplitStream<
-            tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<TcpStream>>,
+            tokio_tungstenite::WebSocketStream<
+                tokio_tungstenite::MaybeTlsStream<TcpStream>,
+            >,
         >,
         format: crate::meta::FrameSerializationFormat,
     },
@@ -558,14 +663,21 @@ where
                     Poll::Pending => Poll::Pending,
                 },
                 #[cfg(feature = "hyper")]
-                RemoteRx::HyperWebSocket { rx, format } => match Pin::new(rx).poll_next(cx) {
-                    Poll::Ready(Some(Ok(hyper_tungstenite::tungstenite::Message::Binary(msg)))) => {
+                RemoteRx::HyperWebSocket { rx, format } => match Pin::new(rx)
+                    .poll_next(cx)
+                {
+                    Poll::Ready(Some(Ok(
+                        hyper_tungstenite::tungstenite::Message::Binary(msg),
+                    ))) => {
                         match format {
                             crate::meta::FrameSerializationFormat::Bincode => {
                                 return match bincode::deserialize(&msg) {
                                     Ok(msg) => Poll::Ready(Some(msg)),
                                     Err(err) => {
-                                        tracing::warn!("failed to deserialize message - {}", err);
+                                        tracing::warn!(
+                                            "failed to deserialize message - {}",
+                                            err
+                                        );
                                         continue;
                                     }
                                 }
@@ -577,7 +689,10 @@ where
                         }
                     }
                     Poll::Ready(Some(Ok(msg))) => {
-                        tracing::warn!("unsupported message from channel - {}", msg);
+                        tracing::warn!(
+                            "unsupported message from channel - {}",
+                            msg
+                        );
                         continue;
                     }
                     Poll::Ready(Some(Err(err))) => {
@@ -588,14 +703,21 @@ where
                     Poll::Pending => Poll::Pending,
                 },
                 #[cfg(feature = "tokio-tungstenite")]
-                RemoteRx::TokioWebSocket { rx, format } => match Pin::new(rx).poll_next(cx) {
-                    Poll::Ready(Some(Ok(tokio_tungstenite::tungstenite::Message::Binary(msg)))) => {
+                RemoteRx::TokioWebSocket { rx, format } => match Pin::new(rx)
+                    .poll_next(cx)
+                {
+                    Poll::Ready(Some(Ok(
+                        tokio_tungstenite::tungstenite::Message::Binary(msg),
+                    ))) => {
                         match format {
                             crate::meta::FrameSerializationFormat::Bincode => {
                                 return match bincode::deserialize(&msg) {
                                     Ok(msg) => Poll::Ready(Some(msg)),
                                     Err(err) => {
-                                        tracing::warn!("failed to deserialize message - {}", err);
+                                        tracing::warn!(
+                                            "failed to deserialize message - {}",
+                                            err
+                                        );
                                         continue;
                                     }
                                 }
@@ -607,7 +729,10 @@ where
                         }
                     }
                     Poll::Ready(Some(Ok(msg))) => {
-                        tracing::warn!("unsupported message from channel - {}", msg);
+                        tracing::warn!(
+                            "unsupported message from channel - {}",
+                            msg
+                        );
                         continue;
                     }
                     Poll::Ready(Some(Err(err))) => {

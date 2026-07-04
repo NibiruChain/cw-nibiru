@@ -29,7 +29,8 @@ pub fn resolve<M: MemorySize>(
     naddrs: M::Offset,
     ret_naddrs: WasmPtr<M::Offset, M>,
 ) -> Result<Errno, WasiError> {
-    let naddrs: usize = wasi_try_ok!(naddrs.try_into().map_err(|_| Errno::Inval));
+    let naddrs: usize =
+        wasi_try_ok!(naddrs.try_into().map_err(|_| Errno::Inval));
     let mut env = ctx.data();
     let host_str = {
         let memory = unsafe { env.memory_view(&ctx) };
@@ -50,13 +51,16 @@ pub fn resolve<M: MemorySize>(
 
     let mut idx = 0;
     let memory = unsafe { env.memory_view(&ctx) };
-    let addrs = wasi_try_mem_ok!(addrs.slice(&memory, wasi_try_ok!(to_offset::<M>(naddrs))));
+    let addrs = wasi_try_mem_ok!(
+        addrs.slice(&memory, wasi_try_ok!(to_offset::<M>(naddrs)))
+    );
     for found_ip in found_ips.iter().take(naddrs) {
         crate::net::write_ip(&memory, addrs.index(idx).as_ptr::<M>(), *found_ip);
         idx += 1;
     }
 
-    let idx: M::Offset = wasi_try_ok!(idx.try_into().map_err(|_| Errno::Overflow));
+    let idx: M::Offset =
+        wasi_try_ok!(idx.try_into().map_err(|_| Errno::Overflow));
     wasi_try_mem_ok!(ret_naddrs.write(&memory, idx));
 
     Ok(Errno::Success)

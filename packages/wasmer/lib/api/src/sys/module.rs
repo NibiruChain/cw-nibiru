@@ -4,13 +4,14 @@ use std::sync::Arc;
 use bytes::Bytes;
 use wasmer_compiler::{Artifact, ArtifactCreate};
 use wasmer_types::{
-    CompileError, DeserializeError, ExportsIterator, ImportsIterator, ModuleInfo, SerializeError,
+    CompileError, DeserializeError, ExportsIterator, ImportsIterator,
+    ModuleInfo, SerializeError,
 };
 use wasmer_types::{ExportType, ImportType};
 
 use crate::{
-    engine::AsEngineRef, sys::engine::NativeEngineExt, vm::VMInstance, AsStoreMut, AsStoreRef,
-    InstantiationError, IntoBytes,
+    engine::AsEngineRef, sys::engine::NativeEngineExt, vm::VMInstance,
+    AsStoreMut, AsStoreRef, InstantiationError, IntoBytes,
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -51,18 +52,27 @@ impl Module {
     }
 
     #[tracing::instrument(level = "debug", skip_all)]
-    pub(crate) fn validate(engine: &impl AsEngineRef, binary: &[u8]) -> Result<(), CompileError> {
+    pub(crate) fn validate(
+        engine: &impl AsEngineRef,
+        binary: &[u8],
+    ) -> Result<(), CompileError> {
         engine.as_engine_ref().engine().0.validate(binary)
     }
 
     #[cfg(feature = "compiler")]
-    fn compile(engine: &impl AsEngineRef, binary: &[u8]) -> Result<Self, CompileError> {
+    fn compile(
+        engine: &impl AsEngineRef,
+        binary: &[u8],
+    ) -> Result<Self, CompileError> {
         let artifact = engine.as_engine_ref().engine().0.compile(binary)?;
         Ok(Self::from_artifact(artifact))
     }
 
     #[cfg(not(feature = "compiler"))]
-    fn compile(_engine: &impl AsEngineRef, _binary: &[u8]) -> Result<Self, CompileError> {
+    fn compile(
+        _engine: &impl AsEngineRef,
+        _binary: &[u8],
+    ) -> Result<Self, CompileError> {
         Err(CompileError::UnsupportedTarget(
             "The compiler feature is not enabled, but is required to compile a Module".to_string(),
         ))
@@ -164,8 +174,11 @@ impl Module {
             // of this steps traps, we still need to keep the instance alive
             // as some of the Instance elements may have placed in other
             // instance tables.
-            self.artifact
-                .finish_instantiation(config, signal_handler, &mut instance_handle)?;
+            self.artifact.finish_instantiation(
+                config,
+                signal_handler,
+                &mut instance_handle,
+            )?;
 
             Ok(instance_handle)
         }
@@ -181,11 +194,15 @@ impl Module {
         })
     }
 
-    pub(crate) fn imports(&self) -> ImportsIterator<impl Iterator<Item = ImportType> + '_> {
+    pub(crate) fn imports(
+        &self,
+    ) -> ImportsIterator<impl Iterator<Item = ImportType> + '_> {
         self.info().imports()
     }
 
-    pub(crate) fn exports(&self) -> ExportsIterator<impl Iterator<Item = ExportType> + '_> {
+    pub(crate) fn exports(
+        &self,
+    ) -> ExportsIterator<impl Iterator<Item = ExportType> + '_> {
         self.info().exports()
     }
 

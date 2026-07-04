@@ -12,7 +12,9 @@ use std::{
 use futures::{Future, FutureExt};
 use wasmer_wasix_types::wasi::Snapshot0Clockid;
 
-use crate::{syscalls::platform_clock_time_get, VirtualTaskManager, WasiProcess};
+use crate::{
+    syscalls::platform_clock_time_get, VirtualTaskManager, WasiProcess,
+};
 
 use super::process::LockableWasiProcessInner;
 
@@ -40,7 +42,10 @@ pub struct WasiProcessCpuBackoff {
 }
 
 impl WasiProcessCpuBackoff {
-    pub fn new(max_cpu_backoff_time: Duration, max_cpu_cool_off_time: Duration) -> Self {
+    pub fn new(
+        max_cpu_backoff_time: Duration,
+        max_cpu_cool_off_time: Duration,
+    ) -> Self {
         Self {
             cpu_backoff_wakers: Default::default(),
             cpu_backoff_waker_seed: 0,
@@ -84,7 +89,10 @@ impl CpuBackoffToken {
 impl Future for CpuBackoffToken {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Self::Output> {
         let inner = self.inner.clone();
         let mut inner = inner.0.lock().unwrap();
 
@@ -112,10 +120,15 @@ impl Future for CpuBackoffToken {
         // If we have reached the end of the wait period
         // then we need to exponentially grow it any future
         // backoff's so that it gets slower
-        if ret.is_ready() && self.cpu_backoff_time == inner.backoff.cpu_backoff_time {
+        if ret.is_ready()
+            && self.cpu_backoff_time == inner.backoff.cpu_backoff_time
+        {
             inner.backoff.cpu_backoff_time *= 2;
-            if inner.backoff.cpu_backoff_time > inner.backoff.max_cpu_backoff_time {
-                inner.backoff.cpu_backoff_time = inner.backoff.max_cpu_backoff_time;
+            if inner.backoff.cpu_backoff_time
+                > inner.backoff.max_cpu_backoff_time
+            {
+                inner.backoff.cpu_backoff_time =
+                    inner.backoff.max_cpu_backoff_time;
             }
         }
 
@@ -171,10 +184,12 @@ impl WasiProcess {
 
             // Check if a cool-off-period has passed
             let now =
-                platform_clock_time_get(Snapshot0Clockid::Monotonic, 1_000_000).unwrap() as u128;
+                platform_clock_time_get(Snapshot0Clockid::Monotonic, 1_000_000)
+                    .unwrap() as u128;
             if inner.backoff.cpu_run_cool_off == 0 {
-                inner.backoff.cpu_run_cool_off =
-                    now + (1_000_000 * inner.backoff.max_cpu_cool_off_time.as_millis());
+                inner.backoff.cpu_run_cool_off = now
+                    + (1_000_000
+                        * inner.backoff.max_cpu_cool_off_time.as_millis());
             }
             if now <= inner.backoff.cpu_run_cool_off {
                 return None;

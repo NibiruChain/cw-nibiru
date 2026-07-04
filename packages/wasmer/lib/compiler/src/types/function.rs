@@ -19,12 +19,14 @@ use super::{
     },
 };
 use rkyv::{
-    option::ArchivedOption, Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+    option::ArchivedOption, Archive, Deserialize as RkyvDeserialize,
+    Serialize as RkyvSerialize,
 };
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use wasmer_types::{
-    entity::PrimaryMap, FunctionIndex, LocalFunctionIndex, SignatureIndex, TrapInformation,
+    entity::PrimaryMap, FunctionIndex, LocalFunctionIndex, SignatureIndex,
+    TrapInformation,
 };
 
 /// The frame info for a Compiled function.
@@ -33,7 +35,9 @@ use wasmer_types::{
 /// the frame information after a `Trap`.
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[cfg_attr(feature = "enable-serde", derive(Deserialize, Serialize))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq, Default)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq, Default,
+)]
 #[rkyv(derive(Debug))]
 pub struct CompiledFunctionFrameInfo {
     /// The traps (in the function body).
@@ -48,7 +52,9 @@ pub struct CompiledFunctionFrameInfo {
 /// The function body.
 #[cfg_attr(feature = "enable-serde", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq,
+)]
 #[rkyv(derive(Debug))]
 pub struct FunctionBody {
     /// The function body bytes.
@@ -101,7 +107,9 @@ impl<'a> FunctionBodyLike<'a> for ArchivedFunctionBody {
 /// (function bytecode body, relocations, traps, jump tables
 /// and unwind information).
 #[cfg_attr(feature = "enable-serde", derive(Deserialize, Serialize))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq,
+)]
 #[rkyv(derive(Debug))]
 pub struct CompiledFunction {
     /// The function body.
@@ -128,7 +136,9 @@ pub type CustomSections = PrimaryMap<SectionIndex, CustomSection>;
 /// for debugging.
 #[cfg_attr(feature = "enable-serde", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, PartialEq, Eq, Clone)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, PartialEq, Eq, Clone,
+)]
 #[rkyv(derive(Debug), compare(PartialEq))]
 pub struct Dwarf {
     /// The section index in the [`Compilation`] that corresponds to the exception frames.

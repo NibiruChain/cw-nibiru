@@ -58,7 +58,10 @@ impl<W: WritableJournal, R: ReadableJournal> AutoConsistentJournal<W, R> {
 }
 
 impl<W: WritableJournal> WritableJournal for AutoConsistentJournalTx<W> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         match &entry {
             JournalEntry::OpenFileDescriptorV1 { fd, .. }
             | JournalEntry::CreateEventV1 { fd, .. } => {
@@ -155,8 +158,13 @@ impl<R: ReadableJournal> ReadableJournal for AutoConsistentJournalRx<R> {
     }
 }
 
-impl<W: WritableJournal, R: ReadableJournal> WritableJournal for AutoConsistentJournal<W, R> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+impl<W: WritableJournal, R: ReadableJournal> WritableJournal
+    for AutoConsistentJournal<W, R>
+{
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 
@@ -173,7 +181,9 @@ impl<W: WritableJournal, R: ReadableJournal> WritableJournal for AutoConsistentJ
     }
 }
 
-impl<W: WritableJournal, R: ReadableJournal> ReadableJournal for AutoConsistentJournal<W, R> {
+impl<W: WritableJournal, R: ReadableJournal> ReadableJournal
+    for AutoConsistentJournal<W, R>
+{
     fn read(&self) -> anyhow::Result<Option<LogReadResult<'_>>> {
         self.rx.read()
     }
@@ -183,7 +193,9 @@ impl<W: WritableJournal, R: ReadableJournal> ReadableJournal for AutoConsistentJ
     }
 }
 
-impl Journal for AutoConsistentJournal<Box<DynWritableJournal>, Box<DynReadableJournal>> {
+impl Journal
+    for AutoConsistentJournal<Box<DynWritableJournal>, Box<DynReadableJournal>>
+{
     fn split(self) -> (Box<DynWritableJournal>, Box<DynReadableJournal>) {
         (Box::new(self.tx), Box::new(self.rx))
     }

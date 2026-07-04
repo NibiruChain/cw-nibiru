@@ -13,7 +13,9 @@ use tracing::*;
 use url::Url;
 use wasmer_backend_api::{
     query::get_package_versions_stream,
-    types::{AllPackageVersionsVars, PackageVersionSortBy, PackageVersionWithPackage},
+    types::{
+        AllPackageVersionsVars, PackageVersionSortBy, PackageVersionWithPackage,
+    },
 };
 
 impl Argus {
@@ -88,8 +90,20 @@ impl Argus {
         webc_v3_url: &'a Url,
         p: &'a ProgressBar,
     ) -> anyhow::Result<()> {
-        Argus::download_package(test_id, &path.join("package_v2.webc"), webc_v2_url, p).await?;
-        Argus::download_package(test_id, &path.join("package_v3.webc"), webc_v3_url, p).await?;
+        Argus::download_package(
+            test_id,
+            &path.join("package_v2.webc"),
+            webc_v2_url,
+            p,
+        )
+        .await?;
+        Argus::download_package(
+            test_id,
+            &path.join("package_v3.webc"),
+            webc_v3_url,
+            p,
+        )
+        .await?;
         Ok(())
     }
 
@@ -165,9 +179,13 @@ impl Argus {
         let mut download = match request.send().await {
             Ok(d) => d,
             Err(e) => {
-                error!("[{test_id}] failed to download from URL {url}. Error: {e}");
+                error!(
+                    "[{test_id}] failed to download from URL {url}. Error: {e}"
+                );
                 p.finish_and_clear();
-                anyhow::bail!("[{test_id}] failed to download from URL {url}. Error: {e}");
+                anyhow::bail!(
+                    "[{test_id}] failed to download from URL {url}. Error: {e}"
+                );
             }
         };
 
@@ -213,11 +231,16 @@ impl Argus {
 
     /// Return the complete path to the folder of the test for the package, from the outdir to the
     /// hash
-    pub async fn get_path(config: Arc<ArgusConfig>, pkg: &PackageVersionWithPackage) -> PathBuf {
+    pub async fn get_path(
+        config: Arc<ArgusConfig>,
+        pkg: &PackageVersionWithPackage,
+    ) -> PathBuf {
         let hash = match &pkg.distribution_v2.pirita_sha256_hash {
             Some(hash) => hash,
             None => {
-                unreachable!("no package without an hash should reach this function!")
+                unreachable!(
+                    "no package without an hash should reach this function!"
+                )
             }
         };
 

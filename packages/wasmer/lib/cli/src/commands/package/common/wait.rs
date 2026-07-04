@@ -88,14 +88,16 @@ pub async fn wait_package(
 
     let package_version_id = package_version_id.into_inner();
 
-    let mut stream =
-        wasmer_backend_api::subscription::package_version_ready(client, &package_version_id)
-            .await?;
+    let mut stream = wasmer_backend_api::subscription::package_version_ready(
+        client,
+        &package_version_id,
+    )
+    .await?;
 
     let mut state: WaitPackageState = to_wait.into();
 
-    let deadline: std::time::Instant =
-        std::time::Instant::now() + std::time::Duration::from_secs(timeout.as_secs());
+    let deadline: std::time::Instant = std::time::Instant::now()
+        + std::time::Duration::from_secs(timeout.as_secs());
 
     loop {
         if !state.is_any() {
@@ -108,7 +110,9 @@ pub async fn wait_package(
             ));
         }
 
-        let data = match tokio::time::timeout_at(deadline.into(), stream.next()).await {
+        let data = match tokio::time::timeout_at(deadline.into(), stream.next())
+            .await
+        {
             Err(_) => {
                 return Err(anyhow::anyhow!(
                     "Timed out waiting for package version to become ready"
@@ -124,7 +128,9 @@ pub async fn wait_package(
             match data.package_version_ready.state {
                 PackageVersionState::WebcGenerated => state.container = false,
                 PackageVersionState::BindingsGenerated => state.bindings = false,
-                PackageVersionState::NativeExesGenerated => state.native_executables = false,
+                PackageVersionState::NativeExesGenerated => {
+                    state.native_executables = false
+                }
             }
         }
     }

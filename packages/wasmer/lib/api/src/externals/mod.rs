@@ -59,7 +59,10 @@ impl Extern {
     }
 
     /// Create an `Extern` from an `wasmer_engine::Export`.
-    pub fn from_vm_extern(store: &mut impl AsStoreMut, vm_extern: VMExtern) -> Self {
+    pub fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_extern: VMExtern,
+    ) -> Self {
         vm_extern.to_extern(store)
     }
 

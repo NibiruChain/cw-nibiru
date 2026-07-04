@@ -143,7 +143,8 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
         let mut memory = unsafe { env.memory_view(&ctx) };
 
         let (bytes_written, is_file, can_snapshot) = {
-            let (mut memory, _) = unsafe { env.get_memory_and_wasi_state(&ctx, 0) };
+            let (mut memory, _) =
+                unsafe { env.get_memory_and_wasi_state(&ctx, 0) };
             let mut guard = fd_entry.inode.write();
             match guard.deref_mut() {
                 Kind::File { handle, .. } => {
@@ -163,8 +164,15 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                                 if !is_stdio {
                                     if fd_entry.flags.contains(Fdflags::APPEND) {
                                         // `fdflags::append` means we need to seek to the end before writing.
-                                        offset = fd_entry.inode.stat.read().unwrap().st_size;
-                                        fd_entry.offset.store(offset, Ordering::Release);
+                                        offset = fd_entry
+                                            .inode
+                                            .stat
+                                            .read()
+                                            .unwrap()
+                                            .st_size;
+                                        fd_entry
+                                            .offset
+                                            .store(offset, Ordering::Release);
                                     }
 
                                     handle
@@ -180,20 +188,28 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                                         let iovs_arr = iovs
                                             .slice(&memory, *iovs_len)
                                             .map_err(mem_error_to_wasi)?;
-                                        let iovs_arr =
-                                            iovs_arr.access().map_err(mem_error_to_wasi)?;
+                                        let iovs_arr = iovs_arr
+                                            .access()
+                                            .map_err(mem_error_to_wasi)?;
                                         for iovs in iovs_arr.iter() {
-                                            let buf = WasmPtr::<u8, M>::new(iovs.buf)
-                                                .slice(&memory, iovs.buf_len)
-                                                .map_err(mem_error_to_wasi)?
-                                                .access()
-                                                .map_err(mem_error_to_wasi)?;
-                                            let local_written =
-                                                match handle.write(buf.as_ref()).await {
-                                                    Ok(s) => s,
-                                                    Err(_) if written > 0 => break,
-                                                    Err(err) => return Err(map_io_err(err)),
-                                                };
+                                            let buf =
+                                                WasmPtr::<u8, M>::new(iovs.buf)
+                                                    .slice(&memory, iovs.buf_len)
+                                                    .map_err(mem_error_to_wasi)?
+                                                    .access()
+                                                    .map_err(
+                                                        mem_error_to_wasi,
+                                                    )?;
+                                            let local_written = match handle
+                                                .write(buf.as_ref())
+                                                .await
+                                            {
+                                                Ok(s) => s,
+                                                Err(_) if written > 0 => break,
+                                                Err(err) => {
+                                                    return Err(map_io_err(err))
+                                                }
+                                            };
                                             written += local_written;
                                             if local_written != buf.len() {
                                                 break;
@@ -212,10 +228,11 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                                 Ok(written)
                             },
                         );
-                        let written = wasi_try_ok_ok!(res?.map_err(|err| match err {
-                            Errno::Timedout => Errno::Again,
-                            a => a,
-                        }));
+                        let written =
+                            wasi_try_ok_ok!(res?.map_err(|err| match err {
+                                Errno::Timedout => Errno::Again,
+                                a => a,
+                            }));
 
                         (written, true, true)
                     } else {
@@ -240,9 +257,12 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
 
                         match &data {
                             FdWriteSource::Iovs { iovs, iovs_len } => {
-                                let iovs_arr =
-                                    iovs.slice(&memory, *iovs_len).map_err(mem_error_to_wasi)?;
-                                let iovs_arr = iovs_arr.access().map_err(mem_error_to_wasi)?;
+                                let iovs_arr = iovs
+                                    .slice(&memory, *iovs_len)
+                                    .map_err(mem_error_to_wasi)?;
+                                let iovs_arr = iovs_arr
+                                    .access()
+                                    .map_err(mem_error_to_wasi)?;
                                 for iovs in iovs_arr.iter() {
                                     let buf = WasmPtr::<u8, M>::new(iovs.buf)
                                         .slice(&memory, iovs.buf_len)
@@ -265,7 +285,12 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                             }
                             FdWriteSource::Buffer(data) => {
                                 sent += socket
-                                    .send(tasks.deref(), data.as_ref(), Some(timeout), nonblocking)
+                                    .send(
+                                        tasks.deref(),
+                                        data.as_ref(),
+                                        Some(timeout),
+                                        nonblocking,
+                                    )
                                     .await?;
                             }
                         }
@@ -282,16 +307,22 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                             let iovs_arr = wasi_try_ok_ok!(iovs
                                 .slice(&memory, *iovs_len)
                                 .map_err(mem_error_to_wasi));
-                            let iovs_arr =
-                                wasi_try_ok_ok!(iovs_arr.access().map_err(mem_error_to_wasi));
+                            let iovs_arr = wasi_try_ok_ok!(iovs_arr
+                                .access()
+                                .map_err(mem_error_to_wasi));
                             for iovs in iovs_arr.iter() {
-                                let buf = wasi_try_ok_ok!(WasmPtr::<u8, M>::new(iovs.buf)
-                                    .slice(&memory, iovs.buf_len)
+                                let buf = wasi_try_ok_ok!(
+                                    WasmPtr::<u8, M>::new(iovs.buf)
+                                        .slice(&memory, iovs.buf_len)
+                                        .map_err(mem_error_to_wasi)
+                                );
+                                let buf = wasi_try_ok_ok!(buf
+                                    .access()
                                     .map_err(mem_error_to_wasi));
-                                let buf = wasi_try_ok_ok!(buf.access().map_err(mem_error_to_wasi));
-                                let local_written =
-                                    wasi_try_ok_ok!(std::io::Write::write(pipe, buf.as_ref())
-                                        .map_err(map_io_err));
+                                let local_written = wasi_try_ok_ok!(
+                                    std::io::Write::write(pipe, buf.as_ref())
+                                        .map_err(map_io_err)
+                                );
 
                                 written += local_written;
                                 if local_written != buf.len() {
@@ -300,9 +331,10 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                             }
                         }
                         FdWriteSource::Buffer(data) => {
-                            wasi_try_ok_ok!(
-                                std::io::Write::write_all(pipe, data).map_err(map_io_err)
-                            );
+                            wasi_try_ok_ok!(std::io::Write::write_all(
+                                pipe, data
+                            )
+                            .map_err(map_io_err));
                             written += data.len();
                         }
                     }
@@ -321,8 +353,9 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                             let iovs_arr = wasi_try_ok_ok!(iovs
                                 .slice(&memory, *iovs_len)
                                 .map_err(mem_error_to_wasi));
-                            let iovs_arr =
-                                wasi_try_ok_ok!(iovs_arr.access().map_err(mem_error_to_wasi));
+                            let iovs_arr = wasi_try_ok_ok!(iovs_arr
+                                .access()
+                                .map_err(mem_error_to_wasi));
                             for iovs in iovs_arr.iter() {
                                 let buf_len: usize = wasi_try_ok_ok!(iovs
                                     .buf_len
@@ -330,15 +363,21 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                                     .map_err(|_| Errno::Inval));
                                 let will_be_written = buf_len;
 
-                                let val_cnt = buf_len / std::mem::size_of::<u64>();
+                                let val_cnt =
+                                    buf_len / std::mem::size_of::<u64>();
                                 let val_cnt: M::Offset =
-                                    wasi_try_ok_ok!(val_cnt.try_into().map_err(|_| Errno::Inval));
+                                    wasi_try_ok_ok!(val_cnt
+                                        .try_into()
+                                        .map_err(|_| Errno::Inval));
 
-                                let vals = wasi_try_ok_ok!(WasmPtr::<u64, M>::new(iovs.buf)
-                                    .slice(&memory, val_cnt as M::Offset)
+                                let vals = wasi_try_ok_ok!(
+                                    WasmPtr::<u64, M>::new(iovs.buf)
+                                        .slice(&memory, val_cnt as M::Offset)
+                                        .map_err(mem_error_to_wasi)
+                                );
+                                let vals = wasi_try_ok_ok!(vals
+                                    .access()
                                     .map_err(mem_error_to_wasi));
-                                let vals =
-                                    wasi_try_ok_ok!(vals.access().map_err(mem_error_to_wasi));
                                 for val in vals.iter() {
                                     inner.write(*val);
                                 }
@@ -367,7 +406,9 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
 
                     (written, false, true)
                 }
-                Kind::Symlink { .. } | Kind::Epoll { .. } => return Ok(Err(Errno::Inval)),
+                Kind::Symlink { .. } | Kind::Epoll { .. } => {
+                    return Ok(Err(Errno::Inval))
+                }
                 Kind::Buffer { buffer } => {
                     let mut written = 0usize;
 
@@ -376,16 +417,22 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                             let iovs_arr = wasi_try_ok_ok!(iovs
                                 .slice(&memory, *iovs_len)
                                 .map_err(mem_error_to_wasi));
-                            let iovs_arr =
-                                wasi_try_ok_ok!(iovs_arr.access().map_err(mem_error_to_wasi));
+                            let iovs_arr = wasi_try_ok_ok!(iovs_arr
+                                .access()
+                                .map_err(mem_error_to_wasi));
                             for iovs in iovs_arr.iter() {
-                                let buf = wasi_try_ok_ok!(WasmPtr::<u8, M>::new(iovs.buf)
-                                    .slice(&memory, iovs.buf_len)
+                                let buf = wasi_try_ok_ok!(
+                                    WasmPtr::<u8, M>::new(iovs.buf)
+                                        .slice(&memory, iovs.buf_len)
+                                        .map_err(mem_error_to_wasi)
+                                );
+                                let buf = wasi_try_ok_ok!(buf
+                                    .access()
                                     .map_err(mem_error_to_wasi));
-                                let buf = wasi_try_ok_ok!(buf.access().map_err(mem_error_to_wasi));
-                                let local_written =
-                                    wasi_try_ok_ok!(std::io::Write::write(buffer, buf.as_ref())
-                                        .map_err(map_io_err));
+                                let local_written = wasi_try_ok_ok!(
+                                    std::io::Write::write(buffer, buf.as_ref())
+                                        .map_err(map_io_err)
+                                );
                                 written += local_written;
                                 if local_written != buf.len() {
                                     break;
@@ -393,9 +440,10 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                             }
                         }
                         FdWriteSource::Buffer(data) => {
-                            wasi_try_ok_ok!(
-                                std::io::Write::write_all(buffer, data).map_err(map_io_err)
-                            );
+                            wasi_try_ok_ok!(std::io::Write::write_all(
+                                buffer, data
+                            )
+                            .map_err(map_io_err));
                             written += data.len();
                         }
                     }
@@ -408,11 +456,18 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
         #[cfg(feature = "journal")]
         if should_snapshot && can_snapshot && bytes_written > 0 {
             if let FdWriteSource::Iovs { iovs, iovs_len } = data {
-                JournalEffector::save_fd_write(ctx, fd, offset, bytes_written, iovs, iovs_len)
-                    .map_err(|err| {
-                        tracing::error!("failed to save terminal data - {}", err);
-                        WasiError::Exit(ExitCode::from(Errno::Fault))
-                    })?;
+                JournalEffector::save_fd_write(
+                    ctx,
+                    fd,
+                    offset,
+                    bytes_written,
+                    iovs,
+                    iovs_len,
+                )
+                .map_err(|err| {
+                    tracing::error!("failed to save terminal data - {}", err);
+                    WasiError::Exit(ExitCode::from(Errno::Fault))
+                })?;
             }
         }
 
@@ -424,7 +479,8 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
             let curr_offset = if is_file && should_update_cursor {
                 let bytes_written = bytes_written as u64;
                 let mut fd_map = state.fs.fd_map.write().unwrap();
-                let fd_entry = wasi_try_ok_ok!(fd_map.get_mut(fd).ok_or(Errno::Badf));
+                let fd_entry =
+                    wasi_try_ok_ok!(fd_map.get_mut(fd).ok_or(Errno::Badf));
                 fd_entry
                     .offset
                     .fetch_add(bytes_written, Ordering::AcqRel)
@@ -449,11 +505,13 @@ pub(crate) fn fd_write_internal<M: MemorySize>(
                     // pwrite does not update the cursor of the file so to calculate the final
                     // size of the file we compute where the cursor would have been if it was updated,
                     // and get the max value between it and the current size.
-                    stat.st_size = stat.st_size.max(offset + bytes_written as u64);
+                    stat.st_size =
+                        stat.st_size.max(offset + bytes_written as u64);
                 }
             } else {
                 // Cast is valid because we don't support 128 bit systems...
-                fd_entry.inode.stat.write().unwrap().st_size += bytes_written as u64;
+                fd_entry.inode.stat.write().unwrap().st_size +=
+                    bytes_written as u64;
             }
         }
         bytes_written

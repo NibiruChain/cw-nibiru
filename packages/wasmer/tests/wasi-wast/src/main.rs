@@ -58,7 +58,8 @@ fn main() {
 
     // Generate the WASI Wasm files
     if generate_wasm {
-        let specific_tests: Vec<&str> = opts.free.iter().map(|st| st.as_str()).collect();
+        let specific_tests: Vec<&str> =
+            opts.free.iter().map(|st| st.as_str()).collect();
         build(wasi_versions, &specific_tests);
     }
 }

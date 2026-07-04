@@ -9,7 +9,9 @@ fn check_repr(input: &DeriveInput) {
         .attrs
         .iter()
         .filter_map(|attr| {
-            if let Meta::List(MetaList { path, nested, .. }) = attr.parse_meta().unwrap() {
+            if let Meta::List(MetaList { path, nested, .. }) =
+                attr.parse_meta().unwrap()
+            {
                 if path.is_ident("repr") {
                     return Some(nested.into_iter().collect::<Vec<_>>());
                 }
@@ -92,7 +94,8 @@ pub fn impl_value_type(input: &DeriveInput) -> TokenStream {
     check_repr(input);
 
     let struct_name = &input.ident;
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let (impl_generics, ty_generics, where_clause) =
+        input.generics.split_for_impl();
     let fields = match &input.data {
         Data::Struct(ds) => &ds.fields,
         _ => abort!(input, "ValueType can only be derived for structs"),

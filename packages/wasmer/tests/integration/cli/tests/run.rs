@@ -91,7 +91,10 @@ async fn aio_http() {
 }
 
 #[test]
-#[cfg_attr(feature = "wasmi", ignore = "wasmi currently does not support threads")]
+#[cfg_attr(
+    feature = "wasmi",
+    ignore = "wasmi currently does not support threads"
+)]
 fn list_cwd() {
     let package = packages().join("list-cwd");
 
@@ -116,7 +119,10 @@ wasmer.toml
 }
 
 #[test]
-#[cfg_attr(feature = "wasmi", ignore = "wasmi currently does not support threads")]
+#[cfg_attr(
+    feature = "wasmi",
+    ignore = "wasmi currently does not support threads"
+)]
 fn nested_mounted_paths() {
     let package = packages().join("nested-mounted-paths");
 
@@ -351,7 +357,10 @@ fn test_wasmer_run_works_with_dir() {
 
 // FIXME: Re-enable. See https://github.com/wasmerio/wasmer/issues/3717
 #[test]
-#[cfg_attr(feature = "wasmi", ignore = "wasmi currently does not support threads")]
+#[cfg_attr(
+    feature = "wasmi",
+    ignore = "wasmi currently does not support threads"
+)]
 fn test_wasmer_run_works() {
     let assert = Command::new(get_wasmer_path())
         .arg("https://wasmer.io/python/python@0.2.0")
@@ -658,7 +667,8 @@ fn wasi_runner_on_disk() {
 #[test]
 fn wasi_runner_on_disk_mount_using_relative_directory_on_the_host() {
     let temp = TempDir::new_in(env!("CARGO_TARGET_TMPDIR")).unwrap();
-    std::fs::write(temp.path().join("main.py"), "print('Hello, World!')").unwrap();
+    std::fs::write(temp.path().join("main.py"), "print('Hello, World!')")
+        .unwrap();
 
     let assert = Command::new(get_wasmer_path())
         .arg("run")
@@ -680,7 +690,8 @@ fn wasi_runner_on_disk_mount_using_relative_directory_on_the_host() {
 )]
 fn wasi_runner_on_disk_with_mounted_directories() {
     let temp = TempDir::new().unwrap();
-    std::fs::write(temp.path().join("index.js"), "console.log('Hello, World!')").unwrap();
+    std::fs::write(temp.path().join("index.js"), "console.log('Hello, World!')")
+        .unwrap();
 
     let assert = Command::new(get_wasmer_path())
         .arg("run")
@@ -701,7 +712,8 @@ fn wasi_runner_on_disk_with_mounted_directories() {
 )]
 fn wasi_runner_on_disk_with_mounted_directories_and_webc_volumes() {
     let temp = TempDir::new().unwrap();
-    std::fs::write(temp.path().join("main.py"), "print('Hello, World!')").unwrap();
+    std::fs::write(temp.path().join("main.py"), "print('Hello, World!')")
+        .unwrap();
 
     let assert = Command::new(get_wasmer_path())
         .arg("run")
@@ -807,7 +819,9 @@ fn wcgi_runner_on_disk() {
     assert!(body.contains("<title>Index of /</title>"), "{body}");
 
     // Let's make sure 404s work too
-    let err = http_get(format!("http://127.0.0.1:{port}/this/does/not/exist.html")).unwrap_err();
+    let err =
+        http_get(format!("http://127.0.0.1:{port}/this/does/not/exist.html"))
+            .unwrap_err();
     assert_eq!(err.status().unwrap(), reqwest::StatusCode::NOT_FOUND);
 
     // And kill the server, making sure it generated the expected logs
@@ -844,7 +858,8 @@ fn wcgi_runner_on_disk_with_mounted_directories() {
     let mut child = JoinableChild::spawn(cmd);
     child.wait_for_stdout("WCGI Server running");
 
-    let body = http_get(format!("http://127.0.0.1:{port}/path/to/file.txt")).unwrap();
+    let body =
+        http_get(format!("http://127.0.0.1:{port}/path/to/file.txt")).unwrap();
     assert!(body.contains("Hello, World!"), "{body}");
 
     // And kill the server, making sure it generated the expected logs
@@ -853,8 +868,8 @@ fn wcgi_runner_on_disk_with_mounted_directories() {
     assert
         .stderr(contains("Starting the server"))
         .stderr(contains(
-            "response generated method=GET uri=/path/to/file.txt status_code=200 OK",
-        ));
+        "response generated method=GET uri=/path/to/file.txt status_code=200 OK",
+    ));
 }
 
 /// See https://github.com/wasmerio/wasmer/issues/3794
@@ -863,7 +878,10 @@ fn wcgi_runner_on_disk_with_mounted_directories() {
     all(target_env = "musl", target_os = "linux"),
     ignore = "wasmer run-unstable segfaults on musl"
 )]
-#[cfg_attr(feature = "wasmi", ignore = "wasmi currently does not support threads")]
+#[cfg_attr(
+    feature = "wasmi",
+    ignore = "wasmi currently does not support threads"
+)]
 fn issue_3794_unable_to_mount_relative_paths() {
     let temp = TempDir::new().unwrap();
     std::fs::write(temp.path().join("message.txt"), b"Hello, World!").unwrap();
@@ -1001,7 +1019,8 @@ fn run_a_pre_compiled_wasm_file() {
 fn wasmer_run_some_directory() {
     let temp = TempDir::new().unwrap();
     std::fs::copy(fixtures::qjs(), temp.path().join("qjs.wasm")).unwrap();
-    std::fs::copy(fixtures::qjs_wasmer_toml(), temp.path().join("wasmer.toml")).unwrap();
+    std::fs::copy(fixtures::qjs_wasmer_toml(), temp.path().join("wasmer.toml"))
+        .unwrap();
 
     let assert = Command::new(get_wasmer_path())
         .arg("run")
@@ -1067,7 +1086,10 @@ fn run_quickjs_via_url() {
     feature = "wamr",
     ignore = "FIXME(xdoardo): Bash is currently not working in wamr"
 )]
-#[cfg_attr(feature = "wasmi", ignore = "wasmi currently does not support threads")]
+#[cfg_attr(
+    feature = "wasmi",
+    ignore = "wasmi currently does not support threads"
+)]
 fn run_bash_using_coreutils() {
     let assert = Command::new(get_wasmer_path())
         .arg("run")
@@ -1115,7 +1137,10 @@ fn run_a_package_that_uses_an_atom_from_a_dependency() {
 }
 
 #[test]
-#[cfg_attr(feature = "wasmi", ignore = "wasmi currently does not support threads")]
+#[cfg_attr(
+    feature = "wasmi",
+    ignore = "wasmi currently does not support threads"
+)]
 fn local_package_has_write_access_to_its_volumes() {
     let temp = tempfile::tempdir().unwrap();
 
@@ -1158,7 +1183,8 @@ file.write("Hello, world!")
         .success();
 
     let file_contents =
-        String::from_utf8(std::fs::read(temp.path().join("hello.txt")).unwrap()).unwrap();
+        String::from_utf8(std::fs::read(temp.path().join("hello.txt")).unwrap())
+            .unwrap();
     assert_eq!(file_contents, "Hello, world!");
 }
 
@@ -1259,14 +1285,17 @@ fn read_line(reader: &mut dyn Read) -> Result<String, std::io::Error> {
         }
     }
 
-    let line = String::from_utf8(line).map_err(|e| std::io::Error::new(ErrorKind::Other, e))?;
+    let line = String::from_utf8(line)
+        .map_err(|e| std::io::Error::new(ErrorKind::Other, e))?;
     Ok(line)
 }
 
 impl Drop for JoinableChild {
     fn drop(&mut self) {
         if let Some(mut child) = self.child.take() {
-            eprintln!("==== WARNING: Child was dropped before being joined ====");
+            eprintln!(
+                "==== WARNING: Child was dropped before being joined ===="
+            );
             eprintln!("Command: {:?}", self.command);
 
             let _ = child.kill();

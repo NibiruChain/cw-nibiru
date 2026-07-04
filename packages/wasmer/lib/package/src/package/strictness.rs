@@ -24,7 +24,11 @@ impl Strictness {
         matches!(self, Strictness::Strict)
     }
 
-    pub(crate) fn on_error(&self, _path: &Path, error: Error) -> Result<(), Error> {
+    pub(crate) fn on_error(
+        &self,
+        _path: &Path,
+        error: Error,
+    ) -> Result<(), Error> {
         match self {
             Strictness::Lossy => Ok(()),
             Strictness::Strict => Err(error),
@@ -45,7 +49,11 @@ impl Strictness {
         }
     }
 
-    pub(crate) fn missing_file(&self, path: &Path, base_dir: &Path) -> Result<(), ManifestError> {
+    pub(crate) fn missing_file(
+        &self,
+        path: &Path,
+        base_dir: &Path,
+    ) -> Result<(), ManifestError> {
         match self {
             Strictness::Lossy => Ok(()),
             Strictness::Strict => Err(ManifestError::MissingFile {

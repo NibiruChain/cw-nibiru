@@ -19,7 +19,11 @@ impl SharedCache {
 #[async_trait::async_trait]
 impl ModuleCache for SharedCache {
     #[tracing::instrument(level = "debug", skip_all, fields(%key))]
-    async fn load(&self, key: ModuleHash, engine: &Engine) -> Result<Module, CacheError> {
+    async fn load(
+        &self,
+        key: ModuleHash,
+        engine: &Engine,
+    ) -> Result<Module, CacheError> {
         let key = (key, engine.deterministic_id().to_string());
 
         match self.modules.get(&key) {

@@ -1,6 +1,6 @@
 use crate::{
-    net_error_into_io_err, InterestHandler, NetworkError, SocketStatus, VirtualConnectedSocket,
-    VirtualIoSource, VirtualSocket, VirtualTcpSocket,
+    net_error_into_io_err, InterestHandler, NetworkError, SocketStatus,
+    VirtualConnectedSocket, VirtualIoSource, VirtualSocket, VirtualTcpSocket,
 };
 use bytes::{Buf, Bytes};
 use futures_util::Future;
@@ -107,7 +107,10 @@ impl SocketBuffer {
         state.pull_handler.take();
     }
 
-    pub fn poll_read_ready(&self, cx: &mut Context<'_>) -> Poll<crate::Result<usize>> {
+    pub fn poll_read_ready(
+        &self,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result<usize>> {
         let mut state = self.state.lock().unwrap();
         if !state.buffer.is_empty() {
             return Poll::Ready(Ok(state.buffer.len()));
@@ -130,7 +133,10 @@ impl SocketBuffer {
         }
     }
 
-    pub fn poll_write_ready(&self, cx: &mut Context<'_>) -> Poll<crate::Result<usize>> {
+    pub fn poll_write_ready(
+        &self,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result<usize>> {
         let mut state = self.state.lock().unwrap();
         match state.state {
             State::Alive => {
@@ -148,7 +154,9 @@ impl SocketBuffer {
                 Poll::Ready(Err(NetworkError::ConnectionReset))
             }
             State::Closed | State::Shutdown => {
-                tracing::trace!("poll_write_ready: socket is closed or shutdown");
+                tracing::trace!(
+                    "poll_write_ready: socket is closed or shutdown"
+                );
                 Poll::Ready(Ok(0))
             }
         }
@@ -215,12 +223,19 @@ impl SocketBuffer {
         }
         impl<'a> Future for Poller<'a> {
             type Output = crate::Result<()>;
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                mut self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 loop {
                     if self.data.is_empty() {
                         return Poll::Ready(Ok(()));
                     }
-                    return match self.this.try_send(&self.data, false, Some(cx.waker())) {
+                    return match self.this.try_send(
+                        &self.data,
+                        false,
+                        Some(cx.waker()),
+                    ) {
                         Ok(amt) => {
                             self.data.advance(amt);
                             continue;
@@ -308,11 +323,17 @@ impl AsyncWrite for SocketBuffer {
         }
     }
 
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<Result<(), io::Error>> {
         Poll::Ready(Ok(()))
     }
 
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<Result<(), io::Error>> {
         self.set_state(State::Shutdown);
         Poll::Ready(Ok(()))
     }
@@ -391,11 +412,17 @@ impl VirtualIoSource for TcpSocketHalf {
         self.rx.clear_push_handler();
     }
 
-    fn poll_read_ready(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<usize>> {
+    fn poll_read_ready(
+        &mut self,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result<usize>> {
         self.rx.poll_read_ready(cx)
     }
 
-    fn poll_write_ready(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<usize>> {
+    fn poll_write_ready(
+        &mut self,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result<usize>> {
         self.tx.poll_write_ready(cx)
     }
 }
@@ -457,7 +484,10 @@ impl VirtualConnectedSocket for TcpSocketHalf {
         Ok(())
     }
 
-    fn try_recv(&mut self, buf: &mut [std::mem::MaybeUninit<u8>]) -> crate::Result<usize> {
+    fn try_recv(
+        &mut self,
+        buf: &mut [std::mem::MaybeUninit<u8>],
+    ) -> crate::Result<usize> {
         self.rx.try_read(buf, None)
     }
 }
@@ -540,7 +570,11 @@ pub struct TcpSocketHalfTx {
 }
 
 impl TcpSocketHalfTx {
-    pub fn poll_send(&self, cx: &mut Context<'_>, data: &[u8]) -> Poll<io::Result<usize>> {
+    pub fn poll_send(
+        &self,
+        cx: &mut Context<'_>,
+        data: &[u8],
+    ) -> Poll<io::Result<usize>> {
         match self.tx.try_send(data, false, Some(cx.waker())) {
             Ok(amt) => Poll::Ready(Ok(amt)),
             Err(NetworkError::WouldBlock) => Poll::Pending,
@@ -554,7 +588,11 @@ impl TcpSocketHalfTx {
             .map_err(net_error_into_io_err)
     }
 
-    pub async fn send_ext(&self, data: Bytes, non_blocking: bool) -> io::Result<()> {
+    pub async fn send_ext(
+        &self,
+        data: Bytes,
+        non_blocking: bool,
+    ) -> io::Result<()> {
         if non_blocking {
             self.tx
                 .try_send(&data, true, None)
@@ -584,7 +622,10 @@ impl AsyncWrite for TcpSocketHalfTx {
         Pin::new(&mut self.tx).poll_write(cx, buf)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+    fn poll_flush(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<(), io::Error>> {
         Pin::new(&mut self.tx).poll_flush(cx)
     }
 
@@ -637,7 +678,10 @@ impl AsyncRead for TcpSocketHalfRx {
 }
 
 impl TcpSocketHalfRx {
-    pub fn poll_fill_buf(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+    pub fn poll_fill_buf(
+        &mut self,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<&[u8]>> {
         Pin::new(&mut self.rx).poll_fill_buf(cx)
     }
 

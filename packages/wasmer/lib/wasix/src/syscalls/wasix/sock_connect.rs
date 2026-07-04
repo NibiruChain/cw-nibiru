@@ -35,12 +35,13 @@ pub fn sock_connect<M: MemorySize>(
             Rights::empty(),
             |socket, _| socket.addr_local()
         ));
-        JournalEffector::save_sock_connect(&mut ctx, sock, local_addr, peer_addr).map_err(
-            |err| {
-                tracing::error!("failed to save sock_connected event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            },
-        )?;
+        JournalEffector::save_sock_connect(
+            &mut ctx, sock, local_addr, peer_addr,
+        )
+        .map_err(|err| {
+            tracing::error!("failed to save sock_connected event - {}", err);
+            WasiError::Exit(ExitCode::from(Errno::Fault))
+        })?;
     }
 
     Ok(Errno::Success)

@@ -173,7 +173,9 @@ impl MachineState {
             .enumerate()
             .find(|&(_, (a, b))| a != b)
             .map(|x| x.0)
-            .unwrap_or_else(|| old.stack_values.len().min(self.stack_values.len()));
+            .unwrap_or_else(|| {
+                old.stack_values.len().min(self.stack_values.len())
+            });
         assert_eq!(self.register_values.len(), old.register_values.len());
         let reg_diff: Vec<_> = self
             .register_values
@@ -217,7 +219,8 @@ impl MachineState {
 
             prev_frame_diff,
 
-            wasm_stack_push: self.wasm_stack[first_diff_wasm_stack_depth..].to_vec(),
+            wasm_stack_push: self.wasm_stack[first_diff_wasm_stack_depth..]
+                .to_vec(),
             wasm_stack_pop: old.wasm_stack.len() - first_diff_wasm_stack_depth,
 
             wasm_inst_offset: self.wasm_inst_offset,

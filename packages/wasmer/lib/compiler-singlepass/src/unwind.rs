@@ -1,5 +1,7 @@
 #[cfg(feature = "unwind")]
-use gimli::write::{Address, CallFrameInstruction, CommonInformationEntry, FrameDescriptionEntry};
+use gimli::write::{
+    Address, CallFrameInstruction, CommonInformationEntry, FrameDescriptionEntry,
+};
 #[cfg(feature = "unwind")]
 use gimli::{AArch64, Encoding, Format, X86_64};
 use std::fmt::Debug;
@@ -45,7 +47,9 @@ impl UnwindInstructions {
 
 /// generate a default systemv  cie
 #[cfg(feature = "unwind")]
-pub fn create_systemv_cie(arch: Architecture) -> Option<gimli::write::CommonInformationEntry> {
+pub fn create_systemv_cie(
+    arch: Architecture,
+) -> Option<gimli::write::CommonInformationEntry> {
     match arch {
         Architecture::X86_64 => {
             let mut entry = CommonInformationEntry::new(

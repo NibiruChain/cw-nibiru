@@ -103,7 +103,8 @@ impl WasiInstanceHandlesPointer {
                 THREAD_LOCAL_INSTANCE_HANDLES.with(|map| {
                     let map = map.borrow_mut();
                     if let Some(inner) = map.get(&id) {
-                        let borrow: RefMut<WasiInstanceHandles> = inner.borrow_mut();
+                        let borrow: RefMut<WasiInstanceHandles> =
+                            inner.borrow_mut();
                         let borrow: RefMut<'static, WasiInstanceHandles> =
                             unsafe { std::mem::transmute(borrow) };
                         Some(WasiInstanceGuardMut {

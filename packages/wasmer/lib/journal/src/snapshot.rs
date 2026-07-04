@@ -2,7 +2,18 @@ use super::*;
 
 /// Various triggers that will cause the runtime to take snapshot
 /// of the WASM state and store it in the snapshot file.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
 pub enum SnapshotTrigger {
     /// Triggered when all the threads in the process goes idle
     Idle,
@@ -36,7 +47,10 @@ impl SnapshotTrigger {
     pub fn only_once(&self) -> bool {
         matches!(
             self,
-            Self::FirstListen | Self::FirstEnviron | Self::FirstStdin | Self::FirstSigint
+            Self::FirstListen
+                | Self::FirstEnviron
+                | Self::FirstStdin
+                | Self::FirstSigint
         )
     }
 }
@@ -58,7 +72,9 @@ impl FromStr for SnapshotTrigger {
             "first-listen" => Self::FirstListen,
             "first-stdin" => Self::FirstStdin,
             "first-environ" => Self::FirstEnviron,
-            "first-intr" | "first-sigint" | "first-ctrlc" | "first-ctrl-c" => Self::FirstSigint,
+            "first-intr" | "first-sigint" | "first-ctrlc" | "first-ctrl-c" => {
+                Self::FirstSigint
+            }
             "periodic-interval" => Self::PeriodicInterval,
             "intr" | "sigint" | "ctrlc" | "ctrl-c" => Self::Sigint,
             "alarm" | "timer" | "sigalrm" => Self::Sigalrm,
@@ -67,7 +83,11 @@ impl FromStr for SnapshotTrigger {
             "non-deterministic-call" => Self::NonDeterministicCall,
             "bootstrap" => Self::Bootstrap,
             "transaction" => Self::Transaction,
-            a => return Err(anyhow::format_err!("invalid or unknown trigger ({a})")),
+            a => {
+                return Err(anyhow::format_err!(
+                    "invalid or unknown trigger ({a})"
+                ))
+            }
         })
     }
 }

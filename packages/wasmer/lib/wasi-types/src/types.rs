@@ -153,8 +153,8 @@ pub mod net {
     use crate::wasi::OptionTimestamp;
 
     pub use crate::wasi::{
-        AddrUnspec, AddrUnspecPort, CidrUnspec, HttpHandles, HttpStatus, RiFlags, RoFlags, SdFlags,
-        SiFlags, SockProto, Timeout,
+        AddrUnspec, AddrUnspecPort, CidrUnspec, HttpHandles, HttpStatus,
+        RiFlags, RoFlags, SdFlags, SiFlags, SockProto, Timeout,
     };
 
     #[derive(Debug, Copy, Clone, PartialEq, Eq, ValueType)]

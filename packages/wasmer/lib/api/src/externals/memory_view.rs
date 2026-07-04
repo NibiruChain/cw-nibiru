@@ -24,7 +24,10 @@ use crate::sys::externals::memory_view as memory_view_impl;
 pub struct MemoryView<'a>(pub(crate) memory_view_impl::MemoryView<'a>);
 
 impl<'a> MemoryView<'a> {
-    pub(crate) fn new(memory: &Memory, store: &'a (impl AsStoreRef + ?Sized)) -> Self {
+    pub(crate) fn new(
+        memory: &Memory,
+        store: &'a (impl AsStoreRef + ?Sized),
+    ) -> Self {
         MemoryView(memory_view_impl::MemoryView::new(&memory.0, store))
     }
 
@@ -97,7 +100,11 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent writes.
-    pub fn read(&self, offset: u64, buf: &mut [u8]) -> Result<(), MemoryAccessError> {
+    pub fn read(
+        &self,
+        offset: u64,
+        buf: &mut [u8],
+    ) -> Result<(), MemoryAccessError> {
         self.0.read(offset, buf)
     }
 
@@ -134,7 +141,11 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent reads/writes.
-    pub fn write(&self, offset: u64, data: &[u8]) -> Result<(), MemoryAccessError> {
+    pub fn write(
+        &self,
+        offset: u64,
+        data: &[u8],
+    ) -> Result<(), MemoryAccessError> {
         self.0.write(offset, data)
     }
 
@@ -142,7 +153,11 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent writes.
-    pub fn write_u8(&self, offset: u64, val: u8) -> Result<(), MemoryAccessError> {
+    pub fn write_u8(
+        &self,
+        offset: u64,
+        val: u8,
+    ) -> Result<(), MemoryAccessError> {
         self.0.write_u8(offset, val)
     }
 
@@ -152,7 +167,10 @@ impl<'a> MemoryView<'a> {
     }
 
     /// Copies a range of the memory and returns it as a vector of bytes
-    pub fn copy_range_to_vec(&self, range: Range<u64>) -> Result<Vec<u8>, MemoryAccessError> {
+    pub fn copy_range_to_vec(
+        &self,
+        range: Range<u64>,
+    ) -> Result<Vec<u8>, MemoryAccessError> {
         let mut new_memory = Vec::new();
         let mut offset = range.start;
         let end = range.end.min(self.data_size());
@@ -168,7 +186,11 @@ impl<'a> MemoryView<'a> {
     }
 
     /// Copies the memory to another new memory object
-    pub fn copy_to_memory(&self, amount: u64, new_memory: &Self) -> Result<(), MemoryAccessError> {
+    pub fn copy_to_memory(
+        &self,
+        amount: u64,
+        new_memory: &Self,
+    ) -> Result<(), MemoryAccessError> {
         let mut offset = 0;
         let mut chunk = [0u8; 40960];
         while offset < amount {

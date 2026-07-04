@@ -18,7 +18,8 @@ pub fn path_unlink_file<M: MemorySize>(
     path_len: M::Offset,
 ) -> Result<Errno, WasiError> {
     let env = ctx.data();
-    let (memory, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, mut state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
 
     let base_dir = wasi_try_ok!(state.fs.get_fd(fd));
     if !base_dir.rights.contains(Rights::PATH_UNLINK_FILE) {
@@ -33,12 +34,13 @@ pub fn path_unlink_file<M: MemorySize>(
     if ret == Errno::Success {
         #[cfg(feature = "journal")]
         if env.enable_journal {
-            wasi_try_ok!(
-                JournalEffector::save_path_unlink(&mut ctx, fd, path_str).map_err(|err| {
-                    tracing::error!("failed to save unlink event - {}", err);
-                    Errno::Fault
-                })
+            wasi_try_ok!(JournalEffector::save_path_unlink(
+                &mut ctx, fd, path_str
             )
+            .map_err(|err| {
+                tracing::error!("failed to save unlink event - {}", err);
+                Errno::Fault
+            }))
         }
     }
 
@@ -51,15 +53,18 @@ pub(crate) fn path_unlink_file_internal(
     path: &str,
 ) -> Result<Errno, WasiError> {
     let env = ctx.data();
-    let (memory, mut state, inodes) = unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
+    let (memory, mut state, inodes) =
+        unsafe { env.get_memory_and_wasi_state_and_inodes(&ctx, 0) };
 
-    let inode = wasi_try_ok!(state.fs.get_inode_at_path(inodes, fd, path, false));
-    let (parent_inode, childs_name) = wasi_try_ok!(state.fs.get_parent_inode_at_path(
-        inodes,
-        fd,
-        std::path::Path::new(path),
-        false
-    ));
+    let inode =
+        wasi_try_ok!(state.fs.get_inode_at_path(inodes, fd, path, false));
+    let (parent_inode, childs_name) =
+        wasi_try_ok!(state.fs.get_parent_inode_at_path(
+            inodes,
+            fd,
+            std::path::Path::new(path),
+            false
+        ));
 
     let removed_inode = {
         let mut guard = parent_inode.write();

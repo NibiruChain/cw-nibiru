@@ -131,7 +131,12 @@ pub fn proc_exec2<M: MemorySize>(
             let mut new_store = Some(new_store);
             let mut config = Some(wasi_env);
 
-            match bin_factory.try_built_in(name.clone(), Some(&ctx), &mut new_store, &mut config) {
+            match bin_factory.try_built_in(
+                name.clone(),
+                Some(&ctx),
+                &mut new_store,
+                &mut config,
+            ) {
                 Ok(a) => {}
                 Err(err) => {
                     if !err.is_not_found() {
@@ -143,13 +148,15 @@ pub fn proc_exec2<M: MemorySize>(
 
                     let name_inner = name.clone();
                     __asyncify_light(ctx.data(), None, async {
-                        let ret = bin_factory.spawn(name_inner, new_store, env).await;
+                        let ret =
+                            bin_factory.spawn(name_inner, new_store, env).await;
                         match ret {
                             Ok(ret) => {
                                 trace!(%child_pid, "spawned sub-process");
                             }
                             Err(err) => {
-                                err_exit_code = conv_spawn_err_to_exit_code(&err);
+                                err_exit_code =
+                                    conv_spawn_err_to_exit_code(&err);
 
                                 debug!(%child_pid, "process failed with (err={})", err_exit_code);
                                 child_finished.set_finished(Ok(err_exit_code));
@@ -198,7 +205,10 @@ pub fn proc_exec2<M: MemorySize>(
             ) {
                 Errno::Success => OnCalledAction::InvokeAgain,
                 err => {
-                    warn!("fork failed - could not rewind the stack - errno={}", err);
+                    warn!(
+                        "fork failed - could not rewind the stack - errno={}",
+                        err
+                    );
                     OnCalledAction::Trap(Box::new(WasiError::Exit(err.into())))
                 }
             }
@@ -250,13 +260,14 @@ pub fn proc_exec2<M: MemorySize>(
                 let thread = env.thread.clone();
 
                 // The poller will wait for the process to actually finish
-                let res = __asyncify_with_deep_sleep::<M, _, _>(ctx, async move {
-                    process
-                        .wait_finished()
-                        .await
-                        .unwrap_or_else(|_| Errno::Child.into())
-                        .to_native()
-                })?;
+                let res =
+                    __asyncify_with_deep_sleep::<M, _, _>(ctx, async move {
+                        process
+                            .wait_finished()
+                            .await
+                            .unwrap_or_else(|_| Errno::Child.into())
+                            .to_native()
+                    })?;
                 match res {
                     AsyncifyAction::Finish(mut ctx, result) => {
                         // When we arrive here the process should already be terminated

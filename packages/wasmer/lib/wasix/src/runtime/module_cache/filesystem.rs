@@ -18,7 +18,10 @@ pub struct FileSystemCache {
 }
 
 impl FileSystemCache {
-    pub fn new(cache_dir: impl Into<PathBuf>, task_manager: Arc<TokioTaskManager>) -> Self {
+    pub fn new(
+        cache_dir: impl Into<PathBuf>,
+        task_manager: Arc<TokioTaskManager>,
+    ) -> Self {
         FileSystemCache {
             cache_dir: cache_dir.into(),
             task_manager,
@@ -41,7 +44,11 @@ impl FileSystemCache {
 #[async_trait::async_trait]
 impl ModuleCache for FileSystemCache {
     #[tracing::instrument(level = "debug", skip_all, fields(% key))]
-    async fn load(&self, key: ModuleHash, engine: &Engine) -> Result<Module, CacheError> {
+    async fn load(
+        &self,
+        key: ModuleHash,
+        engine: &Engine,
+    ) -> Result<Module, CacheError> {
         let path = self.path(key, engine.deterministic_id());
 
         self.task_manager
@@ -106,9 +113,9 @@ impl ModuleCache for FileSystemCache {
                 let module = module.clone();
 
                 async move {
-                    let parent = path
-                        .parent()
-                        .expect("Unreachable - always created by joining onto cache_dir");
+                    let parent = path.parent().expect(
+                        "Unreachable - always created by joining onto cache_dir",
+                    );
 
                     if let Err(e) = tokio::fs::create_dir_all(parent).await {
                         tracing::warn!(
@@ -153,7 +160,9 @@ impl ModuleCache for FileSystemCache {
 async fn read_file(path: &Path) -> Result<Vec<u8>, CacheError> {
     match tokio::fs::read(path).await {
         Ok(bytes) => Ok(bytes),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Err(CacheError::NotFound),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            Err(CacheError::NotFound)
+        }
         Err(error) => Err(CacheError::FileRead {
             path: path.to_path_buf(),
             error,
@@ -219,7 +228,8 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let engine = Engine::default();
         let module = Module::new(&engine, ADD_WAT).unwrap();
-        let cache = FileSystemCache::new(temp.path(), create_tokio_task_manager());
+        let cache =
+            FileSystemCache::new(temp.path(), create_tokio_task_manager());
         let key = ModuleHash::xxhash_from_bytes([0; 8]);
         let expected_path = cache.path(key, engine.deterministic_id());
 
@@ -235,7 +245,8 @@ mod tests {
         let module = Module::new(&engine, ADD_WAT).unwrap();
         let cache_dir = temp.path().join("this").join("doesn't").join("exist");
         assert!(!cache_dir.exists());
-        let cache = FileSystemCache::new(&cache_dir, create_tokio_task_manager());
+        let cache =
+            FileSystemCache::new(&cache_dir, create_tokio_task_manager());
         let key = ModuleHash::xxhash_from_bytes([0; 8]);
 
         cache.save(key, &engine, &module).await.unwrap();
@@ -248,7 +259,8 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let engine = Engine::default();
         let key = ModuleHash::xxhash_from_bytes([0; 8]);
-        let cache = FileSystemCache::new(temp.path(), create_tokio_task_manager());
+        let cache =
+            FileSystemCache::new(temp.path(), create_tokio_task_manager());
 
         let err = cache.load(key, &engine).await.unwrap_err();
 
@@ -261,7 +273,8 @@ mod tests {
         let engine = Engine::default();
         let module = Module::new(&engine, ADD_WAT).unwrap();
         let key = ModuleHash::xxhash_from_bytes([0; 8]);
-        let cache = FileSystemCache::new(temp.path(), create_tokio_task_manager());
+        let cache =
+            FileSystemCache::new(temp.path(), create_tokio_task_manager());
         let expected_path = cache.path(key, engine.deterministic_id());
         std::fs::create_dir_all(expected_path.parent().unwrap()).unwrap();
         let serialized = module.serialize().unwrap();
@@ -284,12 +297,14 @@ mod tests {
         let engine = Engine::default();
         let module = Module::new(&engine, ADD_WAT).unwrap();
         let key = ModuleHash::xxhash_from_bytes([0; 8]);
-        let cache = FileSystemCache::new(temp.path(), create_tokio_task_manager());
+        let cache =
+            FileSystemCache::new(temp.path(), create_tokio_task_manager());
         let expected_path = cache.path(key, engine.deterministic_id());
         std::fs::create_dir_all(expected_path.parent().unwrap()).unwrap();
         let serialized = module.serialize().unwrap();
         let mut encoder = weezl::encode::Encoder::new(weezl::BitOrder::Msb, 8);
-        std::fs::write(&expected_path, encoder.encode(&serialized).unwrap()).unwrap();
+        std::fs::write(&expected_path, encoder.encode(&serialized).unwrap())
+            .unwrap();
 
         let module = cache.load(key, &engine).await.unwrap();
 

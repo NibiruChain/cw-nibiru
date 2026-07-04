@@ -1,9 +1,13 @@
 use std::sync::Arc;
 
 use super::*;
-use crate::runners::wcgi::{self, CreateEnvConfig, CreateEnvResult, RecycleEnvConfig};
+use crate::runners::wcgi::{
+    self, CreateEnvConfig, CreateEnvResult, RecycleEnvConfig,
+};
 use virtual_fs::NullFile;
-use wasmer_wasix_types::types::{__WASI_STDERR_FILENO, __WASI_STDIN_FILENO, __WASI_STDOUT_FILENO};
+use wasmer_wasix_types::types::{
+    __WASI_STDERR_FILENO, __WASI_STDIN_FILENO, __WASI_STDOUT_FILENO,
+};
 
 #[derive(Debug, Clone)]
 pub struct DcgiCallbacks {
@@ -62,7 +66,10 @@ impl wcgi::Callbacks for DcgiCallbacks {
         self.factory.release(conf).await;
     }
 
-    async fn create_env(&self, mut conf: CreateEnvConfig) -> anyhow::Result<CreateEnvResult> {
+    async fn create_env(
+        &self,
+        mut conf: CreateEnvConfig,
+    ) -> anyhow::Result<CreateEnvResult> {
         tracing::debug!("attempting to acquire existing DCGI instance");
 
         if let Some(res) = self.factory.acquire(&mut conf).await {

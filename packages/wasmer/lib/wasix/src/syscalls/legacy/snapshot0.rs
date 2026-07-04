@@ -1,9 +1,9 @@
 use tracing::{field, instrument, trace_span};
 use wasmer::{AsStoreMut, AsStoreRef, FunctionEnvMut, Memory, WasmPtr};
 use wasmer_wasix_types::wasi::{
-    Errno, Event, EventFdReadwrite, Eventrwflags, Eventtype, ExitCode, Fd, Filesize, Filestat,
-    Filetype, Snapshot0Event, Snapshot0Filestat, Snapshot0Subscription, Snapshot0Whence,
-    Subscription, Whence,
+    Errno, Event, EventFdReadwrite, Eventrwflags, Eventtype, ExitCode, Fd,
+    Filesize, Filestat, Filetype, Snapshot0Event, Snapshot0Filestat,
+    Snapshot0Subscription, Snapshot0Whence, Subscription, Whence,
 };
 
 use crate::{
@@ -24,7 +24,8 @@ pub fn fd_filestat_get(
 ) -> Errno {
     let env = ctx.data();
     let memory = unsafe { env.memory_view(&ctx) };
-    let result = syscalls::fd_filestat_get_old::<Memory32>(ctx.as_mut(), fd, buf);
+    let result =
+        syscalls::fd_filestat_get_old::<Memory32>(ctx.as_mut(), fd, buf);
 
     result
 }
@@ -42,8 +43,14 @@ pub fn path_filestat_get(
     let env = ctx.data();
     let memory = unsafe { env.memory_view(&ctx) };
 
-    let result =
-        syscalls::path_filestat_get_old::<Memory32>(ctx.as_mut(), fd, flags, path, path_len, buf);
+    let result = syscalls::path_filestat_get_old::<Memory32>(
+        ctx.as_mut(),
+        fd,
+        flags,
+        path,
+        path_len,
+        buf,
+    );
 
     result
 }
@@ -93,35 +100,38 @@ pub fn poll_oneoff<M: MemorySize>(
     }
 
     // Function to invoke once the poll is finished
-    let process_events = |ctx: &FunctionEnvMut<'_, WasiEnv>, triggered_events: Vec<Event>| {
-        let env = ctx.data();
-        let memory = unsafe { env.memory_view(&ctx) };
+    let process_events =
+        |ctx: &FunctionEnvMut<'_, WasiEnv>, triggered_events: Vec<Event>| {
+            let env = ctx.data();
+            let memory = unsafe { env.memory_view(&ctx) };
 
-        // Process all the events that were triggered
-        let mut events_seen: u32 = 0;
-        let event_array = wasi_try_mem!(out_.slice(&memory, nsubscriptions));
-        for event in triggered_events {
-            let event = Snapshot0Event {
-                userdata: event.userdata,
-                error: event.error,
-                type_: Eventtype::FdRead,
-                fd_readwrite: match event.type_ {
-                    Eventtype::FdRead => unsafe { event.u.fd_readwrite },
-                    Eventtype::FdWrite => unsafe { event.u.fd_readwrite },
-                    Eventtype::Clock => EventFdReadwrite {
-                        nbytes: 0,
-                        flags: Eventrwflags::empty(),
+            // Process all the events that were triggered
+            let mut events_seen: u32 = 0;
+            let event_array = wasi_try_mem!(out_.slice(&memory, nsubscriptions));
+            for event in triggered_events {
+                let event = Snapshot0Event {
+                    userdata: event.userdata,
+                    error: event.error,
+                    type_: Eventtype::FdRead,
+                    fd_readwrite: match event.type_ {
+                        Eventtype::FdRead => unsafe { event.u.fd_readwrite },
+                        Eventtype::FdWrite => unsafe { event.u.fd_readwrite },
+                        Eventtype::Clock => EventFdReadwrite {
+                            nbytes: 0,
+                            flags: Eventrwflags::empty(),
+                        },
+                        Eventtype::Unknown => return Errno::Inval,
                     },
-                    Eventtype::Unknown => return Errno::Inval,
-                },
-            };
-            wasi_try_mem!(event_array.index(events_seen as u64).write(event));
-            events_seen += 1;
-        }
-        let out_ptr = nevents.deref(&memory);
-        wasi_try_mem!(out_ptr.write(events_seen));
-        Errno::Success
-    };
+                };
+                wasi_try_mem!(event_array
+                    .index(events_seen as u64)
+                    .write(event));
+                events_seen += 1;
+            }
+            let out_ptr = nevents.deref(&memory);
+            wasi_try_mem!(out_ptr.write(events_seen));
+            Errno::Success
+        };
 
     // We clear the number of events
     wasi_try_mem_ok!(nevents.write(&memory, 0));

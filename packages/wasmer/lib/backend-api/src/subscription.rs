@@ -1,5 +1,8 @@
 use crate::{
-    types::{PackageVersionReadySubscription, PackageVersionReadySubscriptionVariables},
+    types::{
+        PackageVersionReadySubscription,
+        PackageVersionReadySubscriptionVariables,
+    },
     WasmerClient,
 };
 use anyhow::Context;

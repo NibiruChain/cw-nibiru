@@ -55,7 +55,9 @@ impl Clone for FilteredJournalConfig {
             filter_snapshots: self.filter_snapshots,
             filter_net: self.filter_net,
             filter_events: self.filter_events.clone(),
-            event_index: AtomicUsize::new(self.event_index.load(Ordering::SeqCst)),
+            event_index: AtomicUsize::new(
+                self.event_index.load(Ordering::SeqCst),
+            ),
         }
     }
 }
@@ -224,7 +226,10 @@ impl<W: WritableJournal, R: ReadableJournal> FilteredJournal<W, R> {
 }
 
 impl<W: WritableJournal> WritableJournal for FilteredJournalTx<W> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         let event_index = self.config.event_index.fetch_add(1, Ordering::SeqCst);
         if let Some(events) = self.config.filter_events.as_ref() {
             if !events.contains(&event_index) {
@@ -251,7 +256,8 @@ impl<W: WritableJournal> WritableJournal for FilteredJournalTx<W> {
                 entry
             }
             JournalEntry::ClearEtherealV1 => entry,
-            JournalEntry::SetThreadV1 { .. } | JournalEntry::CloseThreadV1 { .. } => {
+            JournalEntry::SetThreadV1 { .. }
+            | JournalEntry::CloseThreadV1 { .. } => {
                 if self.config.filter_threads {
                     return Ok(LogWriteResult {
                         record_start: 0,
@@ -387,8 +393,13 @@ impl<R: ReadableJournal> ReadableJournal for FilteredJournalRx<R> {
     }
 }
 
-impl<W: WritableJournal, R: ReadableJournal> WritableJournal for FilteredJournal<W, R> {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+impl<W: WritableJournal, R: ReadableJournal> WritableJournal
+    for FilteredJournal<W, R>
+{
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         self.tx.write(entry)
     }
 
@@ -405,7 +416,9 @@ impl<W: WritableJournal, R: ReadableJournal> WritableJournal for FilteredJournal
     }
 }
 
-impl<W: WritableJournal, R: ReadableJournal> ReadableJournal for FilteredJournal<W, R> {
+impl<W: WritableJournal, R: ReadableJournal> ReadableJournal
+    for FilteredJournal<W, R>
+{
     fn read(&self) -> anyhow::Result<Option<LogReadResult<'_>>> {
         self.rx.read()
     }
@@ -415,7 +428,9 @@ impl<W: WritableJournal, R: ReadableJournal> ReadableJournal for FilteredJournal
     }
 }
 
-impl Journal for FilteredJournal<Box<DynWritableJournal>, Box<DynReadableJournal>> {
+impl Journal
+    for FilteredJournal<Box<DynWritableJournal>, Box<DynReadableJournal>>
+{
     fn split(self) -> (Box<DynWritableJournal>, Box<DynReadableJournal>) {
         (Box::new(self.tx), Box::new(self.rx))
     }

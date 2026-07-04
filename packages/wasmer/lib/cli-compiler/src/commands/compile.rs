@@ -9,7 +9,9 @@ use wasmer_compiler::{
     ArtifactBuild, ArtifactCreate, ModuleEnvironment,
 };
 use wasmer_types::entity::PrimaryMap;
-use wasmer_types::{CompileError, MemoryIndex, MemoryStyle, TableIndex, TableStyle};
+use wasmer_types::{
+    CompileError, MemoryIndex, MemoryStyle, TableIndex, TableStyle,
+};
 
 #[derive(Debug, Parser)]
 /// The options for the `wasmer compile` subcommand
@@ -58,7 +60,8 @@ impl Compile {
                 Target::new(target_triple.clone(), features)
             })
             .unwrap_or_default();
-        let (engine_builder, compiler_type) = self.store.get_engine_for_target(target.clone())?;
+        let (engine_builder, compiler_type) =
+            self.store.get_engine_for_target(target.clone())?;
         let engine = engine_builder
             .set_hash_algorithm(Some(wasmer_types::HashAlgorithm::Sha256))
             .engine();
@@ -89,7 +92,8 @@ impl Compile {
         let path: &Path = self.path.as_ref();
         let wasm_bytes = std::fs::read(path)?;
         let environ = ModuleEnvironment::new();
-        let translation = environ.translate(&wasm_bytes).map_err(CompileError::Wasm)?;
+        let translation =
+            environ.translate(&wasm_bytes).map_err(CompileError::Wasm)?;
         let module = translation.module;
         let memory_styles: PrimaryMap<MemoryIndex, MemoryStyle> = module
             .memories

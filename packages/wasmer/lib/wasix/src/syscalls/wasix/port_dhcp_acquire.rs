@@ -4,7 +4,9 @@ use crate::syscalls::*;
 /// ### `port_dhcp_acquire()`
 /// Acquires a set of IP addresses using DHCP
 #[instrument(level = "trace", skip_all, ret)]
-pub fn port_dhcp_acquire(mut ctx: FunctionEnvMut<'_, WasiEnv>) -> Result<Errno, WasiError> {
+pub fn port_dhcp_acquire(
+    mut ctx: FunctionEnvMut<'_, WasiEnv>,
+) -> Result<Errno, WasiError> {
     wasi_try_ok!(port_dhcp_acquire_internal(&mut ctx)?);
 
     #[cfg(feature = "journal")]

@@ -8,7 +8,8 @@ use std::sync::Arc;
 use wasmer_types::entity::PrimaryMap;
 use wasmer_types::SerializeError;
 use wasmer_types::{
-    DataInitializerLike, MemoryIndex, MemoryStyle, ModuleInfo, TableIndex, TableStyle,
+    DataInitializerLike, MemoryIndex, MemoryStyle, ModuleInfo, TableIndex,
+    TableStyle,
 };
 
 /// An `Artifact` is the product that the `Engine`
@@ -21,7 +22,9 @@ pub trait ArtifactCreate<'a>: Send + Sync + Upcastable {
     /// Type of `OwnedDataInitializer` returned by the `data_initializers` method
     type OwnedDataInitializer: DataInitializerLike<'a> + 'a;
     /// Type of iterator returned by the `data_initializers` method
-    type OwnedDataInitializerIterator: Iterator<Item = Self::OwnedDataInitializer>;
+    type OwnedDataInitializerIterator: Iterator<
+        Item = Self::OwnedDataInitializer,
+    >;
 
     /// Create a `ModuleInfo` for instantiation
     fn create_module_info(&'a self) -> Arc<ModuleInfo>;
@@ -78,7 +81,11 @@ impl<T: Any + Send + Sync + 'static> Upcastable for T {
 }
 
 impl<'a, O, I>
-    dyn ArtifactCreate<'a, OwnedDataInitializer = O, OwnedDataInitializerIterator = I> + 'static
+    dyn ArtifactCreate<
+            'a,
+            OwnedDataInitializer = O,
+            OwnedDataInitializerIterator = I,
+        > + 'static
 {
     /// Try to downcast the artifact into a given type.
     #[inline]

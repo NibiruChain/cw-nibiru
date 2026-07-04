@@ -40,7 +40,11 @@ impl<'a> BorrowChecker<'a> {
         }
     }
 
-    pub fn slice<T: AllBytesValid>(&mut self, ptr: i32, len: i32) -> Result<&'a [T], RuntimeError> {
+    pub fn slice<T: AllBytesValid>(
+        &mut self,
+        ptr: i32,
+        len: i32,
+    ) -> Result<&'a [T], RuntimeError> {
         let (ret, r) = self.get_slice(ptr, len)?;
         // SAFETY: We're promoting the valid lifetime of `ret` from a temporary
         // borrow on `self` to `'a` on this `BorrowChecker`. At the same time
@@ -100,7 +104,11 @@ impl<'a> BorrowChecker<'a> {
         }
     }
 
-    fn get_slice_mut<T>(&mut self, ptr: i32, len: i32) -> Result<(&mut [T], Region), RuntimeError> {
+    fn get_slice_mut<T>(
+        &mut self,
+        ptr: i32,
+        len: i32,
+    ) -> Result<(&mut [T], Region), RuntimeError> {
         let r = self.region::<T>(ptr, len)?;
         if self.is_mut_borrowed(r) || self.is_shared_borrowed(r) {
             Err(to_error(GuestError::PtrBorrowed(r)))
@@ -131,7 +139,11 @@ impl<'a> BorrowChecker<'a> {
         Ok(r)
     }
 
-    pub fn slice_str(&mut self, ptr: i32, len: i32) -> Result<&'a str, RuntimeError> {
+    pub fn slice_str(
+        &mut self,
+        ptr: i32,
+        len: i32,
+    ) -> Result<&'a str, RuntimeError> {
         let bytes = self.slice(ptr, len)?;
         std::str::from_utf8(bytes).map_err(to_error)
     }
@@ -140,7 +152,8 @@ impl<'a> BorrowChecker<'a> {
         let end = region
             .start
             .checked_add(region.len)
-            .ok_or_else(|| to_error(GuestError::PtrOverflow))? as usize;
+            .ok_or_else(|| to_error(GuestError::PtrOverflow))?
+            as usize;
         if end <= self.len {
             Ok(())
         } else {
@@ -162,13 +175,21 @@ impl<'a> BorrowChecker<'a> {
 }
 
 impl RawMem for BorrowChecker<'_> {
-    fn store<T: Endian>(&mut self, offset: i32, val: T) -> Result<(), RuntimeError> {
+    fn store<T: Endian>(
+        &mut self,
+        offset: i32,
+        val: T,
+    ) -> Result<(), RuntimeError> {
         let (slice, _) = self.get_slice_mut::<Le<T>>(offset, 1)?;
         slice[0].set(val);
         Ok(())
     }
 
-    fn store_many<T: Endian>(&mut self, offset: i32, val: &[T]) -> Result<(), RuntimeError> {
+    fn store_many<T: Endian>(
+        &mut self,
+        offset: i32,
+        val: &[T],
+    ) -> Result<(), RuntimeError> {
         let (slice, _) = self.get_slice_mut::<Le<T>>(
             offset,
             val.len()

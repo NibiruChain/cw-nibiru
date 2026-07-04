@@ -1,7 +1,9 @@
 //! List volumes tied to an edge app.
 
 use super::super::util::AppIdentOpts;
-use crate::{commands::AsyncCliCommand, config::WasmerEnv, opts::ListFormatOpts};
+use crate::{
+    commands::AsyncCliCommand, config::WasmerEnv, opts::ListFormatOpts,
+};
 
 /// List the volumes of an app.
 #[derive(clap::Parser, Debug)]
@@ -24,9 +26,12 @@ impl AsyncCliCommand for CmdAppVolumesList {
         let client = self.env.client()?;
 
         let (_ident, app) = self.ident.load_app(&client).await?;
-        let volumes =
-            wasmer_backend_api::query::get_app_volumes(&client, &app.owner.global_name, &app.name)
-                .await?;
+        let volumes = wasmer_backend_api::query::get_app_volumes(
+            &client,
+            &app.owner.global_name,
+            &app.name,
+        )
+        .await?;
 
         if volumes.is_empty() {
             eprintln!("App {} has no volumes!", app.name);

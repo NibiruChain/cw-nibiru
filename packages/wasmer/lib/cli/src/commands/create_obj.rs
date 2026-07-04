@@ -61,8 +61,10 @@ pub struct CreateObj {
 impl CreateObj {
     /// Runs logic for the `create-obj` subcommand
     pub fn execute(&self) -> Result<()> {
-        let path = crate::common::normalize_path(&format!("{}", self.path.display()));
-        let target_triple = self.target_triple.clone().unwrap_or_else(Triple::host);
+        let path =
+            crate::common::normalize_path(&format!("{}", self.path.display()));
+        let target_triple =
+            self.target_triple.clone().unwrap_or_else(Triple::host);
         let starting_cd = env::current_dir()?;
         let input_path = starting_cd.join(path);
         let temp_dir = tempfile::tempdir();
@@ -80,7 +82,8 @@ impl CreateObj {
             &target_triple,
             &self.cpu_features,
         );
-        let (_, compiler_type) = self.compiler.get_store_for_target(target.clone())?;
+        let (_, compiler_type) =
+            self.compiler.get_store_for_target(target.clone())?;
         println!("Compiler: {}", compiler_type);
         println!("Target: {}", target.triple());
 
@@ -158,7 +161,8 @@ impl CreateObj {
             ));
         }
 
-        let output_file = self.output.canonicalize().unwrap().display().to_string();
+        let output_file =
+            self.output.canonicalize().unwrap().display().to_string();
         let output_file = output_file
             .strip_prefix(r"\\?\")
             .unwrap_or(&output_file)

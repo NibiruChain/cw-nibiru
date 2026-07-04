@@ -19,8 +19,12 @@ impl<'a, 'c> JournalSyscallPlayer<'a, 'c> {
         if self.stderr_fds.contains(&original_fd) {
             self.stderr_fds.insert(copied_fd);
         }
-        JournalEffector::apply_fd_duplicate(&mut self.ctx, original_fd, copied_fd)
-            .map_err(anyhow_err_to_runtime_err)?;
+        JournalEffector::apply_fd_duplicate(
+            &mut self.ctx,
+            original_fd,
+            copied_fd,
+        )
+        .map_err(anyhow_err_to_runtime_err)?;
         Ok(())
     }
 }

@@ -12,7 +12,8 @@ use std::task::{Context, Poll};
 
 use crate::mem_fs::FileSystem as MemFileSystem;
 use crate::{
-    FileOpener, FileSystem, FsError, Metadata, OpenOptions, OpenOptionsConfig, ReadDir, VirtualFile,
+    FileOpener, FileSystem, FsError, Metadata, OpenOptions, OpenOptionsConfig,
+    ReadDir, VirtualFile,
 };
 use indexmap::IndexMap;
 use webc::v1::{FsEntry, FsEntryType, OwnedFsEntryFile};
@@ -27,7 +28,8 @@ pub struct StaticFileSystem {
 
 impl StaticFileSystem {
     pub fn init(bytes: &'static [u8], package: &str) -> Option<Self> {
-        let volumes = Arc::new(webc::v1::WebC::parse_volumes_from_fileblock(bytes).ok()?);
+        let volumes =
+            Arc::new(webc::v1::WebC::parse_volumes_from_fileblock(bytes).ok()?);
         let fs = Self {
             package: package.to_string(),
             volumes: volumes.clone(),
@@ -35,7 +37,8 @@ impl StaticFileSystem {
         };
         let volume_names = fs.volumes.keys().cloned().collect::<Vec<_>>();
         for volume_name in volume_names {
-            let directories = volumes.get(&volume_name).unwrap().list_directories();
+            let directories =
+                volumes.get(&volume_name).unwrap().list_directories();
             for directory in directories {
                 let _ = fs.create_dir(Path::new(&directory));
             }
@@ -70,7 +73,9 @@ impl FileOpener for StaticFileSystem {
             }
             None => {
                 for (volume, v) in self.volumes.iter() {
-                    let entry = match v.get_file_entry(path.to_string_lossy().as_ref()) {
+                    let entry = match v
+                        .get_file_entry(path.to_string_lossy().as_ref())
+                    {
                         Ok(s) => s,
                         Err(_) => continue, // error
                     };
@@ -120,11 +125,17 @@ impl VirtualFile for WebCFile {
     fn unlink(&mut self) -> Result<(), FsError> {
         Ok(())
     }
-    fn poll_read_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         let remaining = self.entry.get_len() - self.cursor;
         Poll::Ready(Ok(remaining as usize))
     }
-    fn poll_write_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(0))
     }
 }
@@ -171,16 +182,25 @@ impl AsyncWrite for WebCFile {
     ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(buf.len()))
     }
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
     }
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<Result<(), io::Error>> {
         Poll::Ready(Ok(()))
     }
 }
 
 impl AsyncSeek for WebCFile {
-    fn start_seek(mut self: Pin<&mut Self>, pos: io::SeekFrom) -> io::Result<()> {
+    fn start_seek(
+        mut self: Pin<&mut Self>,
+        pos: io::SeekFrom,
+    ) -> io::Result<()> {
         let self_size = self.size();
         match pos {
             SeekFrom::Start(s) => {
@@ -202,7 +222,10 @@ impl AsyncSeek for WebCFile {
         }
         Ok(())
     }
-    fn poll_complete(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         Poll::Ready(Ok(self.cursor))
     }
 }
@@ -219,7 +242,10 @@ fn get_volume_name_opt<P: AsRef<Path>>(path: P) -> Option<String> {
     None
 }
 
-fn transform_into_read_dir(path: &Path, fs_entries: &[FsEntry<'_>]) -> crate::ReadDir {
+fn transform_into_read_dir(
+    path: &Path,
+    fs_entries: &[FsEntry<'_>],
+) -> crate::ReadDir {
     let entries = fs_entries
         .iter()
         .map(|e| crate::DirEntry {
@@ -291,11 +317,16 @@ impl FileSystem for StaticFileSystem {
             result
         }
     }
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<(), FsError>> {
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<(), FsError>> {
         Box::pin(async {
             let from = normalizes_path(from);
             let to = normalizes_path(to);
-            let result = self.memory.rename(Path::new(&from), Path::new(&to)).await;
+            let result =
+                self.memory.rename(Path::new(&from), Path::new(&to)).await;
             if self
                 .volumes
                 .values()
@@ -322,7 +353,9 @@ impl FileSystem for StaticFileSystem {
                 modified: 0,
                 len: fs_entry.get_len(),
             })
-        } else if let Some(_fs) = self.volumes.values().find_map(|v| v.read_dir(&path).ok()) {
+        } else if let Some(_fs) =
+            self.volumes.values().find_map(|v| v.read_dir(&path).ok())
+        {
             Ok(Metadata {
                 ft: translate_file_type(FsEntryType::Dir),
                 accessed: 0,

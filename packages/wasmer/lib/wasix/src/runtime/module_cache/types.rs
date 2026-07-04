@@ -24,7 +24,11 @@ use crate::runtime::module_cache::FallbackCache;
 #[async_trait::async_trait]
 pub trait ModuleCache: Debug {
     /// Load a module based on its hash.
-    async fn load(&self, key: ModuleHash, engine: &Engine) -> Result<Module, CacheError>;
+    async fn load(
+        &self,
+        key: ModuleHash,
+        engine: &Engine,
+    ) -> Result<Module, CacheError>;
 
     /// Save a module so it can be retrieved with [`ModuleCache::load()`] at a
     /// later time.
@@ -75,7 +79,11 @@ where
     D: Deref<Target = C> + Debug + Send + Sync,
     C: ModuleCache + Send + Sync + ?Sized,
 {
-    async fn load(&self, key: ModuleHash, engine: &Engine) -> Result<Module, CacheError> {
+    async fn load(
+        &self,
+        key: ModuleHash,
+        engine: &Engine,
+    ) -> Result<Module, CacheError> {
         (**self).load(key, engine).await
     }
 
@@ -133,7 +141,9 @@ mod tests {
 
     #[test]
     fn key_is_displayed_as_hex() {
-        let key = ModuleHash::xxhash_from_bytes([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]);
+        let key = ModuleHash::xxhash_from_bytes([
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        ]);
 
         let repr = key.to_string();
 

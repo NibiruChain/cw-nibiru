@@ -7,7 +7,9 @@ use std::{
 use anyhow::{Context, Error};
 use futures::future::BoxFuture;
 use tokio::runtime::Handle;
-use virtual_fs::{FileSystem, FsError, OverlayFileSystem, RootFileSystemBuilder, TmpFileSystem};
+use virtual_fs::{
+    FileSystem, FsError, OverlayFileSystem, RootFileSystemBuilder, TmpFileSystem,
+};
 use wasmer::Imports;
 use webc::metadata::annotations::Wasi as WasiAnnotation;
 
@@ -119,7 +121,11 @@ impl CommonWasiOptions {
         builder.add_envs(self.env.clone());
     }
 
-    fn populate_args(&self, wasi: &WasiAnnotation, builder: &mut WasiEnvBuilder) {
+    fn populate_args(
+        &self,
+        wasi: &WasiAnnotation,
+        builder: &mut WasiEnvBuilder,
+    ) {
         if let Some(main_args) = &wasi.main_args {
             builder.add_args(main_args);
         }
@@ -166,12 +172,17 @@ fn build_directory_mappings(
         } else {
             if let Some(parent) = guest_path.parent() {
                 create_dir_all(&*root_fs, parent).with_context(|| {
-                    format!("Unable to create the \"{}\" directory", parent.display())
+                    format!(
+                        "Unable to create the \"{}\" directory",
+                        parent.display()
+                    )
                 })?;
             }
 
             TmpFileSystem::mount(root_fs, guest_path.clone(), fs, "/".into())
-                .with_context(|| format!("Unable to mount \"{}\"", guest_path.display()))?;
+                .with_context(|| {
+                    format!("Unable to mount \"{}\"", guest_path.display())
+                })?;
         }
     }
 
@@ -295,7 +306,11 @@ impl From<MappedDirectory> for MountedDirectory {
 struct RelativeOrAbsolutePathHack<F>(F);
 
 impl<F: FileSystem> RelativeOrAbsolutePathHack<F> {
-    fn execute<Func, Ret>(&self, path: &Path, operation: Func) -> Result<Ret, FsError>
+    fn execute<Func, Ret>(
+        &self,
+        path: &Path,
+        operation: Func,
+    ) -> Result<Ret, FsError>
     where
         Func: Fn(&F, &Path) -> Result<Ret, FsError>,
     {
@@ -330,7 +345,11 @@ impl<F: FileSystem> virtual_fs::FileSystem for RelativeOrAbsolutePathHack<F> {
         self.execute(path, |fs, p| fs.remove_dir(p))
     }
 
-    fn rename<'a>(&'a self, from: &Path, to: &Path) -> BoxFuture<'a, virtual_fs::Result<()>> {
+    fn rename<'a>(
+        &'a self,
+        from: &Path,
+        to: &Path,
+    ) -> BoxFuture<'a, virtual_fs::Result<()>> {
         let from = from.to_owned();
         let to = to.to_owned();
         Box::pin(async move { self.0.rename(&from, &to).await })
@@ -340,7 +359,10 @@ impl<F: FileSystem> virtual_fs::FileSystem for RelativeOrAbsolutePathHack<F> {
         self.execute(path, |fs, p| fs.metadata(p))
     }
 
-    fn symlink_metadata(&self, path: &Path) -> virtual_fs::Result<virtual_fs::Metadata> {
+    fn symlink_metadata(
+        &self,
+        path: &Path,
+    ) -> virtual_fs::Result<virtual_fs::Metadata> {
         self.execute(path, |fs, p| fs.symlink_metadata(p))
     }
 
@@ -371,7 +393,9 @@ impl<F: FileSystem> virtual_fs::FileOpener for RelativeOrAbsolutePathHack<F> {
         &self,
         path: &Path,
         conf: &virtual_fs::OpenOptionsConfig,
-    ) -> virtual_fs::Result<Box<dyn virtual_fs::VirtualFile + Send + Sync + 'static>> {
+    ) -> virtual_fs::Result<
+        Box<dyn virtual_fs::VirtualFile + Send + Sync + 'static>,
+    > {
         self.execute(path, |fs, p| {
             fs.new_open_options().options(conf.clone()).open(p)
         })
@@ -388,7 +412,8 @@ mod tests {
 
     use super::*;
 
-    const PYTHON: &[u8] = include_bytes!("../../../c-api/examples/assets/python-0.1.0.wasmer");
+    const PYTHON: &[u8] =
+        include_bytes!("../../../c-api/examples/assets/python-0.1.0.wasmer");
 
     /// Fixes <https://github.com/wasmerio/wasmer/issues/3789>
     #[tokio::test]
@@ -465,7 +490,8 @@ mod tests {
         let webc_fs = WebcVolumeFileSystem::mount_all(&container);
 
         let root_fs = RootFileSystemBuilder::default().build();
-        let fs = prepare_filesystem(root_fs, &mapping, Some(Arc::new(webc_fs))).unwrap();
+        let fs = prepare_filesystem(root_fs, &mapping, Some(Arc::new(webc_fs)))
+            .unwrap();
 
         assert!(fs.metadata("/home/file.txt".as_ref()).unwrap().is_file());
         assert!(fs.metadata("lib".as_ref()).unwrap().is_dir());

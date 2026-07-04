@@ -27,7 +27,18 @@ use super::{
 };
 
 /// Represents the ID of a WASI thread
-#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Default,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
 pub struct WasiThreadId(u32);
 
 impl WasiThreadId {
@@ -206,9 +217,10 @@ impl WasiThreadRunGuard {
 impl Drop for WasiThreadRunGuard {
     fn drop(&mut self) {
         self.thread
-            .set_status_finished(Err(
-                crate::RuntimeError::new("Thread manager disconnected").into()
-            ));
+            .set_status_finished(Err(crate::RuntimeError::new(
+                "Thread manager disconnected",
+            )
+            .into()));
     }
 }
 
@@ -388,7 +400,10 @@ impl WasiThread {
     }
 
     /// Returns all the signals that are waiting to be processed
-    pub fn pop_signals_or_subscribe(&self, waker: &Waker) -> Option<Vec<Signal>> {
+    pub fn pop_signals_or_subscribe(
+        &self,
+        waker: &Waker,
+    ) -> Option<Vec<Signal>> {
         let mut guard = self.state.signals.lock().unwrap();
         let mut ret = Vec::new();
         std::mem::swap(&mut ret, &mut guard.0);
@@ -487,8 +502,8 @@ impl WasiThread {
                 }
             } else {
                 memory_stack = &memory_stack[pstack.memory_stack.len()..];
-                memory_stack_corrected =
-                    &memory_stack_corrected[pstack.memory_stack_corrected.len()..];
+                memory_stack_corrected = &memory_stack_corrected
+                    [pstack.memory_stack_corrected.len()..];
             }
 
             // If there is no more memory stack then we are done and can add the call stack

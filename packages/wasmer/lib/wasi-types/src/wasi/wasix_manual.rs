@@ -6,7 +6,8 @@ use wasmer::{FromToNativeWasmType, MemorySize, ValueType};
 
 use super::{
     Errno, ErrnoSignal, EventFdReadwrite, Eventtype, Fd, JoinStatusType, Signal,
-    Snapshot0SubscriptionClock, SubscriptionClock, SubscriptionFsReadwrite, Userdata,
+    Snapshot0SubscriptionClock, SubscriptionClock, SubscriptionFsReadwrite,
+    Userdata,
 };
 
 /// Thread local key
@@ -228,8 +229,12 @@ impl core::fmt::Debug for JoinStatus {
         f = unsafe {
             match self.tag {
                 JoinStatusType::Nothing => f.field("nothing", &self.u.nothing),
-                JoinStatusType::ExitNormal => f.field("exit_normal", &self.u.exit_normal),
-                JoinStatusType::ExitSignal => f.field("exit_signal", &self.u.exit_signal),
+                JoinStatusType::ExitNormal => {
+                    f.field("exit_normal", &self.u.exit_normal)
+                }
+                JoinStatusType::ExitSignal => {
+                    f.field("exit_signal", &self.u.exit_signal)
+                }
                 JoinStatusType::Stopped => f.field("stopped", &self.u.stopped),
             }
         };
@@ -430,7 +435,9 @@ unsafe impl wasmer::FromToNativeWasmType for EpollCtl {
             2 => Self::Del,
 
             q => {
-                tracing::debug!("could not serialize number {q} to enum EpollCtl");
+                tracing::debug!(
+                    "could not serialize number {q} to enum EpollCtl"
+                );
                 Self::Unknown
             }
         }

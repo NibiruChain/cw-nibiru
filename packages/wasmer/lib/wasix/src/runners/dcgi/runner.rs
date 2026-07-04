@@ -48,9 +48,13 @@ impl DcgiRunner {
         pkg: &BinaryPackage,
         runtime: Arc<dyn Runtime + Send + Sync>,
     ) -> Result<Handler, Error> {
-        let inner: wcgi::Handler =
-            self.inner
-                .prepare_handler(command_name, pkg, true, CgiDialect::Rfc3875, runtime)?;
+        let inner: wcgi::Handler = self.inner.prepare_handler(
+            command_name,
+            pkg,
+            true,
+            CgiDialect::Rfc3875,
+            runtime,
+        )?;
         Ok(Handler::new(inner))
     }
 }
@@ -93,7 +97,8 @@ impl crate::runners::Runner for DcgiRunner {
         let runtime = Arc::new(runtime) as Arc<DynRuntime>;
 
         //We now pass the runtime to the handlers
-        let handler = self.prepare_handler(command_name, pkg, Arc::clone(&runtime))?;
+        let handler =
+            self.prepare_handler(command_name, pkg, Arc::clone(&runtime))?;
         self.inner.run_command_with_handler(handler, runtime)
     }
 }
@@ -130,7 +135,11 @@ impl Config {
     }
 
     /// Expose an environment variable to the guest.
-    pub fn env(&mut self, name: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn env(
+        &mut self,
+        name: impl Into<String>,
+        value: impl Into<String>,
+    ) -> &mut Self {
         self.inner.env(name, value);
         self
     }
@@ -167,7 +176,10 @@ impl Config {
 
     /// Set callbacks that will be triggered at various points in the runner's
     /// lifecycle.
-    pub fn callbacks(&mut self, callbacks: impl wcgi::Callbacks + 'static) -> &mut Self {
+    pub fn callbacks(
+        &mut self,
+        callbacks: impl wcgi::Callbacks + 'static,
+    ) -> &mut Self {
         self.inner.callbacks(callbacks);
         self
     }
@@ -200,16 +212,25 @@ impl Config {
         self
     }
 
-    pub fn has_snapshot_trigger(&self, on: crate::journal::SnapshotTrigger) -> bool {
+    pub fn has_snapshot_trigger(
+        &self,
+        on: crate::journal::SnapshotTrigger,
+    ) -> bool {
         self.inner.has_snapshot_trigger(on)
     }
 
-    pub fn with_snapshot_interval(&mut self, period: std::time::Duration) -> &mut Self {
+    pub fn with_snapshot_interval(
+        &mut self,
+        period: std::time::Duration,
+    ) -> &mut Self {
         self.inner.with_snapshot_interval(period);
         self
     }
 
-    pub fn add_journal(&mut self, journal: Arc<crate::journal::DynJournal>) -> &mut Self {
+    pub fn add_journal(
+        &mut self,
+        journal: Arc<crate::journal::DynJournal>,
+    ) -> &mut Self {
         self.inner.add_journal(journal);
         self
     }

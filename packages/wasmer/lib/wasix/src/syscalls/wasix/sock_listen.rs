@@ -19,19 +19,25 @@ pub fn sock_listen<M: MemorySize>(
     sock: WasiFd,
     backlog: M::Offset,
 ) -> Result<Errno, WasiError> {
-    ctx = wasi_try_ok!(maybe_snapshot_once::<M>(ctx, SnapshotTrigger::FirstListen)?);
+    ctx = wasi_try_ok!(maybe_snapshot_once::<M>(
+        ctx,
+        SnapshotTrigger::FirstListen
+    )?);
 
     let env = ctx.data();
-    let backlog: usize = wasi_try_ok!(backlog.try_into().map_err(|_| Errno::Inval));
+    let backlog: usize =
+        wasi_try_ok!(backlog.try_into().map_err(|_| Errno::Inval));
 
     wasi_try_ok!(sock_listen_internal(&mut ctx, sock, backlog)?);
 
     #[cfg(feature = "journal")]
     if ctx.data().enable_journal {
-        JournalEffector::save_sock_listen(&mut ctx, sock, backlog).map_err(|err| {
-            tracing::error!("failed to save sock_listen event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_sock_listen(&mut ctx, sock, backlog).map_err(
+            |err| {
+                tracing::error!("failed to save sock_listen event - {}", err);
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            },
+        )?;
     }
 
     Ok(Errno::Success)
@@ -49,7 +55,9 @@ pub(crate) fn sock_listen_internal(
         ctx,
         sock,
         Rights::SOCK_LISTEN,
-        |socket, _| async move { socket.listen(tasks.deref(), net.deref(), backlog).await }
+        |socket, _| async move {
+            socket.listen(tasks.deref(), net.deref(), backlog).await
+        }
     ));
 
     Ok(Ok(()))

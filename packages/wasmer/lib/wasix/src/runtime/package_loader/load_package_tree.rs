@@ -9,7 +9,9 @@ use anyhow::{Context, Error};
 use futures::{future::BoxFuture, StreamExt, TryStreamExt};
 use once_cell::sync::OnceCell;
 use petgraph::visit::EdgeRef;
-use virtual_fs::{FileSystem, OverlayFileSystem, UnionFileSystem, WebcVolumeFileSystem};
+use virtual_fs::{
+    FileSystem, OverlayFileSystem, UnionFileSystem, WebcVolumeFileSystem,
+};
 use wasmer_config::package::PackageId;
 use webc::metadata::annotations::Atom as AtomAnnotation;
 use webc::{Container, Volume};
@@ -19,8 +21,8 @@ use crate::{
     runtime::{
         package_loader::PackageLoader,
         resolver::{
-            DependencyGraph, ItemLocation, PackageSummary, Resolution, ResolvedFileSystemMapping,
-            ResolvedPackage,
+            DependencyGraph, ItemLocation, PackageSummary, Resolution,
+            ResolvedFileSystemMapping, ResolvedPackage,
         },
     },
 };
@@ -38,7 +40,9 @@ pub async fn load_package_tree(
     resolution: &Resolution,
     root_is_local_dir: bool,
 ) -> Result<BinaryPackage, Error> {
-    let mut containers = fetch_dependencies(loader, &resolution.package, &resolution.graph).await?;
+    let mut containers =
+        fetch_dependencies(loader, &resolution.package, &resolution.graph)
+            .await?;
     containers.insert(resolution.package.root_package.clone(), root.clone());
     let package_ids = containers.keys().cloned().collect();
     let fs = filesystem(&containers, &resolution.package, root_is_local_dir)?;
@@ -90,9 +94,13 @@ fn commands(
         let manifest = webc.manifest();
         let command_metadata = &manifest.commands[original_name];
 
-        if let Some(cmd) =
-            load_binary_command(package, name, command_metadata, containers, resolution)?
-        {
+        if let Some(cmd) = load_binary_command(
+            package,
+            name,
+            command_metadata,
+            containers,
+            resolution,
+        )? {
             pkg_commands.push(cmd);
         }
     }
@@ -142,7 +150,8 @@ fn load_binary_command(
                 .find(|edge| edge.weight().alias == dep)
                 .with_context(|| format!("Unable to find the \"{dep}\" dependency for the \"{command_name}\" command in \"{package_id}\""))?;
 
-            let other_package = graph.node_weight(edge_reference.target()).unwrap();
+            let other_package =
+                graph.node_weight(edge_reference.target()).unwrap();
             let id = &other_package.id;
 
             tracing::debug!(
@@ -180,7 +189,12 @@ fn load_binary_command(
         )
     })?;
 
-    let cmd = BinaryPackageCommand::new(command_name.to_string(), cmd.clone(), atom, hash);
+    let cmd = BinaryPackageCommand::new(
+        command_name.to_string(),
+        cmd.clone(),
+        atom,
+        hash,
+    );
 
     Ok(Some(cmd))
 }
@@ -230,11 +244,10 @@ fn legacy_atom_hack(
     command_name: &str,
     metadata: &webc::metadata::Command,
 ) -> Result<Option<BinaryPackageCommand>, anyhow::Error> {
-    let (name, atom) = webc
-        .atoms()
-        .into_iter()
-        .next()
-        .ok_or_else(|| anyhow::Error::msg("container does not have any atom"))?;
+    let (name, atom) =
+        webc.atoms().into_iter().next().ok_or_else(|| {
+            anyhow::Error::msg("container does not have any atom")
+        })?;
 
     tracing::debug!(
         command_name,
@@ -279,16 +292,17 @@ async fn fetch_dependencies(
         };
         Some((id, summary))
     });
-    let packages: HashMap<PackageId, Container> = futures::stream::iter(packages)
-        .map(|(id, s)| async move {
-            match loader.load(&s).await {
-                Ok(webc) => Ok((id, webc)),
-                Err(e) => Err(e),
-            }
-        })
-        .buffer_unordered(MAX_PARALLEL_DOWNLOADS)
-        .try_collect()
-        .await?;
+    let packages: HashMap<PackageId, Container> =
+        futures::stream::iter(packages)
+            .map(|(id, s)| async move {
+                match loader.load(&s).await {
+                    Ok(webc) => Ok((id, webc)),
+                    Err(e) => Err(e),
+                }
+            })
+            .buffer_unordered(MAX_PARALLEL_DOWNLOADS)
+            .try_collect()
+            .await?;
 
     Ok(packages)
 }
@@ -360,7 +374,8 @@ fn filesystem_v3(
     pkg: &ResolvedPackage,
     root_is_local_dir: bool,
 ) -> Result<Box<dyn FileSystem + Send + Sync>, Error> {
-    let mut volumes: HashMap<&PackageId, BTreeMap<String, Volume>> = HashMap::new();
+    let mut volumes: HashMap<&PackageId, BTreeMap<String, Volume>> =
+        HashMap::new();
 
     let mut mountings: Vec<_> = pkg.filesystem.iter().collect();
     mountings.sort_by_key(|m| std::cmp::Reverse(m.mount_path.as_path()));
@@ -389,8 +404,12 @@ fn filesystem_v3(
             )
         })?;
         let container_volumes = match volumes.entry(package) {
-            std::collections::hash_map::Entry::Occupied(entry) => &*entry.into_mut(),
-            std::collections::hash_map::Entry::Vacant(entry) => &*entry.insert(container.volumes()),
+            std::collections::hash_map::Entry::Occupied(entry) => {
+                &*entry.into_mut()
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                &*entry.insert(container.volumes())
+            }
         };
 
         let volume = container_volumes.get(volume_name).with_context(|| {
@@ -401,7 +420,10 @@ fn filesystem_v3(
         union_fs.mount(volume_name.clone(), mount_path, Box::new(webc_vol))?;
     }
 
-    let fs = OverlayFileSystem::new(virtual_fs::EmptyFileSystem::default(), [union_fs]);
+    let fs = OverlayFileSystem::new(
+        virtual_fs::EmptyFileSystem::default(),
+        [union_fs],
+    );
 
     Ok(Box::new(fs))
 }
@@ -435,7 +457,8 @@ fn filesystem_v2(
     root_is_local_dir: bool,
 ) -> Result<Box<dyn FileSystem + Send + Sync>, Error> {
     let mut filesystems = Vec::new();
-    let mut volumes: HashMap<&PackageId, BTreeMap<String, Volume>> = HashMap::new();
+    let mut volumes: HashMap<&PackageId, BTreeMap<String, Volume>> =
+        HashMap::new();
 
     let mut mountings: Vec<_> = pkg.filesystem.iter().collect();
     mountings.sort_by_key(|m| std::cmp::Reverse(m.mount_path.as_path()));
@@ -455,7 +478,9 @@ fn filesystem_v2(
         // we can keep the memory usage down. A webc::compat::Volume is
         // reference-counted, anyway.
         let container_volumes = match volumes.entry(package) {
-            std::collections::hash_map::Entry::Occupied(entry) => &*entry.into_mut(),
+            std::collections::hash_map::Entry::Occupied(entry) => {
+                &*entry.into_mut()
+            }
             std::collections::hash_map::Entry::Vacant(entry) => {
                 // looks like we need to insert it
                 let container = packages.get(package)
@@ -502,12 +527,16 @@ fn filesystem_v2(
         filesystems.push(fs);
     }
 
-    let fs = OverlayFileSystem::new(virtual_fs::EmptyFileSystem::default(), filesystems);
+    let fs = OverlayFileSystem::new(
+        virtual_fs::EmptyFileSystem::default(),
+        filesystems,
+    );
 
     Ok(Box::new(fs))
 }
 
-type DynPathMapper = Box<dyn Fn(&Path) -> Result<PathBuf, virtual_fs::FsError> + Send + Sync>;
+type DynPathMapper =
+    Box<dyn Fn(&Path) -> Result<PathBuf, virtual_fs::FsError> + Send + Sync>;
 
 /// A [`FileSystem`] implementation that lets you map the [`Path`] to something
 /// else.
@@ -558,7 +587,11 @@ where
         self.inner.remove_dir(&path)
     }
 
-    fn rename<'a>(&'a self, from: &Path, to: &Path) -> BoxFuture<'a, virtual_fs::Result<()>> {
+    fn rename<'a>(
+        &'a self,
+        from: &Path,
+        to: &Path,
+    ) -> BoxFuture<'a, virtual_fs::Result<()>> {
         let from = from.to_owned();
         let to = to.to_owned();
         Box::pin(async move {
@@ -573,7 +606,10 @@ where
         self.inner.metadata(&path)
     }
 
-    fn symlink_metadata(&self, path: &Path) -> virtual_fs::Result<virtual_fs::Metadata> {
+    fn symlink_metadata(
+        &self,
+        path: &Path,
+    ) -> virtual_fs::Result<virtual_fs::Metadata> {
         let path = self.path(path)?;
         self.inner.symlink_metadata(&path)
     }
@@ -607,7 +643,9 @@ where
         &self,
         path: &Path,
         conf: &virtual_fs::OpenOptionsConfig,
-    ) -> virtual_fs::Result<Box<dyn virtual_fs::VirtualFile + Send + Sync + 'static>> {
+    ) -> virtual_fs::Result<
+        Box<dyn virtual_fs::VirtualFile + Send + Sync + 'static>,
+    > {
         let path = self.path(path)?;
         self.inner
             .new_open_options()

@@ -1,6 +1,8 @@
 use super::{util::login_user, AsyncCliCommand};
 use crate::{
-    commands::{app::create::CmdAppCreate, package::publish::PackagePublish, PublishWait},
+    commands::{
+        app::create::CmdAppCreate, package::publish::PackagePublish, PublishWait,
+    },
     config::WasmerEnv,
     opts::ItemFormatOpts,
     utils::load_package_manifest,
@@ -128,13 +130,14 @@ impl CmdAppDeploy {
         owner: String,
         manifest_dir_path: PathBuf,
     ) -> anyhow::Result<PackageIdent> {
-        let (manifest_path, manifest) = match load_package_manifest(&manifest_dir_path)? {
-            Some(r) => r,
-            None => anyhow::bail!(
-                "Could not read or find manifest in path '{}'!",
-                manifest_dir_path.display()
-            ),
-        };
+        let (manifest_path, manifest) =
+            match load_package_manifest(&manifest_dir_path)? {
+                Some(r) => r,
+                None => anyhow::bail!(
+                    "Could not read or find manifest in path '{}'!",
+                    manifest_dir_path.display()
+                ),
+            };
 
         let publish_cmd = PackagePublish {
             env: self.env.clone(),
@@ -174,9 +177,10 @@ impl CmdAppDeploy {
         }
 
         if let Some(edge_app) = maybe_edge_app {
-            app.as_mapping_mut()
-                .unwrap()
-                .insert("owner".into(), edge_app.owner.global_name.clone().into());
+            app.as_mapping_mut().unwrap().insert(
+                "owner".into(),
+                edge_app.owner.global_name.clone().into(),
+            );
             return Ok(edge_app.owner.global_name.clone());
         };
 
@@ -185,7 +189,10 @@ impl CmdAppDeploy {
             anyhow::bail!("No owner specified: use --owner XXX");
         }
 
-        let user = wasmer_backend_api::query::current_user_with_namespaces(client, None).await?;
+        let user = wasmer_backend_api::query::current_user_with_namespaces(
+            client, None,
+        )
+        .await?;
         let owner = crate::utils::prompts::prompt_for_namespace(
             "Who should own this app?",
             None,
@@ -230,7 +237,9 @@ impl AsyncCliCommand for CmdAppDeploy {
     type Output = ();
 
     async fn run_async(self) -> Result<Self::Output, anyhow::Error> {
-        let client = login_user(&self.env, !self.non_interactive, "deploy an app").await?;
+        let client =
+            login_user(&self.env, !self.non_interactive, "deploy an app")
+                .await?;
 
         let base_dir_path = self.dir.clone().unwrap_or_else(|| {
             self.path
@@ -249,7 +258,10 @@ impl AsyncCliCommand for CmdAppDeploy {
 
                 (f, base_dir_path.clone())
             } else {
-                anyhow::bail!("No such file or directory '{}'", base_dir_path.display());
+                anyhow::bail!(
+                    "No such file or directory '{}'",
+                    base_dir_path.display()
+                );
             }
         };
 
@@ -269,11 +281,15 @@ impl AsyncCliCommand for CmdAppDeploy {
         assert!(app_config_path.is_file());
 
         let config_str = std::fs::read_to_string(&app_config_path)
-            .with_context(|| format!("Could not read file '{}'", &app_config_path.display()))?;
+            .with_context(|| {
+                format!("Could not read file '{}'", &app_config_path.display())
+            })?;
 
         // We want to allow the user to specify the app name interactively.
         let mut app_yaml: serde_yaml::Value = serde_yaml::from_str(&config_str)?;
-        let maybe_edge_app = if let Some(app_id) = app_yaml.get("app_id").and_then(|s| s.as_str()) {
+        let maybe_edge_app = if let Some(app_id) =
+            app_yaml.get("app_id").and_then(|s| s.as_str())
+        {
             wasmer_backend_api::query::get_app_by_id(&client, app_id.to_owned())
                 .await
                 .ok()
@@ -285,13 +301,20 @@ impl AsyncCliCommand for CmdAppDeploy {
             .get_owner(&client, &mut app_yaml, maybe_edge_app.as_ref())
             .await?;
 
-        if !wasmer_backend_api::query::viewer_can_deploy_to_namespace(&client, &owner).await? {
+        if !wasmer_backend_api::query::viewer_can_deploy_to_namespace(
+            &client, &owner,
+        )
+        .await?
+        {
             eprintln!("It seems you don't have access to {}", owner.bold());
             if self.non_interactive {
                 anyhow::bail!("Please, change the owner before deploying or check your current user with `{} whoami`.", std::env::args().next().unwrap_or("wasmer".into()));
             } else {
                 let user =
-                    wasmer_backend_api::query::current_user_with_namespaces(&client, None).await?;
+                    wasmer_backend_api::query::current_user_with_namespaces(
+                        &client, None,
+                    )
+                    .await?;
                 owner = crate::utils::prompts::prompt_for_namespace(
                     "Who should own this app?",
                     None,
@@ -329,11 +352,12 @@ impl AsyncCliCommand for CmdAppDeploy {
             );
         } else if app_yaml.get("name").is_none() {
             if !self.non_interactive {
-                let default_name = std::env::current_dir().ok().and_then(|dir| {
-                    dir.file_name()
-                        .and_then(|f| f.to_str())
-                        .map(|s| s.to_owned())
-                });
+                let default_name =
+                    std::env::current_dir().ok().and_then(|dir| {
+                        dir.file_name()
+                            .and_then(|f| f.to_str())
+                            .map(|s| s.to_owned())
+                    });
                 let app_name = crate::utils::prompts::prompt_new_app_name(
                     "Enter the name of the app",
                     default_name.as_deref(),
@@ -362,12 +386,15 @@ impl AsyncCliCommand for CmdAppDeploy {
             }
         }
 
-        let original_app_config: AppConfigV1 = serde_yaml::from_value(app_yaml.clone())?;
+        let original_app_config: AppConfigV1 =
+            serde_yaml::from_value(app_yaml.clone())?;
         std::fs::write(
             &app_config_path,
             serde_yaml::to_string(&original_app_config)?,
         )
-        .with_context(|| format!("Could not write file: '{}'", app_config_path.display()))?;
+        .with_context(|| {
+            format!("Could not write file: '{}'", app_config_path.display())
+        })?;
 
         let mut app_config = original_app_config.clone();
 
@@ -391,16 +418,22 @@ impl AsyncCliCommand for CmdAppDeploy {
                 };
 
                 if !self.quiet {
-                    eprintln!("Loading local package (manifest path: {})", path.display());
+                    eprintln!(
+                        "Loading local package (manifest path: {})",
+                        path.display()
+                    );
                 }
 
-                let package_id = self.publish(&client, owner.clone(), path).await?;
+                let package_id =
+                    self.publish(&client, owner.clone(), path).await?;
 
                 app_cfg_new.package = package_id.into();
 
                 DeployAppOpts {
                     app: &app_cfg_new,
-                    original_config: Some(app_config.clone().to_yaml_value().unwrap()),
+                    original_config: Some(
+                        app_config.clone().to_yaml_value().unwrap(),
+                    ),
                     allow_create: true,
                     make_default: !self.no_default,
                     owner: Some(owner),
@@ -414,7 +447,9 @@ impl AsyncCliCommand for CmdAppDeploy {
                 // Release v<insert current version> introduced a breaking change on the
                 // deployment flow, and we want old CI to explicitly fail.
 
-                if let Ok(Some((manifest_path, manifest))) = load_package_manifest(&base_dir_path) {
+                if let Ok(Some((manifest_path, manifest))) =
+                    load_package_manifest(&base_dir_path)
+                {
                     if let Some(package) = &manifest.package {
                         if let Some(name) = &package.name {
                             if name == &n.full_name() {
@@ -427,27 +462,34 @@ impl AsyncCliCommand for CmdAppDeploy {
                                     eprintln!("This behaviour is deprecated.");
                                 }
 
-                                let theme = dialoguer::theme::ColorfulTheme::default();
+                                let theme =
+                                    dialoguer::theme::ColorfulTheme::default();
                                 if self.non_interactive {
                                     if !self.quiet {
                                         eprintln!("Hint: replace `package: {}` with `package: .` to replicate the intended behaviour.", n);
                                     }
                                     anyhow::bail!("deprecated deploy behaviour")
                                 } else if Confirm::with_theme(&theme)
-                                    .with_prompt("Change package to '.' in app.yaml?")
+                                    .with_prompt(
+                                        "Change package to '.' in app.yaml?",
+                                    )
                                     .interact()?
                                 {
-                                    app_config.package = PackageSource::Path(String::from("."));
+                                    app_config.package =
+                                        PackageSource::Path(String::from("."));
                                     // We have to write it right now.
-                                    let new_config_raw = serde_yaml::to_string(&app_config)?;
-                                    std::fs::write(&app_config_path, new_config_raw).with_context(
-                                        || {
-                                            format!(
-                                                "Could not write file: '{}'",
-                                                app_config_path.display()
-                                            )
-                                        },
-                                    )?;
+                                    let new_config_raw =
+                                        serde_yaml::to_string(&app_config)?;
+                                    std::fs::write(
+                                        &app_config_path,
+                                        new_config_raw,
+                                    )
+                                    .with_context(|| {
+                                        format!(
+                                            "Could not write file: '{}'",
+                                            app_config_path.display()
+                                        )
+                                    })?;
 
                                     log::info!(
                                         "Using package {} ({})",
@@ -455,15 +497,23 @@ impl AsyncCliCommand for CmdAppDeploy {
                                         n.full_name()
                                     );
 
-                                    let package_id =
-                                        self.publish(&client, owner.clone(), manifest_path).await?;
+                                    let package_id = self
+                                        .publish(
+                                            &client,
+                                            owner.clone(),
+                                            manifest_path,
+                                        )
+                                        .await?;
 
                                     app_config.package = package_id.into();
 
                                     DeployAppOpts {
                                         app: &app_config,
                                         original_config: Some(
-                                            app_config.clone().to_yaml_value().unwrap(),
+                                            app_config
+                                                .clone()
+                                                .to_yaml_value()
+                                                .unwrap(),
                                         ),
                                         allow_create: true,
                                         make_default: !self.no_default,
@@ -479,7 +529,10 @@ impl AsyncCliCommand for CmdAppDeploy {
                                     DeployAppOpts {
                                         app: &app_config,
                                         original_config: Some(
-                                            app_config.clone().to_yaml_value().unwrap(),
+                                            app_config
+                                                .clone()
+                                                .to_yaml_value()
+                                                .unwrap(),
                                         ),
                                         allow_create: true,
                                         make_default: !self.no_default,
@@ -491,7 +544,10 @@ impl AsyncCliCommand for CmdAppDeploy {
                                 DeployAppOpts {
                                     app: &app_config,
                                     original_config: Some(
-                                        app_config.clone().to_yaml_value().unwrap(),
+                                        app_config
+                                            .clone()
+                                            .to_yaml_value()
+                                            .unwrap(),
                                     ),
                                     allow_create: true,
                                     make_default: !self.no_default,
@@ -502,7 +558,9 @@ impl AsyncCliCommand for CmdAppDeploy {
                         } else {
                             DeployAppOpts {
                                 app: &app_config,
-                                original_config: Some(app_config.clone().to_yaml_value().unwrap()),
+                                original_config: Some(
+                                    app_config.clone().to_yaml_value().unwrap(),
+                                ),
                                 allow_create: true,
                                 make_default: !self.no_default,
                                 owner: Some(owner),
@@ -512,7 +570,9 @@ impl AsyncCliCommand for CmdAppDeploy {
                     } else {
                         DeployAppOpts {
                             app: &app_config,
-                            original_config: Some(app_config.clone().to_yaml_value().unwrap()),
+                            original_config: Some(
+                                app_config.clone().to_yaml_value().unwrap(),
+                            ),
                             allow_create: true,
                             make_default: !self.no_default,
                             owner: Some(owner),
@@ -520,10 +580,15 @@ impl AsyncCliCommand for CmdAppDeploy {
                         }
                     }
                 } else {
-                    log::info!("Using package {}", app_config.package.to_string());
+                    log::info!(
+                        "Using package {}",
+                        app_config.package.to_string()
+                    );
                     DeployAppOpts {
                         app: &app_config,
-                        original_config: Some(app_config.clone().to_yaml_value().unwrap()),
+                        original_config: Some(
+                            app_config.clone().to_yaml_value().unwrap(),
+                        ),
                         allow_create: true,
                         make_default: !self.no_default,
                         owner: Some(owner),
@@ -535,7 +600,9 @@ impl AsyncCliCommand for CmdAppDeploy {
                 log::info!("Using package {}", app_config.package.to_string());
                 DeployAppOpts {
                     app: &app_config,
-                    original_config: Some(app_config.clone().to_yaml_value().unwrap()),
+                    original_config: Some(
+                        app_config.clone().to_yaml_value().unwrap(),
+                    ),
                     allow_create: true,
                     make_default: !self.no_default,
                     owner: Some(owner),
@@ -590,9 +657,14 @@ impl AsyncCliCommand for CmdAppDeploy {
                 &new_app_config.to_yaml_value()?,
             );
             let new_config_raw = serde_yaml::to_string(&new_merged)?;
-            std::fs::write(&app_config_path, new_config_raw).with_context(|| {
-                format!("Could not write file: '{}'", app_config_path.display())
-            })?;
+            std::fs::write(&app_config_path, new_config_raw).with_context(
+                || {
+                    format!(
+                        "Could not write file: '{}'",
+                        app_config_path.display()
+                    )
+                },
+            )?;
         }
 
         wait_app(&client, opts.clone(), app_version.clone(), self.quiet).await?;
@@ -631,7 +703,8 @@ pub async fn deploy_app(
     } else {
         config_value
     };
-    let mut raw_config = serde_yaml::to_string(&final_config)?.trim().to_string();
+    let mut raw_config =
+        serde_yaml::to_string(&final_config)?.trim().to_string();
     raw_config.push('\n');
 
     // TODO: respect allow_create flag
@@ -724,7 +797,9 @@ pub async fn wait_app(
                     if !quiet {
                         eprintln!();
                     }
-                    anyhow::bail!("\nApp still not reachable after 5 minutes...");
+                    anyhow::bail!(
+                        "\nApp still not reachable after 5 minutes..."
+                    );
                 }
 
                 {
@@ -758,7 +833,9 @@ pub async fn wait_app(
                             if !quiet {
                                 eprintln!();
                             }
-                            if !(res.status().is_success() || res.status().is_redirection()) {
+                            if !(res.status().is_success()
+                                || res.status().is_redirection())
+                            {
                                 eprintln!(
                                     "{}",
                                     format!(
@@ -766,7 +843,10 @@ pub async fn wait_app(
                                         res.status()).yellow()
                                 );
                             } else {
-                                eprintln!("{} Deployment complete", "𖥔".yellow().bold());
+                                eprintln!(
+                                    "{} Deployment complete",
+                                    "𖥔".yellow().bold()
+                                );
                             }
 
                             break;
@@ -790,7 +870,8 @@ pub async fn wait_app(
                     .as_millis()
                     .try_into()
                     .unwrap_or_default();
-                let to_sleep = Duration::from_millis(sleep_millis.saturating_sub(elapsed));
+                let to_sleep =
+                    Duration::from_millis(sleep_millis.saturating_sub(elapsed));
                 tokio::time::sleep(to_sleep).await;
                 sleep_millis = (sleep_millis * 2).max(10_000);
             }
@@ -800,7 +881,9 @@ pub async fn wait_app(
     Ok((app, version))
 }
 
-pub fn app_config_from_api(version: &DeployAppVersion) -> Result<AppConfigV1, anyhow::Error> {
+pub fn app_config_from_api(
+    version: &DeployAppVersion,
+) -> Result<AppConfigV1, anyhow::Error> {
     let app_id = version
         .app
         .as_ref()

@@ -106,12 +106,18 @@ impl Node {
     fn name(&self) -> &OsStr {
         match self {
             Self::File(FileNode { name, .. }) => name.as_os_str(),
-            Self::OffloadedFile(OffloadedFileNode { name, .. }) => name.as_os_str(),
-            Self::ReadOnlyFile(ReadOnlyFileNode { name, .. }) => name.as_os_str(),
+            Self::OffloadedFile(OffloadedFileNode { name, .. }) => {
+                name.as_os_str()
+            }
+            Self::ReadOnlyFile(ReadOnlyFileNode { name, .. }) => {
+                name.as_os_str()
+            }
             Self::ArcFile(ArcFileNode { name, .. }) => name.as_os_str(),
             Self::CustomFile(CustomFileNode { name, .. }) => name.as_os_str(),
             Self::Directory(DirectoryNode { name, .. }) => name.as_os_str(),
-            Self::ArcDirectory(ArcDirectoryNode { name, .. }) => name.as_os_str(),
+            Self::ArcDirectory(ArcDirectoryNode { name, .. }) => {
+                name.as_os_str()
+            }
         }
     }
 
@@ -142,12 +148,18 @@ impl Node {
     fn set_name(&mut self, new_name: OsString) {
         match self {
             Self::File(FileNode { name, .. }) => *name = new_name,
-            Self::OffloadedFile(OffloadedFileNode { name, .. }) => *name = new_name,
-            Self::ReadOnlyFile(ReadOnlyFileNode { name, .. }) => *name = new_name,
+            Self::OffloadedFile(OffloadedFileNode { name, .. }) => {
+                *name = new_name
+            }
+            Self::ReadOnlyFile(ReadOnlyFileNode { name, .. }) => {
+                *name = new_name
+            }
             Self::ArcFile(ArcFileNode { name, .. }) => *name = new_name,
             Self::CustomFile(CustomFileNode { name, .. }) => *name = new_name,
             Self::Directory(DirectoryNode { name, .. }) => *name = new_name,
-            Self::ArcDirectory(ArcDirectoryNode { name, .. }) => *name = new_name,
+            Self::ArcDirectory(ArcDirectoryNode { name, .. }) => {
+                *name = new_name
+            }
         }
     }
 }

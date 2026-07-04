@@ -28,7 +28,13 @@ pub const HEADER_APP_VERSION_ID: &str = "x-edge-app-version-id";
 /// NOTE: only used by the backend, Edge itself does not use this format, and
 /// uses [`super::AppVersionV1Spec`] instead.
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct AppConfigV1 {
     /// Name of the app.
@@ -101,14 +107,26 @@ pub struct AppConfigV1 {
 }
 
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct Locality {
     pub regions: Vec<String>,
 }
 
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct AppScalingConfigV1 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -116,7 +134,13 @@ pub struct AppScalingConfigV1 {
 }
 
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub enum AppScalingModeV1 {
     #[serde(rename = "single_concurrency")]
@@ -124,7 +148,13 @@ pub enum AppScalingModeV1 {
 }
 
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct AppVolume {
     pub name: String,
@@ -132,7 +162,13 @@ pub struct AppVolume {
 }
 
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct AppScheduledTask {
     pub name: String,
@@ -164,7 +200,8 @@ impl AppConfigV1 {
     }
 
     pub fn parse_yaml(value: &str) -> Result<Self, anyhow::Error> {
-        let raw = serde_yaml::from_str::<serde_yaml::Value>(value).context("invalid yaml")?;
+        let raw = serde_yaml::from_str::<serde_yaml::Value>(value)
+            .context("invalid yaml")?;
         let kind = raw
             .get("kind")
             .context("invalid app config: no 'kind' field found")?
@@ -181,7 +218,8 @@ impl AppConfigV1 {
             }
         }
 
-        let data = serde_yaml::from_value(raw).context("could not deserialize app config")?;
+        let data = serde_yaml::from_value(raw)
+            .context("could not deserialize app config")?;
         Ok(data)
     }
 }
@@ -189,7 +227,13 @@ impl AppConfigV1 {
 /// Restricted version of [`super::CapabilityMapV1`], with only a select subset
 /// of settings.
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct AppConfigCapabilityMapV1 {
     /// Instance memory settings.
@@ -214,7 +258,13 @@ pub struct AppConfigCapabilityMapV1 {
 /// to have separation between the high-level app.yaml and the more internal
 /// App entity.
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct AppConfigCapabilityMemoryV1 {
     /// Memory limit for an instance.
@@ -237,7 +287,13 @@ pub struct AppConfigCapabilityMemoryV1 {
 /// All the specified requests will be sent to the app before the snapshot is
 /// created, allowing the app to pre-load files, pre initialize caches, ...
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct AppConfigCapabilityInstaBootV1 {
     /// HTTP requests to perform during startup snapshot creation.
@@ -260,7 +316,13 @@ pub struct AppConfigCapabilityInstaBootV1 {
 
 /// App redirect configuration.
 #[derive(
-    serde::Serialize, serde::Deserialize, schemars::JsonSchema, Clone, Debug, PartialEq, Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
 )]
 pub struct Redirect {
     /// Force https by redirecting http requests to https automatically.

@@ -30,7 +30,9 @@ impl Global {
         mutability: Mutability,
     ) -> Result<Self, RuntimeError> {
         if !val.is_from_store(store) {
-            return Err(RuntimeError::new("cross-`Store` values are not supported"));
+            return Err(RuntimeError::new(
+                "cross-`Store` values are not supported",
+            ));
         }
         let global_ty = GlobalType {
             mutability,
@@ -89,7 +91,11 @@ impl Global {
         param_from_js(&context, &self.handle.ty.ty, &value)
     }
 
-    pub fn set(&self, store: &mut impl AsStoreMut, val: Value) -> Result<(), RuntimeError> {
+    pub fn set(
+        &self,
+        store: &mut impl AsStoreMut,
+        val: Value,
+    ) -> Result<(), RuntimeError> {
         let store_mut = store.as_store_mut();
         let new_value = val.as_jsvalue(&store_mut);
         let engine = store_mut.engine();
@@ -100,7 +106,10 @@ impl Global {
             .map_err(|e| <JSValue as Into<RuntimeError>>::into(e))
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, vm_global: VMGlobal) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_global: VMGlobal,
+    ) -> Self {
         use crate::jsc::store::StoreObject;
         VMGlobal::list_mut(store.objects_mut()).push(vm_global.clone());
         Self { handle: vm_global }

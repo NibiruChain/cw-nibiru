@@ -1,8 +1,8 @@
 use std::mem;
 
 use libc::{
-    clock_getres, clock_gettime, timespec, CLOCK_MONOTONIC, CLOCK_PROCESS_CPUTIME_ID,
-    CLOCK_REALTIME, CLOCK_THREAD_CPUTIME_ID,
+    clock_getres, clock_gettime, timespec, CLOCK_MONOTONIC,
+    CLOCK_PROCESS_CPUTIME_ID, CLOCK_REALTIME, CLOCK_THREAD_CPUTIME_ID,
 };
 use wasmer::WasmRef;
 use wasmer_wasix_types::wasi::{Errno, Snapshot0Clockid, Timestamp};
@@ -29,7 +29,8 @@ pub fn platform_clock_res_get(
         (clock_getres(unix_clock_id, &mut timespec_out), timespec_out)
     };
 
-    let t_out = (timespec_out.tv_sec * 1_000_000_000).wrapping_add(timespec_out.tv_nsec);
+    let t_out =
+        (timespec_out.tv_sec * 1_000_000_000).wrapping_add(timespec_out.tv_nsec);
     Ok(t_out)
 }
 
@@ -56,6 +57,7 @@ pub fn platform_clock_time_get(
         )
     };
 
-    let t_out = (timespec_out.tv_sec * 1_000_000_000).wrapping_add(timespec_out.tv_nsec);
+    let t_out =
+        (timespec_out.tv_sec * 1_000_000_000).wrapping_add(timespec_out.tv_nsec);
     Ok(t_out)
 }

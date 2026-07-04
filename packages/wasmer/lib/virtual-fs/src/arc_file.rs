@@ -38,7 +38,10 @@ where
         let file = Pin::new(guard.as_mut());
         file.start_seek(position)
     }
-    fn poll_complete(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         let mut guard = self.inner.lock().unwrap();
         let file = Pin::new(guard.as_mut());
         file.poll_complete(cx)
@@ -58,12 +61,18 @@ where
         let file = Pin::new(guard.as_mut());
         file.poll_write(cx, buf)
     }
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let mut guard = self.inner.lock().unwrap();
         let file = Pin::new(guard.as_mut());
         file.poll_flush(cx)
     }
-    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let mut guard = self.inner.lock().unwrap();
         let file = Pin::new(guard.as_mut());
         file.poll_shutdown(cx)
@@ -115,7 +124,11 @@ where
         let inner = self.inner.lock().unwrap();
         inner.created_time()
     }
-    fn set_times(&mut self, atime: Option<u64>, mtime: Option<u64>) -> crate::Result<()> {
+    fn set_times(
+        &mut self,
+        atime: Option<u64>,
+        mtime: Option<u64>,
+    ) -> crate::Result<()> {
         let mut inner = self.inner.lock().unwrap();
         inner.set_times(atime, mtime)
     }
@@ -139,12 +152,18 @@ where
         let inner = self.inner.lock().unwrap();
         inner.get_special_fd()
     }
-    fn poll_read_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         let mut inner = self.inner.lock().unwrap();
         let inner = Pin::new(inner.as_mut());
         inner.poll_read_ready(cx)
     }
-    fn poll_write_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         let mut inner = self.inner.lock().unwrap();
         let inner = Pin::new(inner.as_mut());
         inner.poll_write_ready(cx)

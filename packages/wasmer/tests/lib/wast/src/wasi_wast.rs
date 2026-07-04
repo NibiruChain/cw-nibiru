@@ -10,16 +10,18 @@ use std::{
 
 use tokio::runtime::Handle;
 use virtual_fs::{
-    host_fs, mem_fs, passthru_fs, tmp_fs, union_fs, AsyncRead, AsyncSeek, AsyncWrite,
-    AsyncWriteExt, FileSystem, Pipe, ReadBuf, RootFileSystemBuilder,
+    host_fs, mem_fs, passthru_fs, tmp_fs, union_fs, AsyncRead, AsyncSeek,
+    AsyncWrite, AsyncWriteExt, FileSystem, Pipe, ReadBuf, RootFileSystemBuilder,
 };
 use wasmer::{FunctionEnv, Imports, Module, Store};
 use wasmer_types::ModuleHash;
-use wasmer_wasix::runtime::task_manager::{tokio::TokioTaskManager, InlineWaker};
+use wasmer_wasix::runtime::task_manager::{
+    tokio::TokioTaskManager, InlineWaker,
+};
 use wasmer_wasix::types::wasi::{Filesize, Timestamp};
 use wasmer_wasix::{
-    generate_import_object_from_env, get_wasi_version, FsError, PluggableRuntime, VirtualFile,
-    WasiEnv, WasiEnvBuilder, WasiVersion,
+    generate_import_object_from_env, get_wasi_version, FsError,
+    PluggableRuntime, VirtualFile, WasiEnv, WasiEnvBuilder, WasiVersion,
 };
 use wast::parser::{self, Parse, ParseBuffer, Parser};
 
@@ -61,7 +63,8 @@ pub struct WasiTest<'a> {
 }
 
 // TODO: add `test_fs` here to sandbox better
-const BASE_TEST_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../wasi-wast/wasi/");
+const BASE_TEST_DIR: &str =
+    concat!(env!("CARGO_MANIFEST_DIR"), "/../../wasi-wast/wasi/");
 
 fn get_stdio_output(rx: &mpsc::Receiver<Vec<u8>>) -> anyhow::Result<String> {
     let mut stdio = Vec::new();
@@ -107,9 +110,11 @@ impl<'a> WasiTest<'a> {
         #[cfg(not(target_arch = "wasm32"))]
         let _guard = handle.enter();
         #[cfg(not(target_arch = "wasm32"))]
-        let mut rt = PluggableRuntime::new(Arc::new(TokioTaskManager::new(runtime)));
+        let mut rt =
+            PluggableRuntime::new(Arc::new(TokioTaskManager::new(runtime)));
         #[cfg(target_arch = "wasm32")]
-        let mut rt = PluggableRuntime::new(Arc::new(TokioTaskManager::default()));
+        let mut rt =
+            PluggableRuntime::new(Arc::new(TokioTaskManager::default()));
         rt.set_engine(Some(store.engine().clone()));
 
         let mut pb = PathBuf::from(base_path);
@@ -123,13 +128,15 @@ impl<'a> WasiTest<'a> {
         let module_hash = ModuleHash::xxhash(&wasm_bytes);
 
         let module = Module::new(store, wasm_bytes)?;
-        let (builder, _tempdirs, mut stdin_tx, stdout_rx, stderr_rx) =
-            { InlineWaker::block_on(async { self.create_wasi_env(filesystem_kind).await }) }?;
+        let (builder, _tempdirs, mut stdin_tx, stdout_rx, stderr_rx) = {
+            InlineWaker::block_on(async {
+                self.create_wasi_env(filesystem_kind).await
+            })
+        }?;
 
-        let (instance, _wasi_env) =
-            builder
-                .runtime(Arc::new(rt))
-                .instantiate_ext(module, module_hash, store)?;
+        let (instance, _wasi_env) = builder
+            .runtime(Arc::new(rt))
+            .instantiate_ext(module, module_hash, store)?;
 
         let start = instance.exports.get_function("_start")?;
 
@@ -202,8 +209,11 @@ impl<'a> WasiTest<'a> {
 
         match filesystem_kind {
             WasiFileSystemKind::Host => {
-                let fs = host_fs::FileSystem::new(Handle::current(), PathBuf::from(BASE_TEST_DIR))
-                    .unwrap();
+                let fs = host_fs::FileSystem::new(
+                    Handle::current(),
+                    PathBuf::from(BASE_TEST_DIR),
+                )
+                .unwrap();
 
                 for (alias, real_dir) in &self.mapped_dirs {
                     let mut dir = PathBuf::from(BASE_TEST_DIR);
@@ -219,7 +229,8 @@ impl<'a> WasiTest<'a> {
                 }
 
                 for alias in &self.temp_dirs {
-                    let temp_dir = tempfile::tempdir_in(PathBuf::from(BASE_TEST_DIR))?;
+                    let temp_dir =
+                        tempfile::tempdir_in(PathBuf::from(BASE_TEST_DIR))?;
                     builder.add_map_dir(alias, temp_dir.path())?;
                     host_temp_dirs_to_not_drop.push(temp_dir);
                 }
@@ -229,8 +240,12 @@ impl<'a> WasiTest<'a> {
 
             other => {
                 let fs: Box<dyn FileSystem + Send + Sync> = match other {
-                    WasiFileSystemKind::InMemory => Box::<mem_fs::FileSystem>::default(),
-                    WasiFileSystemKind::Tmp => Box::<tmp_fs::TmpFileSystem>::default(),
+                    WasiFileSystemKind::InMemory => {
+                        Box::<mem_fs::FileSystem>::default()
+                    }
+                    WasiFileSystemKind::Tmp => {
+                        Box::<tmp_fs::TmpFileSystem>::default()
+                    }
                     WasiFileSystemKind::PassthruMemory => {
                         let fs = Box::<mem_fs::FileSystem>::default();
                         Box::new(passthru_fs::PassthruFileSystem::new(fs))
@@ -290,7 +305,8 @@ impl<'a> WasiTest<'a> {
 
                 let root = PathBuf::from("/");
 
-                map_host_fs_to_mem_fs(&*fs, read_dir(BASE_TEST_DIR)?, &root).await?;
+                map_host_fs_to_mem_fs(&*fs, read_dir(BASE_TEST_DIR)?, &root)
+                    .await?;
 
                 for (alias, real_dir) in &self.mapped_dirs {
                     let mut path = root.clone();
@@ -306,8 +322,10 @@ impl<'a> WasiTest<'a> {
                 }
 
                 for alias in &self.temp_dirs {
-                    let temp_dir_name =
-                        PathBuf::from(format!("/.tmp_wasmer_wast_{}", temp_dir_index));
+                    let temp_dir_name = PathBuf::from(format!(
+                        "/.tmp_wasmer_wast_{}",
+                        temp_dir_index
+                    ));
                     fs.create_dir(temp_dir_name.as_path())?;
                     builder.add_map_dir(alias, temp_dir_name)?;
                     temp_dir_index += 1;
@@ -338,8 +356,9 @@ impl<'a> WasiTest<'a> {
     /// Get the correct [`WasiVersion`] from the Wasm [`Module`].
     fn get_version(&self, module: &Module) -> anyhow::Result<WasiVersion> {
         use anyhow::Context;
-        let version = get_wasi_version(module, true)
-            .with_context(|| "failed to detect a version of WASI from the module")?;
+        let version = get_wasi_version(module, true).with_context(|| {
+            "failed to detect a version of WASI from the module"
+        })?;
         Ok(version)
     }
 
@@ -678,10 +697,16 @@ impl VirtualFile for OutputCapturerer {
     fn unlink(&mut self) -> Result<(), FsError> {
         Ok(())
     }
-    fn poll_read_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_read_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(0))
     }
-    fn poll_write_ready(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<usize>> {
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(8192))
     }
 }
@@ -693,7 +718,10 @@ impl AsyncSeek for OutputCapturerer {
             "can not seek logging wrapper",
         ))
     }
-    fn poll_complete(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<u64>> {
         Poll::Ready(Err(io::Error::new(
             io::ErrorKind::Other,
             "can not seek logging wrapper",
@@ -711,13 +739,21 @@ impl AsyncWrite for OutputCapturerer {
             .lock()
             .unwrap()
             .send(buf.to_vec())
-            .map_err(|err| io::Error::new(io::ErrorKind::BrokenPipe, err.to_string()))?;
+            .map_err(|err| {
+                io::Error::new(io::ErrorKind::BrokenPipe, err.to_string())
+            })?;
         Poll::Ready(Ok(buf.len()))
     }
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
     }
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
     }
 }
@@ -755,7 +791,8 @@ fn map_host_fs_to_mem_fs<'a>(
 
                 map_host_fs_to_mem_fs(fs, read_dir(entry.path())?, &path).await?
             } else if entry_type.is_file() {
-                let mut host_file = OpenOptions::new().read(true).open(entry.path())?;
+                let mut host_file =
+                    OpenOptions::new().read(true).open(entry.path())?;
                 let mut mem_file = fs
                     .new_open_options()
                     .create_new(true)

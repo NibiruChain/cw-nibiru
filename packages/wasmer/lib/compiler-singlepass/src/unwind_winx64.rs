@@ -23,12 +23,14 @@ impl<'a> Writer<'a> {
     }
 
     fn write_u16_le(&mut self, v: u16) {
-        self.buf[self.offset..(self.offset + 2)].copy_from_slice(&v.to_le_bytes());
+        self.buf[self.offset..(self.offset + 2)]
+            .copy_from_slice(&v.to_le_bytes());
         self.offset += 2;
     }
 
     fn write_u32_le(&mut self, v: u32) {
-        self.buf[self.offset..(self.offset + 4)].copy_from_slice(&v.to_le_bytes());
+        self.buf[self.offset..(self.offset + 4)]
+            .copy_from_slice(&v.to_le_bytes());
         self.offset += 4;
     }
 }
@@ -83,7 +85,10 @@ impl UnwindCode {
                 reg,
             } => {
                 writer.write_u8(*instruction_offset);
-                writer.write_u8((*reg << 4) | (UnwindOperation::PushNonvolatileRegister as u8));
+                writer.write_u8(
+                    (*reg << 4)
+                        | (UnwindOperation::PushNonvolatileRegister as u8),
+                );
             }
             Self::SaveReg {
                 instruction_offset,
@@ -126,13 +131,16 @@ impl UnwindCode {
                 writer.write_u8(*instruction_offset);
                 if *size <= SMALL_ALLOC_MAX_SIZE {
                     writer.write_u8(
-                        ((((*size - 8) / 8) as u8) << 4) | UnwindOperation::SmallStackAlloc as u8,
+                        ((((*size - 8) / 8) as u8) << 4)
+                            | UnwindOperation::SmallStackAlloc as u8,
                     );
                 } else if *size <= LARGE_ALLOC_16BIT_MAX_SIZE {
                     writer.write_u8(UnwindOperation::LargeStackAlloc as u8);
                     writer.write_u16_le((*size / 8) as u16);
                 } else {
-                    writer.write_u8((1 << 4) | (UnwindOperation::LargeStackAlloc as u8));
+                    writer.write_u8(
+                        (1 << 4) | (UnwindOperation::LargeStackAlloc as u8),
+                    );
                     writer.write_u32_le(*size);
                 }
             }
@@ -154,7 +162,8 @@ impl UnwindCode {
                     3
                 }
             }
-            Self::SaveXmm { stack_offset, .. } | Self::SaveReg { stack_offset, .. } => {
+            Self::SaveXmm { stack_offset, .. }
+            | Self::SaveReg { stack_offset, .. } => {
                 if *stack_offset <= u16::MAX as u32 {
                     2
                 } else {
@@ -240,12 +249,15 @@ impl UnwindInfo {
 
 const UNWIND_RBP_REG: u8 = 5;
 
-pub(crate) fn create_unwind_info_from_insts(insts: &[(usize, UnwindOps)]) -> Option<UnwindInfo> {
+pub(crate) fn create_unwind_info_from_insts(
+    insts: &[(usize, UnwindOps)],
+) -> Option<UnwindInfo> {
     let mut unwind_codes = vec![];
     let mut frame_register_offset = 0;
     let mut max_unwind_offset = 0;
     for &(instruction_offset, ref inst) in insts {
-        let instruction_offset = ensure_unwind_offset(instruction_offset as u32)?;
+        let instruction_offset =
+            ensure_unwind_offset(instruction_offset as u32)?;
         match *inst {
             UnwindOps::PushFP { .. } => {
                 unwind_codes.push(UnwindCode::PushRegister {
@@ -297,7 +309,9 @@ pub(crate) fn create_unwind_info_from_insts(insts: &[(usize, UnwindOps)]) -> Opt
 
 fn ensure_unwind_offset(offset: u32) -> Option<u8> {
     if offset > 255 {
-        panic!("function prologues cannot exceed 255 bytes in size for Windows x64");
+        panic!(
+            "function prologues cannot exceed 255 bytes in size for Windows x64"
+        );
     }
     Some(offset as u8)
 }

@@ -89,7 +89,11 @@ pub trait FileSystem: fmt::Debug + Send + Sync + 'static + Upcastable {
     fn read_dir(&self, path: &Path) -> Result<ReadDir>;
     fn create_dir(&self, path: &Path) -> Result<()>;
     fn remove_dir(&self, path: &Path) -> Result<()>;
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<()>>;
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<()>>;
     fn metadata(&self, path: &Path) -> Result<Metadata>;
     /// This method gets metadata without following symlinks in the path.
     /// Currently identical to `metadata` because symlinks aren't implemented
@@ -99,8 +103,12 @@ pub trait FileSystem: fmt::Debug + Send + Sync + 'static + Upcastable {
 
     fn new_open_options(&self) -> OpenOptions;
 
-    fn mount(&self, name: String, path: &Path, fs: Box<dyn FileSystem + Send + Sync>)
-        -> Result<()>;
+    fn mount(
+        &self,
+        name: String,
+        path: &Path,
+        fs: Box<dyn FileSystem + Send + Sync>,
+    ) -> Result<()>;
 }
 
 impl dyn FileSystem + 'static {
@@ -136,7 +144,11 @@ where
         (**self).remove_dir(path)
     }
 
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, Result<()>> {
+    fn rename<'a>(
+        &'a self,
+        from: &'a Path,
+        to: &'a Path,
+    ) -> BoxFuture<'a, Result<()>> {
         Box::pin(async { (**self).rename(from, to).await })
     }
 
@@ -351,7 +363,11 @@ pub trait VirtualFile:
 
     #[allow(unused_variables)]
     /// sets accessed and modified time
-    fn set_times(&mut self, atime: Option<u64>, mtime: Option<u64>) -> crate::Result<()> {
+    fn set_times(
+        &mut self,
+        atime: Option<u64>,
+        mtime: Option<u64>,
+    ) -> crate::Result<()> {
         Ok(())
     }
 
@@ -380,7 +396,11 @@ pub trait VirtualFile:
 
     /// Writes to this file using an mmap offset and reference
     /// (this method only works for mmap optimized file systems)
-    fn write_from_mmap(&mut self, _offset: u64, _len: u64) -> std::io::Result<()> {
+    fn write_from_mmap(
+        &mut self,
+        _offset: u64,
+        _len: u64,
+    ) -> std::io::Result<()> {
         Err(std::io::ErrorKind::Unsupported.into())
     }
 
@@ -399,10 +419,16 @@ pub trait VirtualFile:
     }
 
     /// Polls the file for when there is data to be read
-    fn poll_read_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>>;
+    fn poll_read_ready(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>>;
 
     /// Polls the file for when it is available for writing
-    fn poll_write_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<usize>>;
+    fn poll_write_ready(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<usize>>;
 }
 
 // Implementation of `Upcastable` taken from https://users.rust-lang.org/t/why-does-downcasting-not-work-for-subtraits/33286/7 .

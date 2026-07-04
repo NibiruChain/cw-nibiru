@@ -16,7 +16,9 @@ pub trait IntoSuper<Super: ?Sized> {
 impl<T: AbstractVolume + Send + Sync + 'static>
     IntoSuper<dyn AbstractVolume + Send + Sync + 'static> for T
 {
-    fn into_super(self: Arc<Self>) -> Arc<dyn AbstractVolume + Send + Sync + 'static> {
+    fn into_super(
+        self: Arc<Self>,
+    ) -> Arc<dyn AbstractVolume + Send + Sync + 'static> {
         self
     }
 }
@@ -30,10 +32,15 @@ pub trait WasmerPackageVolume:
     + Debug
     + IntoSuper<dyn AbstractVolume + Send + Sync + 'static>
 {
-    fn as_volume(self: Arc<Self>) -> Arc<dyn AbstractVolume + Send + Sync + 'static> {
+    fn as_volume(
+        self: Arc<Self>,
+    ) -> Arc<dyn AbstractVolume + Send + Sync + 'static> {
         self.into_super()
     }
 
     /// Serialize the volume as a [`webc::v3::write::Directory`].  
-    fn as_directory_tree(&self, strictness: Strictness) -> Result<Directory<'_>, Error>;
+    fn as_directory_tree(
+        &self,
+        strictness: Strictness,
+    ) -> Result<Directory<'_>, Error>;
 }

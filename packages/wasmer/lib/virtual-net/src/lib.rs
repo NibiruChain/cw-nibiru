@@ -23,7 +23,9 @@ pub use composite::CompositeTcpListener;
 pub use loopback::LoopbackNetworking;
 use pin_project_lite::pin_project;
 #[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "remote")]
 pub use server::{RemoteNetworkingServer, RemoteNetworkingServerDriver};
 use std::fmt;
@@ -54,7 +56,18 @@ pub use virtual_mio::{InterestGuard, InterestHandlerWaker, InterestType};
 pub type Result<T> = std::result::Result<T, NetworkError>;
 
 /// Represents an IP address and its netmask
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+    Serialize,
+    Deserialize,
+)]
 #[cfg_attr(feature = "rkyv", derive(RkyvSerialize, RkyvDeserialize, Archive))]
 pub struct IpCidr {
     pub ip: IpAddr,
@@ -197,7 +210,10 @@ pub trait VirtualNetworking: fmt::Debug + Send + Sync + 'static {
 
     /// Creates a socket that can be used to send and receive ICMP packets
     /// from a paritcular IP address
-    async fn bind_icmp(&self, addr: IpAddr) -> Result<Box<dyn VirtualIcmpSocket + Sync>> {
+    async fn bind_icmp(
+        &self,
+        addr: IpAddr,
+    ) -> Result<Box<dyn VirtualIcmpSocket + Sync>> {
         Err(NetworkError::Unsupported)
     }
 
@@ -223,13 +239,20 @@ pub trait VirtualNetworking: fmt::Debug + Send + Sync + 'static {
 
 pub type DynVirtualNetworking = Arc<dyn VirtualNetworking>;
 
-pub trait VirtualTcpListener: VirtualIoSource + fmt::Debug + Send + Sync + 'static {
+pub trait VirtualTcpListener:
+    VirtualIoSource + fmt::Debug + Send + Sync + 'static
+{
     /// Tries to accept a new connection
-    fn try_accept(&mut self) -> Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)>;
+    fn try_accept(
+        &mut self,
+    ) -> Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)>;
 
     /// Registers a waker for when a new connection has arrived. This uses
     /// a stack machine which means more than one waker can be registered
-    fn set_handler(&mut self, handler: Box<dyn InterestHandler + Send + Sync>) -> Result<()>;
+    fn set_handler(
+        &mut self,
+        handler: Box<dyn InterestHandler + Send + Sync>,
+    ) -> Result<()>;
 
     /// Returns the local address of this TCP listener
     fn addr_local(&self) -> Result<SocketAddr>;
@@ -244,12 +267,16 @@ pub trait VirtualTcpListener: VirtualIoSource + fmt::Debug + Send + Sync + 'stat
 #[async_trait::async_trait]
 pub trait VirtualTcpListenerExt: VirtualTcpListener {
     /// Accepts a new connection from the TCP listener
-    async fn accept(&mut self) -> Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)>;
+    async fn accept(
+        &mut self,
+    ) -> Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)>;
 }
 
 #[async_trait::async_trait]
 impl<R: VirtualTcpListener + ?Sized> VirtualTcpListenerExt for R {
-    async fn accept(&mut self) -> Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)> {
+    async fn accept(
+        &mut self,
+    ) -> Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)> {
         struct Poller<'a, R>
         where
             R: VirtualTcpListener + ?Sized,
@@ -261,8 +288,12 @@ impl<R: VirtualTcpListener + ?Sized> VirtualTcpListenerExt for R {
             R: VirtualTcpListener + ?Sized,
         {
             type Output = Result<(Box<dyn VirtualTcpSocket + Sync>, SocketAddr)>;
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let handler: Box<dyn InterestHandler + Send + Sync> = cx.waker().into();
+            fn poll(
+                mut self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
+                let handler: Box<dyn InterestHandler + Send + Sync> =
+                    cx.waker().into();
                 if let Err(err) = self.listener.set_handler(handler) {
                     return Poll::Ready(Err(err));
                 }
@@ -277,7 +308,9 @@ impl<R: VirtualTcpListener + ?Sized> VirtualTcpListenerExt for R {
     }
 }
 
-pub trait VirtualSocket: VirtualIoSource + fmt::Debug + Send + Sync + 'static {
+pub trait VirtualSocket:
+    VirtualIoSource + fmt::Debug + Send + Sync + 'static
+{
     /// Sets how many network hops the packets are permitted for new connections
     fn set_ttl(&mut self, ttl: u32) -> Result<()>;
 
@@ -293,7 +326,10 @@ pub trait VirtualSocket: VirtualIoSource + fmt::Debug + Send + Sync + 'static {
     /// Registers a waker for when this connection is ready to receive
     /// more data. Uses a stack machine which means more than one waker
     /// can be registered
-    fn set_handler(&mut self, handler: Box<dyn InterestHandler + Send + Sync>) -> Result<()>;
+    fn set_handler(
+        &mut self,
+        handler: Box<dyn InterestHandler + Send + Sync>,
+    ) -> Result<()>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -313,7 +349,9 @@ pub enum StreamSecurity {
 }
 
 /// Connected sockets have a persistent connection to a remote peer
-pub trait VirtualConnectedSocket: VirtualSocket + fmt::Debug + Send + Sync + 'static {
+pub trait VirtualConnectedSocket:
+    VirtualSocket + fmt::Debug + Send + Sync + 'static
+{
     /// Determines how long the socket will remain in a TIME_WAIT
     /// after it disconnects (only the one that initiates the close will
     /// be in a TIME_WAIT state thus the clients should always do this rather
@@ -363,10 +401,14 @@ impl<R: VirtualConnectedSocket + ?Sized> VirtualConnectedSocketExt for R {
             R: VirtualConnectedSocket + ?Sized,
         {
             type Output = Result<usize>;
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 let this = self.project();
 
-                let handler: Box<dyn InterestHandler + Send + Sync> = cx.waker().into();
+                let handler: Box<dyn InterestHandler + Send + Sync> =
+                    cx.waker().into();
                 if let Err(err) = this.socket.set_handler(handler) {
                     return Poll::Ready(Err(err));
                 }
@@ -395,10 +437,14 @@ impl<R: VirtualConnectedSocket + ?Sized> VirtualConnectedSocketExt for R {
             R: VirtualConnectedSocket + ?Sized,
         {
             type Output = Result<usize>;
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 let this = self.project();
 
-                let handler: Box<dyn InterestHandler + Send + Sync> = cx.waker().into();
+                let handler: Box<dyn InterestHandler + Send + Sync> =
+                    cx.waker().into();
                 if let Err(err) = this.socket.set_handler(handler) {
                     return Poll::Ready(Err(err));
                 }
@@ -424,8 +470,12 @@ impl<R: VirtualConnectedSocket + ?Sized> VirtualConnectedSocketExt for R {
             R: VirtualConnectedSocket + ?Sized,
         {
             type Output = Result<()>;
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let handler: Box<dyn InterestHandler + Send + Sync> = cx.waker().into();
+            fn poll(
+                mut self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
+                let handler: Box<dyn InterestHandler + Send + Sync> =
+                    cx.waker().into();
                 if let Err(err) = self.socket.set_handler(handler) {
                     return Poll::Ready(Err(err));
                 }
@@ -442,24 +492,34 @@ impl<R: VirtualConnectedSocket + ?Sized> VirtualConnectedSocketExt for R {
 
 /// Connectionless sockets are able to send and receive datagrams and stream
 /// bytes to multiple addresses at the same time (peer-to-peer)
-pub trait VirtualConnectionlessSocket: VirtualSocket + fmt::Debug + Send + Sync + 'static {
+pub trait VirtualConnectionlessSocket:
+    VirtualSocket + fmt::Debug + Send + Sync + 'static
+{
     /// Sends out a datagram or stream of bytes on this socket
     /// to a specific address
     fn try_send_to(&mut self, data: &[u8], addr: SocketAddr) -> Result<usize>;
 
     /// Recv a packet from the socket
-    fn try_recv_from(&mut self, buf: &mut [MaybeUninit<u8>]) -> Result<(usize, SocketAddr)>;
+    fn try_recv_from(
+        &mut self,
+        buf: &mut [MaybeUninit<u8>],
+    ) -> Result<(usize, SocketAddr)>;
 }
 
 #[async_trait::async_trait]
 pub trait VirtualConnectionlessSocketExt: VirtualConnectionlessSocket {
     async fn send_to(&mut self, data: &[u8], addr: SocketAddr) -> Result<usize>;
 
-    async fn recv_from(&mut self, buf: &mut [MaybeUninit<u8>]) -> Result<(usize, SocketAddr)>;
+    async fn recv_from(
+        &mut self,
+        buf: &mut [MaybeUninit<u8>],
+    ) -> Result<(usize, SocketAddr)>;
 }
 
 #[async_trait::async_trait]
-impl<R: VirtualConnectionlessSocket + ?Sized> VirtualConnectionlessSocketExt for R {
+impl<R: VirtualConnectionlessSocket + ?Sized> VirtualConnectionlessSocketExt
+    for R
+{
     async fn send_to(&mut self, data: &[u8], addr: SocketAddr) -> Result<usize> {
         pin_project! {
             struct Poller<'a, 'b, R: ?Sized>
@@ -476,10 +536,14 @@ impl<R: VirtualConnectionlessSocket + ?Sized> VirtualConnectionlessSocketExt for
             R: VirtualConnectionlessSocket + ?Sized,
         {
             type Output = Result<usize>;
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 let this = self.project();
 
-                let handler: Box<dyn InterestHandler + Send + Sync> = cx.waker().into();
+                let handler: Box<dyn InterestHandler + Send + Sync> =
+                    cx.waker().into();
                 if let Err(err) = this.socket.set_handler(handler) {
                     return Poll::Ready(Err(err));
                 }
@@ -498,7 +562,10 @@ impl<R: VirtualConnectionlessSocket + ?Sized> VirtualConnectionlessSocketExt for
         .await
     }
 
-    async fn recv_from(&mut self, buf: &mut [MaybeUninit<u8>]) -> Result<(usize, SocketAddr)> {
+    async fn recv_from(
+        &mut self,
+        buf: &mut [MaybeUninit<u8>],
+    ) -> Result<(usize, SocketAddr)> {
         pin_project! {
             struct Poller<'a, 'b, R: ?Sized>
             where
@@ -513,10 +580,14 @@ impl<R: VirtualConnectionlessSocket + ?Sized> VirtualConnectionlessSocketExt for
             R: VirtualConnectionlessSocket + ?Sized,
         {
             type Output = Result<(usize, SocketAddr)>;
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            fn poll(
+                self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<Self::Output> {
                 let this = self.project();
 
-                let handler: Box<dyn InterestHandler + Send + Sync> = cx.waker().into();
+                let handler: Box<dyn InterestHandler + Send + Sync> =
+                    cx.waker().into();
                 if let Err(err) = this.socket.set_handler(handler) {
                     return Poll::Ready(Err(err));
                 }
@@ -539,7 +610,9 @@ pub trait VirtualIcmpSocket:
 }
 
 #[async_trait::async_trait]
-pub trait VirtualRawSocket: VirtualSocket + fmt::Debug + Send + Sync + 'static {
+pub trait VirtualRawSocket:
+    VirtualSocket + fmt::Debug + Send + Sync + 'static
+{
     /// Sends out a datagram or stream of bytes on this socket
     fn try_send(&mut self, data: &[u8]) -> Result<usize>;
 
@@ -561,7 +634,9 @@ pub trait VirtualRawSocket: VirtualSocket + fmt::Debug + Send + Sync + 'static {
     fn promiscuous(&self) -> Result<bool>;
 }
 
-pub trait VirtualTcpSocket: VirtualConnectedSocket + fmt::Debug + Send + Sync + 'static {
+pub trait VirtualTcpSocket:
+    VirtualConnectedSocket + fmt::Debug + Send + Sync + 'static
+{
     /// Sets the receive buffer size which acts as a trottle for how
     /// much data is buffered on this side of the pipe
     fn set_recv_buf_size(&mut self, size: usize) -> Result<()>;
@@ -663,7 +738,10 @@ impl<'a> AsyncWrite for Box<dyn VirtualTcpSocket + Sync + 'a> {
         }
     }
 
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         let this = self.get_mut();
         let handler: Box<dyn InterestHandler + Send + Sync> = cx.waker().into();
         if let Err(err) = this.set_handler(handler) {
@@ -676,7 +754,10 @@ impl<'a> AsyncWrite for Box<dyn VirtualTcpSocket + Sync + 'a> {
         }
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_shutdown(
+        mut self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         Poll::Ready(
             self.shutdown(Shutdown::Write)
                 .map_err(net_error_into_io_err),
@@ -726,19 +807,35 @@ pub trait VirtualUdpSocket:
 
     /// Tells this interface that it will subscribe to a
     /// particular multicast address. This applies to IPv4 addresses
-    fn join_multicast_v4(&mut self, multiaddr: Ipv4Addr, iface: Ipv4Addr) -> Result<()>;
+    fn join_multicast_v4(
+        &mut self,
+        multiaddr: Ipv4Addr,
+        iface: Ipv4Addr,
+    ) -> Result<()>;
 
     /// Tells this interface that it will unsubscribe to a
     /// particular multicast address. This applies to IPv4 addresses
-    fn leave_multicast_v4(&mut self, multiaddr: Ipv4Addr, iface: Ipv4Addr) -> Result<()>;
+    fn leave_multicast_v4(
+        &mut self,
+        multiaddr: Ipv4Addr,
+        iface: Ipv4Addr,
+    ) -> Result<()>;
 
     /// Tells this interface that it will subscribe to a
     /// particular multicast address. This applies to IPv6 addresses
-    fn join_multicast_v6(&mut self, multiaddr: Ipv6Addr, iface: u32) -> Result<()>;
+    fn join_multicast_v6(
+        &mut self,
+        multiaddr: Ipv6Addr,
+        iface: u32,
+    ) -> Result<()>;
 
     /// Tells this interface that it will unsubscribe to a
     /// particular multicast address. This applies to IPv6 addresses
-    fn leave_multicast_v6(&mut self, multiaddr: Ipv6Addr, iface: u32) -> Result<()>;
+    fn leave_multicast_v6(
+        &mut self,
+        multiaddr: Ipv6Addr,
+        iface: u32,
+    ) -> Result<()>;
 
     /// Returns the remote address of this UDP socket if it has been
     /// connected to a specific target destination address

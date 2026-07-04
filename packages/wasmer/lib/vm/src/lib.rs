@@ -41,28 +41,35 @@ pub use crate::global::*;
 pub use crate::imports::Imports;
 pub use crate::instance::{InstanceAllocator, VMInstance};
 pub use crate::memory::{
-    initialize_memory_with_data, LinearMemory, NotifyLocation, VMMemory, VMOwnedMemory,
-    VMSharedMemory,
+    initialize_memory_with_data, LinearMemory, NotifyLocation, VMMemory,
+    VMOwnedMemory, VMSharedMemory,
 };
 pub use crate::mmap::{Mmap, MmapType};
 pub use crate::probestack::PROBESTACK;
 pub use crate::sig_registry::SignatureRegistry;
-pub use crate::store::{InternalStoreHandle, MaybeInstanceOwned, StoreHandle, StoreObjects};
+pub use crate::store::{
+    InternalStoreHandle, MaybeInstanceOwned, StoreHandle, StoreObjects,
+};
 pub use crate::table::{TableElement, VMTable};
 #[doc(hidden)]
-pub use crate::threadconditions::{ThreadConditions, ThreadConditionsHandle, WaiterError};
+pub use crate::threadconditions::{
+    ThreadConditions, ThreadConditionsHandle, WaiterError,
+};
 pub use crate::trap::*;
 pub use crate::vmcontext::{
-    VMCallerCheckedAnyfunc, VMContext, VMDynamicFunctionContext, VMFunctionContext,
-    VMFunctionImport, VMFunctionKind, VMGlobalDefinition, VMGlobalImport, VMMemoryDefinition,
-    VMMemoryImport, VMSharedSignatureIndex, VMTableDefinition, VMTableImport, VMTrampoline,
+    VMCallerCheckedAnyfunc, VMContext, VMDynamicFunctionContext,
+    VMFunctionContext, VMFunctionImport, VMFunctionKind, VMGlobalDefinition,
+    VMGlobalImport, VMMemoryDefinition, VMMemoryImport, VMSharedSignatureIndex,
+    VMTableDefinition, VMTableImport, VMTrampoline,
 };
 pub use wasmer_types::LibCall;
 pub use wasmer_types::MemoryError;
 pub use wasmer_types::MemoryStyle;
 use wasmer_types::RawValue;
 pub use wasmer_types::TableStyle;
-pub use wasmer_types::{StoreId, TargetSharedSignatureIndex, VMBuiltinFunctionIndex, VMOffsets};
+pub use wasmer_types::{
+    StoreId, TargetSharedSignatureIndex, VMBuiltinFunctionIndex, VMOffsets,
+};
 
 /// Version number of this crate.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

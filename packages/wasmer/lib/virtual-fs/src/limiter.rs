@@ -81,7 +81,11 @@ mod tracked_vec {
             })
         }
 
-        pub fn resize(&mut self, new_len: usize, value: u8) -> Result<(), FsError> {
+        pub fn resize(
+            &mut self,
+            new_len: usize,
+            value: u8,
+        ) -> Result<(), FsError> {
             let old_capacity = self.data.capacity();
             self.data.resize(new_len, value);
             if let Some(limiter) = &self.limiter {
@@ -91,7 +95,10 @@ mod tracked_vec {
             Ok(())
         }
 
-        pub fn extend_from_slice(&mut self, other: &[u8]) -> Result<(), FsError> {
+        pub fn extend_from_slice(
+            &mut self,
+            other: &[u8],
+        ) -> Result<(), FsError> {
             let old_capacity = self.data.capacity();
             self.data.extend_from_slice(other);
             if let Some(limiter) = &self.limiter {
@@ -101,7 +108,10 @@ mod tracked_vec {
             Ok(())
         }
 
-        pub fn reserve_exact(&mut self, additional: usize) -> Result<(), FsError> {
+        pub fn reserve_exact(
+            &mut self,
+            additional: usize,
+        ) -> Result<(), FsError> {
             let old_capacity = self.data.capacity();
             self.data.reserve_exact(additional);
             if let Some(limiter) = &self.limiter {
@@ -178,17 +188,27 @@ mod tracked_vec {
             Ok(Self { data: other })
         }
 
-        pub fn resize(&mut self, new_len: usize, value: u8) -> Result<(), FsError> {
+        pub fn resize(
+            &mut self,
+            new_len: usize,
+            value: u8,
+        ) -> Result<(), FsError> {
             self.data.resize(new_len, value);
             Ok(())
         }
 
-        pub fn extend_from_slice(&mut self, other: &[u8]) -> Result<(), FsError> {
+        pub fn extend_from_slice(
+            &mut self,
+            other: &[u8],
+        ) -> Result<(), FsError> {
             self.data.extend_from_slice(other);
             Ok(())
         }
 
-        pub fn reserve_exact(&mut self, additional: usize) -> Result<(), FsError> {
+        pub fn reserve_exact(
+            &mut self,
+            additional: usize,
+        ) -> Result<(), FsError> {
             self.data.reserve_exact(additional);
             Ok(())
         }

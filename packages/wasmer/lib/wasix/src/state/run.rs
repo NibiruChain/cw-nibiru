@@ -2,13 +2,19 @@ use virtual_mio::InlineWaker;
 use wasmer::{RuntimeError, Store};
 use wasmer_wasix_types::wasi::ExitCode;
 
-use crate::{os::task::thread::RewindResultType, RewindStateOption, WasiError, WasiRuntimeError};
+use crate::{
+    os::task::thread::RewindResultType, RewindStateOption, WasiError,
+    WasiRuntimeError,
+};
 
 use super::*;
 
 impl WasiFunctionEnv {
     #[allow(clippy::result_large_err)]
-    pub fn run_async(self, mut store: Store) -> Result<(Self, Store), WasiRuntimeError> {
+    pub fn run_async(
+        self,
+        mut store: Store,
+    ) -> Result<(Self, Store), WasiRuntimeError> {
         // If no handle or runtime exists then create one
         #[cfg(feature = "sys-thread")]
         let _guard = if tokio::runtime::Handle::try_current().is_err() {
@@ -112,7 +118,9 @@ fn run_with_deep_sleep(
             if exit_code.is_success() {
                 let _ = sender.send(Ok(store));
             } else {
-                let _ = sender.send(Err(WasiRuntimeError::Wasi(WasiError::Exit(exit_code))));
+                let _ = sender.send(Err(WasiRuntimeError::Wasi(
+                    WasiError::Exit(exit_code),
+                )));
             }
             return;
         }
@@ -150,36 +158,42 @@ fn handle_result(
     result: Result<Box<[wasmer::Value]>, RuntimeError>,
     sender: tokio::sync::mpsc::UnboundedSender<Result<Store, WasiRuntimeError>>,
 ) {
-    let result: Result<_, WasiRuntimeError> = match result.map_err(|e| e.downcast::<WasiError>()) {
-        Err(Ok(WasiError::DeepSleep(work))) => {
-            let pid = env.data(&store).pid();
-            let tid = env.data(&store).tid();
-            tracing::trace!(%pid, %tid, "entered a deep sleep");
+    let result: Result<_, WasiRuntimeError> =
+        match result.map_err(|e| e.downcast::<WasiError>()) {
+            Err(Ok(WasiError::DeepSleep(work))) => {
+                let pid = env.data(&store).pid();
+                let tid = env.data(&store).tid();
+                tracing::trace!(%pid, %tid, "entered a deep sleep");
 
-            let tasks = env.data(&store).tasks().clone();
-            let rewind = work.rewind;
-            let respawn = move |ctx, store, res| {
-                run_with_deep_sleep(
-                    store,
-                    Some((rewind, RewindResultType::RewindWithResult(res))),
-                    ctx,
-                    sender,
-                )
-            };
+                let tasks = env.data(&store).tasks().clone();
+                let rewind = work.rewind;
+                let respawn = move |ctx, store, res| {
+                    run_with_deep_sleep(
+                        store,
+                        Some((rewind, RewindResultType::RewindWithResult(res))),
+                        ctx,
+                        sender,
+                    )
+                };
 
-            // Spawns the WASM process after a trigger
-            unsafe {
-                tasks
-                    .resume_wasm_after_poller(Box::new(respawn), env, store, work.trigger)
-                    .unwrap();
+                // Spawns the WASM process after a trigger
+                unsafe {
+                    tasks
+                        .resume_wasm_after_poller(
+                            Box::new(respawn),
+                            env,
+                            store,
+                            work.trigger,
+                        )
+                        .unwrap();
+                }
+
+                return;
             }
-
-            return;
-        }
-        Ok(_) => Ok(()),
-        Err(Ok(other)) => Err(other.into()),
-        Err(Err(e)) => Err(e.into()),
-    };
+            Ok(_) => Ok(()),
+            Err(Ok(other)) => Err(other.into()),
+            Err(Err(e)) => Err(e.into()),
+        };
 
     let (result, exit_code) = wasi_exit_code(result);
     env.on_exit(&mut store, Some(exit_code));

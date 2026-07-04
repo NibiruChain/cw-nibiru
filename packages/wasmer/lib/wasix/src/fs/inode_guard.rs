@@ -79,13 +79,21 @@ impl std::fmt::Debug for InodeValFilePollGuard {
                 write!(f, "guard-file(fd={}, peb={})", self.fd, self.peb)
             }
             InodeValFilePollGuardMode::EventNotifications { .. } => {
-                write!(f, "guard-notifications(fd={}, peb={})", self.fd, self.peb)
+                write!(
+                    f,
+                    "guard-notifications(fd={}, peb={})",
+                    self.fd, self.peb
+                )
             }
             InodeValFilePollGuardMode::Socket { inner } => {
                 let inner = inner.protected.read().unwrap();
                 match inner.kind {
                     InodeSocketKind::TcpListener { .. } => {
-                        write!(f, "guard-tcp-listener(fd={}, peb={})", self.fd, self.peb)
+                        write!(
+                            f,
+                            "guard-tcp-listener(fd={}, peb={})",
+                            self.fd, self.peb
+                        )
                     }
                     InodeSocketKind::TcpStream { ref socket, .. } => {
                         if socket.is_closed() {
@@ -95,16 +103,32 @@ impl std::fmt::Debug for InodeValFilePollGuard {
                                 self.fd, self.peb
                             )
                         } else {
-                            write!(f, "guard-tcp-stream(fd={}, peb={})", self.fd, self.peb)
+                            write!(
+                                f,
+                                "guard-tcp-stream(fd={}, peb={})",
+                                self.fd, self.peb
+                            )
                         }
                     }
                     InodeSocketKind::UdpSocket { .. } => {
-                        write!(f, "guard-udp-socket(fd={}, peb={})", self.fd, self.peb)
+                        write!(
+                            f,
+                            "guard-udp-socket(fd={}, peb={})",
+                            self.fd, self.peb
+                        )
                     }
                     InodeSocketKind::Raw(..) => {
-                        write!(f, "guard-raw-socket(fd={}, peb={})", self.fd, self.peb)
+                        write!(
+                            f,
+                            "guard-raw-socket(fd={}, peb={})",
+                            self.fd, self.peb
+                        )
                     }
-                    _ => write!(f, "guard-socket(fd={}), peb={})", self.fd, self.peb),
+                    _ => write!(
+                        f,
+                        "guard-socket(fd={}), peb={})",
+                        self.fd, self.peb
+                    ),
                 }
             }
             InodeValFilePollGuardMode::Pipe { .. } => {
@@ -160,7 +184,10 @@ pub const POLL_GUARD_MAX_RET: usize = 4;
 impl Future for InodeValFilePollGuardJoin {
     type Output = heapless::Vec<(EventResult, EpollType), POLL_GUARD_MAX_RET>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
+    fn poll(
+        mut self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Self::Output> {
         // Otherwise we need to register for the event
         let waker = cx.waker();
         let mut has_read = false;
@@ -195,7 +222,9 @@ impl Future for InodeValFilePollGuardJoin {
                     let file = Pin::new(guard.as_mut());
                     file.poll_read_ready(cx)
                 }
-                InodeValFilePollGuardMode::EventNotifications(inner) => inner.poll(waker).map(Ok),
+                InodeValFilePollGuardMode::EventNotifications(inner) => {
+                    inner.poll(waker).map(Ok)
+                }
                 InodeValFilePollGuardMode::Socket { ref inner } => {
                     let mut guard = inner.protected.write().unwrap();
                     guard.poll_read_ready(cx)
@@ -285,7 +314,9 @@ impl Future for InodeValFilePollGuardJoin {
                     let file = Pin::new(guard.as_mut());
                     file.poll_write_ready(cx)
                 }
-                InodeValFilePollGuardMode::EventNotifications(inner) => inner.poll(waker).map(Ok),
+                InodeValFilePollGuardMode::EventNotifications(inner) => {
+                    inner.poll(waker).map(Ok)
+                }
                 InodeValFilePollGuardMode::Socket { ref inner } => {
                     let mut guard = inner.protected.write().unwrap();
                     guard.poll_write_ready(cx)
@@ -382,7 +413,9 @@ pub(crate) struct InodeValFileReadGuard {
 }
 
 impl InodeValFileReadGuard {
-    pub(crate) fn new(file: &Arc<RwLock<Box<dyn VirtualFile + Send + Sync + 'static>>>) -> Self {
+    pub(crate) fn new(
+        file: &Arc<RwLock<Box<dyn VirtualFile + Send + Sync + 'static>>>,
+    ) -> Self {
         Self {
             guard: crate::utils::read_owned(file).unwrap(),
         }
@@ -418,7 +451,9 @@ pub struct InodeValFileWriteGuard {
 }
 
 impl InodeValFileWriteGuard {
-    pub(crate) fn new(file: &Arc<RwLock<Box<dyn VirtualFile + Send + Sync + 'static>>>) -> Self {
+    pub(crate) fn new(
+        file: &Arc<RwLock<Box<dyn VirtualFile + Send + Sync + 'static>>>,
+    ) -> Self {
         Self {
             guard: crate::utils::write_owned(file).unwrap(),
         }
@@ -450,7 +485,10 @@ pub(crate) struct WasiStateFileGuard {
 }
 
 impl WasiStateFileGuard {
-    pub fn new(state: &WasiState, fd: wasi::Fd) -> Result<Option<Self>, FsError> {
+    pub fn new(
+        state: &WasiState,
+        fd: wasi::Fd,
+    ) -> Result<Option<Self>, FsError> {
         let fd_map = state.fs.fd_map.read().unwrap();
         if let Some(fd) = fd_map.get(fd) {
             Ok(Some(Self {
@@ -559,7 +597,10 @@ impl VirtualFile for WasiStateFileGuard {
         }
     }
 
-    fn poll_read_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<usize>> {
+    fn poll_read_ready(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<usize>> {
         let mut guard = self.lock_write();
         if let Some(file) = guard.as_mut() {
             let file = Pin::new(file.deref_mut());
@@ -584,7 +625,10 @@ impl VirtualFile for WasiStateFileGuard {
 }
 
 impl AsyncSeek for WasiStateFileGuard {
-    fn start_seek(self: Pin<&mut Self>, position: SeekFrom) -> std::io::Result<()> {
+    fn start_seek(
+        self: Pin<&mut Self>,
+        position: SeekFrom,
+    ) -> std::io::Result<()> {
         let mut guard = self.lock_write();
         if let Some(guard) = guard.as_mut() {
             let file = Pin::new(guard.deref_mut());
@@ -593,7 +637,10 @@ impl AsyncSeek for WasiStateFileGuard {
             Err(std::io::ErrorKind::Unsupported.into())
         }
     }
-    fn poll_complete(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<u64>> {
+    fn poll_complete(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<u64>> {
         let mut guard = self.lock_write();
         if let Some(guard) = guard.as_mut() {
             let file = Pin::new(guard.deref_mut());
@@ -618,7 +665,10 @@ impl AsyncWrite for WasiStateFileGuard {
             Poll::Ready(Err(std::io::ErrorKind::Unsupported.into()))
         }
     }
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         let mut guard = self.lock_write();
         if let Some(guard) = guard.as_mut() {
             let file = Pin::new(guard.deref_mut());
@@ -627,7 +677,10 @@ impl AsyncWrite for WasiStateFileGuard {
             Poll::Ready(Err(std::io::ErrorKind::Unsupported.into()))
         }
     }
-    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         let mut guard = self.lock_write();
         if let Some(guard) = guard.as_mut() {
             let file = Pin::new(guard.deref_mut());

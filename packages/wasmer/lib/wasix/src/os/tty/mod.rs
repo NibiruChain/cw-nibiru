@@ -145,7 +145,9 @@ impl Tty {
         self.stdin.as_ref()
     }
 
-    pub fn stdin_mut(&mut self) -> &mut (dyn VirtualFile + Send + Sync + 'static) {
+    pub fn stdin_mut(
+        &mut self,
+    ) -> &mut (dyn VirtualFile + Send + Sync + 'static) {
         self.stdin.as_mut()
     }
 
@@ -157,8 +159,11 @@ impl Tty {
         stdin
     }
 
-    pub fn stdin_take(&mut self) -> Box<dyn VirtualFile + Send + Sync + 'static> {
-        let mut stdin: Box<dyn VirtualFile + Send + Sync + 'static> = Box::<NullFile>::default();
+    pub fn stdin_take(
+        &mut self,
+    ) -> Box<dyn VirtualFile + Send + Sync + 'static> {
+        let mut stdin: Box<dyn VirtualFile + Send + Sync + 'static> =
+            Box::<NullFile>::default();
         std::mem::swap(&mut self.stdin, &mut stdin);
         stdin
     }
@@ -167,7 +172,10 @@ impl Tty {
         self.options.clone()
     }
 
-    pub fn set_signaler(&mut self, signaler: Box<dyn SignalHandlerAbi + Send + Sync + 'static>) {
+    pub fn set_signaler(
+        &mut self,
+        signaler: Box<dyn SignalHandlerAbi + Send + Sync + 'static>,
+    ) {
         self.signaler.replace(signaler);
     }
 
@@ -182,10 +190,15 @@ impl Tty {
                     // Due to a nasty bug in xterm.js on Android mobile it sends the keys you press
                     // twice in a row with a short interval between - this hack will avoid that bug
                     if self.is_mobile {
-                        let now = platform_clock_time_get(Snapshot0Clockid::Monotonic, 1_000_000)
-                            .unwrap() as u128;
+                        let now = platform_clock_time_get(
+                            Snapshot0Clockid::Monotonic,
+                            1_000_000,
+                        )
+                        .unwrap() as u128;
                         if let Some((what, when)) = self.last.as_ref() {
-                            if what.as_str() == data && now - *when < TTY_MOBILE_PAUSE {
+                            if what.as_str() == data
+                                && now - *when < TTY_MOBILE_PAUSE
+                            {
                                 self.last = None;
                                 return self;
                             }
@@ -200,7 +213,10 @@ impl Tty {
         })
     }
 
-    fn on_enter(mut self, _data: Cow<'static, [u8]>) -> BoxFuture<'static, Self> {
+    fn on_enter(
+        mut self,
+        _data: Cow<'static, [u8]>,
+    ) -> BoxFuture<'static, Self> {
         Box::pin(async move {
             // Add a line feed on the end and take the line
             let mut data = self.line.clone();
@@ -224,7 +240,10 @@ impl Tty {
         })
     }
 
-    fn on_ctrl_c(mut self, _data: Cow<'static, [u8]>) -> BoxFuture<'static, Self> {
+    fn on_ctrl_c(
+        mut self,
+        _data: Cow<'static, [u8]>,
+    ) -> BoxFuture<'static, Self> {
         Box::pin(async move {
             if let Some(signaler) = self.signaler.as_ref() {
                 signaler.signal(Signal::Sigint as u8).ok();
@@ -243,7 +262,10 @@ impl Tty {
         })
     }
 
-    fn on_backspace(mut self, _data: Cow<'static, [u8]>) -> BoxFuture<'static, Self> {
+    fn on_backspace(
+        mut self,
+        _data: Cow<'static, [u8]>,
+    ) -> BoxFuture<'static, Self> {
         // Remove a character (if there are none left we are done)
         if self.line.is_empty() {
             return Box::pin(async move { self });
@@ -259,7 +281,8 @@ impl Tty {
                     options.echo
                 };
                 if echo {
-                    let _ = self.stdout.write("\u{0008} \u{0008}".as_bytes()).await;
+                    let _ =
+                        self.stdout.write("\u{0008} \u{0008}".as_bytes()).await;
                 }
             }
             self
@@ -270,19 +293,31 @@ impl Tty {
         Box::pin(async move { self })
     }
 
-    fn on_cursor_left(self, _data: Cow<'static, [u8]>) -> BoxFuture<'static, Self> {
+    fn on_cursor_left(
+        self,
+        _data: Cow<'static, [u8]>,
+    ) -> BoxFuture<'static, Self> {
         Box::pin(async move { self })
     }
 
-    fn on_cursor_right(self, _data: Cow<'static, [u8]>) -> BoxFuture<'static, Self> {
+    fn on_cursor_right(
+        self,
+        _data: Cow<'static, [u8]>,
+    ) -> BoxFuture<'static, Self> {
         Box::pin(async move { self })
     }
 
-    fn on_cursor_up(self, _data: Cow<'static, [u8]>) -> BoxFuture<'static, Self> {
+    fn on_cursor_up(
+        self,
+        _data: Cow<'static, [u8]>,
+    ) -> BoxFuture<'static, Self> {
         Box::pin(async move { self })
     }
 
-    fn on_cursor_down(self, _data: Cow<'static, [u8]>) -> BoxFuture<'static, Self> {
+    fn on_cursor_down(
+        self,
+        _data: Cow<'static, [u8]>,
+    ) -> BoxFuture<'static, Self> {
         Box::pin(async move { self })
     }
 
@@ -302,7 +337,10 @@ impl Tty {
         Box::pin(async move { self })
     }
 
-    fn on_page_down(self, _data: Cow<'static, [u8]>) -> BoxFuture<'static, Self> {
+    fn on_page_down(
+        self,
+        _data: Cow<'static, [u8]>,
+    ) -> BoxFuture<'static, Self> {
         Box::pin(async move { self })
     }
 
@@ -389,8 +427,9 @@ impl Tty {
                     if echo {
                         let _ = self.stdout.write(data.as_ref()).await;
                     }
-                    self.line
-                        .push_str(String::from_utf8_lossy(data.as_ref()).as_ref());
+                    self.line.push_str(
+                        String::from_utf8_lossy(data.as_ref()).as_ref(),
+                    );
                     self
                 }),
             };

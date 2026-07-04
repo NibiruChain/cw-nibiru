@@ -26,7 +26,8 @@ use wasmer_package::utils::from_disk;
 use wasmer_types::ModuleInfo;
 use webc::{Container, Metadata, PathSegments, Volume as WebcVolume};
 
-const LINK_SYSTEM_LIBRARIES_WINDOWS: &[&str] = &["userenv", "Ws2_32", "advapi32", "bcrypt"];
+const LINK_SYSTEM_LIBRARIES_WINDOWS: &[&str] =
+    &["userenv", "Ws2_32", "advapi32", "bcrypt"];
 
 const LINK_SYSTEM_LIBRARIES_UNIX: &[&str] = &["dl", "m", "pthread"];
 
@@ -126,7 +127,8 @@ impl UrlOrVersion {
         match semver::Version::parse(s) {
             Ok(o) => return Ok(Self::Version(o)),
             Err(e) => {
-                err = anyhow::anyhow!("could not parse as URL or version: {e}").context(err);
+                err = anyhow::anyhow!("could not parse as URL or version: {e}")
+                    .context(err);
             }
         }
 
@@ -201,9 +203,11 @@ impl CliCommand for CreateExe {
     /// Runs logic for the `compile` subcommand
     fn run(self) -> Result<Self::Output, anyhow::Error> {
         let path = normalize_path(&format!("{}", self.path.display()));
-        let target_triple = self.target_triple.clone().unwrap_or_else(Triple::host);
+        let target_triple =
+            self.target_triple.clone().unwrap_or_else(Triple::host);
         let mut cc = self.cross_compile.clone();
-        let target = utils::target_triple_to_target(&target_triple, &self.cpu_features);
+        let target =
+            utils::target_triple_to_target(&target_triple, &self.cpu_features);
 
         let starting_cd = env::current_dir()?;
         let input_path = starting_cd.join(path);
@@ -231,7 +235,8 @@ impl CliCommand for CreateExe {
             return Err(anyhow::anyhow!("input path cannot be a directory"));
         }
 
-        let (store, compiler_type) = self.compiler.get_store_for_target(target.clone())?;
+        let (store, compiler_type) =
+            self.compiler.get_store_for_target(target.clone())?;
 
         let mut engine = store.engine().clone();
         let hash_algorithm = self.hash_algorithm.unwrap_or_default().into();
@@ -282,7 +287,12 @@ impl CliCommand for CreateExe {
 
         get_module_infos(&store, &tempdir, &atoms)?;
         let mut entrypoint = get_entrypoint(&tempdir)?;
-        create_header_files_in_dir(&tempdir, &mut entrypoint, &atoms, &self.precompiled_atom)?;
+        create_header_files_in_dir(
+            &tempdir,
+            &mut entrypoint,
+            &atoms,
+            &self.precompiled_atom,
+        )?;
         link_exe_from_dir(
             &self.env,
             &tempdir,
@@ -311,7 +321,10 @@ impl CliCommand for CreateExe {
     }
 }
 
-fn write_entrypoint(directory: &Path, entrypoint: &Entrypoint) -> Result<(), anyhow::Error> {
+fn write_entrypoint(
+    directory: &Path,
+    entrypoint: &Entrypoint,
+) -> Result<(), anyhow::Error> {
     std::fs::write(
         directory.join("entrypoint.json"),
         serde_json::to_string_pretty(&entrypoint).unwrap(),
@@ -325,20 +338,23 @@ fn write_entrypoint(directory: &Path, entrypoint: &Entrypoint) -> Result<(), any
 }
 
 fn get_entrypoint(directory: &Path) -> Result<Entrypoint, anyhow::Error> {
-    let entrypoint_json =
-        std::fs::read_to_string(directory.join("entrypoint.json")).map_err(|e| {
-            anyhow::anyhow!(
-                "could not read entrypoint.json in {}: {e}",
-                directory.display()
-            )
-        })?;
-
-    let entrypoint: Entrypoint = serde_json::from_str(&entrypoint_json).map_err(|e| {
+    let entrypoint_json = std::fs::read_to_string(
+        directory.join("entrypoint.json"),
+    )
+    .map_err(|e| {
         anyhow::anyhow!(
-            "could not parse entrypoint.json in {}: {e}",
+            "could not read entrypoint.json in {}: {e}",
             directory.display()
         )
     })?;
+
+    let entrypoint: Entrypoint = serde_json::from_str(&entrypoint_json)
+        .map_err(|e| {
+            anyhow::anyhow!(
+                "could not parse entrypoint.json in {}: {e}",
+                directory.display()
+            )
+        })?;
 
     if entrypoint.atoms.is_empty() {
         return Err(anyhow::anyhow!("file has no atoms to compile"));
@@ -383,8 +399,9 @@ pub(super) fn compile_pirita_into_directory(
 
     allow_multi_wasm.validate(&all_atoms)?;
 
-    std::fs::create_dir_all(target_dir)
-        .map_err(|e| anyhow::anyhow!("cannot create / dir in {}: {e}", target_dir.display()))?;
+    std::fs::create_dir_all(target_dir).map_err(|e| {
+        anyhow::anyhow!("cannot create / dir in {}: {e}", target_dir.display())
+    })?;
 
     let target_dir = target_dir.canonicalize()?;
     let target = &utils::target_triple_to_target(triple, cpu_features);
@@ -405,24 +422,30 @@ pub(super) fn compile_pirita_into_directory(
     let volume_path = pathdiff::diff_paths(volume_path, &target_dir).unwrap();
 
     std::fs::create_dir_all(target_dir.join("atoms")).map_err(|e| {
-        anyhow::anyhow!("cannot create /atoms dir in {}: {e}", target_dir.display())
+        anyhow::anyhow!(
+            "cannot create /atoms dir in {}: {e}",
+            target_dir.display()
+        )
     })?;
 
     let mut atoms_from_file = Vec::new();
     let mut target_paths = Vec::new();
 
     for (atom_name, atom_bytes) in all_atoms {
-        atoms_from_file.push((utils::normalize_atom_name(&atom_name), atom_bytes.to_vec()));
+        atoms_from_file
+            .push((utils::normalize_atom_name(&atom_name), atom_bytes.to_vec()));
         let atom_path = target_dir
             .join("atoms")
             .join(format!("{}.o", utils::normalize_atom_name(&atom_name)));
         let header_path = {
-            std::fs::create_dir_all(target_dir.join("include")).map_err(|e| {
-                anyhow::anyhow!(
-                    "cannot create /include dir in {}: {e}",
-                    target_dir.display()
-                )
-            })?;
+            std::fs::create_dir_all(target_dir.join("include")).map_err(
+                |e| {
+                    anyhow::anyhow!(
+                        "cannot create /include dir in {}: {e}",
+                        target_dir.display()
+                    )
+                },
+            )?;
 
             let header_path = target_dir.join("include").join(format!(
                 "static_defs_{}.h",
@@ -439,8 +462,9 @@ pub(super) fn compile_pirita_into_directory(
         ));
     }
 
-    let prefix_map = PrefixMapCompilation::from_input(&atoms_from_file, prefixes, false)
-        .with_context(|| anyhow::anyhow!("compile_pirita_into_directory"))?;
+    let prefix_map =
+        PrefixMapCompilation::from_input(&atoms_from_file, prefixes, false)
+            .with_context(|| anyhow::anyhow!("compile_pirita_into_directory"))?;
 
     let module_infos = compile_atoms(
         &atoms_from_file,
@@ -457,9 +481,12 @@ pub(super) fn compile_pirita_into_directory(
         let mut atom_path = a;
         let mut header_path = opt_header_path;
         if let Ok(a) = atom_path.canonicalize() {
-            let opt_header_path = header_path.and_then(|p| p.canonicalize().ok());
-            atom_path = pathdiff::diff_paths(&a, &target_dir).unwrap_or_else(|| a.clone());
-            header_path = opt_header_path.and_then(|h| pathdiff::diff_paths(h, &target_dir));
+            let opt_header_path =
+                header_path.and_then(|p| p.canonicalize().ok());
+            atom_path = pathdiff::diff_paths(&a, &target_dir)
+                .unwrap_or_else(|| a.clone());
+            header_path = opt_header_path
+                .and_then(|h| pathdiff::diff_paths(h, &target_dir));
         }
         atoms.push(CommandEntrypoint {
             // TODO: improve, "--command pip" should be able to invoke atom "python" with args "-m pip"
@@ -497,13 +524,14 @@ fn volume_file_block(volumes: &BTreeMap<String, WebcVolume>) -> Vec<u8> {
         .map(|(name, volume)| (name, serialize_volume_to_webc_v1(volume)))
         .collect();
 
-    let parsed_volumes: indexmap::IndexMap<String, webc::v1::Volume<'_>> = serialized_volumes
-        .iter()
-        .filter_map(|(name, serialized_volume)| {
-            let volume = webc::v1::Volume::parse(serialized_volume).ok()?;
-            Some((name.to_string(), volume))
-        })
-        .collect();
+    let parsed_volumes: indexmap::IndexMap<String, webc::v1::Volume<'_>> =
+        serialized_volumes
+            .iter()
+            .filter_map(|(name, serialized_volume)| {
+                let volume = webc::v1::Volume::parse(serialized_volume).ok()?;
+                Some((name.to_string(), volume))
+            })
+            .collect();
 
     let webc = webc::v1::WebC {
         version: 0,
@@ -613,7 +641,9 @@ impl PrefixMapCompilation {
             return Ok(Self {
                 input_hashes: atoms
                     .iter()
-                    .map(|(name, bytes)| (normalize_atom_name(name), Self::hash_for_bytes(bytes)))
+                    .map(|(name, bytes)| {
+                        (normalize_atom_name(name), Self::hash_for_bytes(bytes))
+                    })
                     .collect(),
                 manual_prefixes: BTreeMap::new(),
                 compilation_objects: BTreeMap::new(),
@@ -628,7 +658,8 @@ impl PrefixMapCompilation {
             );
         }
 
-        let available_atoms = atoms.iter().map(|(k, _)| k.clone()).collect::<Vec<_>>();
+        let available_atoms =
+            atoms.iter().map(|(k, _)| k.clone()).collect::<Vec<_>>();
         let mut manual_prefixes = BTreeMap::new();
         let mut compilation_objects = BTreeMap::new();
 
@@ -642,21 +673,31 @@ impl PrefixMapCompilation {
                 [atom, prefix, path] => {
                     if only_validate_prefixes {
                         // only insert the prefix in order to not error out of the fs::read(path)
-                        manual_prefixes.insert(normalize_atom_name(atom), prefix.to_string());
+                        manual_prefixes.insert(
+                            normalize_atom_name(atom),
+                            prefix.to_string(),
+                        );
                     } else {
                         let atom_hash = atoms
                         .iter()
                         .find_map(|(name, _)| if normalize_atom_name(name) == normalize_atom_name(atom) { Some(prefix.to_string()) } else { None })
                         .ok_or_else(|| anyhow::anyhow!("no atom {atom:?} found, for prefix {p:?}, available atoms are {available_atoms:?}"))?;
 
-                        let current_dir = std::env::current_dir().unwrap().canonicalize().unwrap();
+                        let current_dir = std::env::current_dir()
+                            .unwrap()
+                            .canonicalize()
+                            .unwrap();
                         let path = current_dir.join(path.replace("./", ""));
                         let bytes = std::fs::read(&path).map_err(|e| {
                             anyhow::anyhow!("could not read file for atom {atom:?} (prefix {p}, path {} in dir {}): {e}", path.display(), current_dir.display())
                         })?;
 
-                        compilation_objects.insert(normalize_atom_name(atom), bytes);
-                        manual_prefixes.insert(normalize_atom_name(atom), atom_hash.to_string());
+                        compilation_objects
+                            .insert(normalize_atom_name(atom), bytes);
+                        manual_prefixes.insert(
+                            normalize_atom_name(atom),
+                            atom_hash.to_string(),
+                        );
                     }
                 }
                 // atom + path, but default SHA256 prefix
@@ -665,20 +706,30 @@ impl PrefixMapCompilation {
                     .iter()
                     .find_map(|(name, bytes)| if normalize_atom_name(name) == normalize_atom_name(atom) { Some(Self::hash_for_bytes(bytes)) } else { None })
                     .ok_or_else(|| anyhow::anyhow!("no atom {atom:?} found, for prefix {p:?}, available atoms are {available_atoms:?}"))?;
-                    manual_prefixes.insert(normalize_atom_name(atom), atom_hash.to_string());
+                    manual_prefixes.insert(
+                        normalize_atom_name(atom),
+                        atom_hash.to_string(),
+                    );
 
                     if !only_validate_prefixes {
-                        let current_dir = std::env::current_dir().unwrap().canonicalize().unwrap();
+                        let current_dir = std::env::current_dir()
+                            .unwrap()
+                            .canonicalize()
+                            .unwrap();
                         let path = current_dir.join(path.replace("./", ""));
                         let bytes = std::fs::read(&path).map_err(|e| {
                             anyhow::anyhow!("could not read file for atom {atom:?} (prefix {p}, path {} in dir {}): {e}", path.display(), current_dir.display())
                         })?;
-                        compilation_objects.insert(normalize_atom_name(atom), bytes);
+                        compilation_objects
+                            .insert(normalize_atom_name(atom), bytes);
                     }
                 }
                 // only prefix if atoms.len() == 1
                 [prefix] if atoms.len() == 1 => {
-                    manual_prefixes.insert(normalize_atom_name(&atoms[0].0), prefix.to_string());
+                    manual_prefixes.insert(
+                        normalize_atom_name(&atoms[0].0),
+                        prefix.to_string(),
+                    );
                 }
                 _ => {
                     return Err(anyhow::anyhow!("invalid --precompiled-atom {p:?} - correct format is ATOM:PREFIX:PATH or ATOM:PATH"));
@@ -694,8 +745,10 @@ impl PrefixMapCompilation {
     }
 
     fn split_prefix(s: &str) -> Vec<String> {
-        let regex =
-            regex::Regex::new(r"^([a-zA-Z0-9\-_]+)(:([a-zA-Z0-9\.\-_]+))?(:(.+*))?").unwrap();
+        let regex = regex::Regex::new(
+            r"^([a-zA-Z0-9\-_]+)(:([a-zA-Z0-9\.\-_]+))?(:(.+*))?",
+        )
+        .unwrap();
         let mut captures = regex
             .captures(s.trim())
             .map(|c| {
@@ -749,15 +802,21 @@ fn test_prefix_parsing() {
     let path = tempdir.path();
     std::fs::write(path.join("test.obj"), b"").unwrap();
     let str1 = format!("ATOM_NAME:PREFIX:{}", path.join("test.obj").display());
-    let prefix =
-        PrefixMapCompilation::from_input(&[("ATOM_NAME".to_string(), b"".to_vec())], &[str1], true);
+    let prefix = PrefixMapCompilation::from_input(
+        &[("ATOM_NAME".to_string(), b"".to_vec())],
+        &[str1],
+        true,
+    );
     assert_eq!(
         prefix.unwrap(),
         PrefixMapCompilation {
             input_hashes: BTreeMap::new(),
-            manual_prefixes: vec![("ATOM_NAME".to_string(), "PREFIX".to_string())]
-                .into_iter()
-                .collect(),
+            manual_prefixes: vec![(
+                "ATOM_NAME".to_string(),
+                "PREFIX".to_string()
+            )]
+            .into_iter()
+            .collect(),
             compilation_objects: Vec::new().into_iter().collect(),
         }
     );
@@ -773,7 +832,8 @@ fn test_split_prefix() {
         vec![
             "qjs".to_string(),
             "abc123".to_string(),
-            "C:\\Users\\felix\\AppData\\Local\\Temp\\.tmpoccCjV\\wasm.obj".to_string(),
+            "C:\\Users\\felix\\AppData\\Local\\Temp\\.tmpoccCjV\\wasm.obj"
+                .to_string(),
         ]
     );
     let split = PrefixMapCompilation::split_prefix("qjs:./tmp.obj");
@@ -786,7 +846,8 @@ fn test_split_prefix() {
         vec![
             "qjs".to_string(),
             "abc123".to_string(),
-            "/var/folders/65/2zzy98b16xz254jccxjzqb8w0000gn/T/.tmpNdgVaq/wasm.o".to_string(),
+            "/var/folders/65/2zzy98b16xz254jccxjzqb8w0000gn/T/.tmpNdgVaq/wasm.o"
+                .to_string(),
         ]
     );
     let split3 = PrefixMapCompilation::split_prefix(
@@ -796,7 +857,8 @@ fn test_split_prefix() {
         split3,
         vec![
             "qjs".to_string(),
-            "/var/folders/65/2zzy98b16xz254jccxjzqb8w0000gn/T/.tmpNdgVaq/wasm.o".to_string(),
+            "/var/folders/65/2zzy98b16xz254jccxjzqb8w0000gn/T/.tmpNdgVaq/wasm.o"
+                .to_string(),
         ]
     );
 }
@@ -822,8 +884,9 @@ fn compile_atoms(
         let atom_name = utils::normalize_atom_name(a);
         let output_object_path = output_dir.join(format!("{atom_name}.o"));
         if let Some(atom) = prefixes.get_compilation_object_for_atom(a) {
-            std::fs::write(&output_object_path, atom)
-                .map_err(|e| anyhow::anyhow!("{}: {e}", output_object_path.display()))?;
+            std::fs::write(&output_object_path, atom).map_err(|e| {
+                anyhow::anyhow!("{}: {e}", output_object_path.display())
+            })?;
             if debug {
                 println!("Using cached object file for atom {a:?}.");
             }
@@ -957,13 +1020,17 @@ pub(super) fn prepare_directory_from_single_wasm_file(
     let bytes = std::fs::read(wasm_file)?;
     let target = &utils::target_triple_to_target(triple, cpu_features);
 
-    std::fs::create_dir_all(target_dir)
-        .map_err(|e| anyhow::anyhow!("cannot create / dir in {}: {e}", target_dir.display()))?;
+    std::fs::create_dir_all(target_dir).map_err(|e| {
+        anyhow::anyhow!("cannot create / dir in {}: {e}", target_dir.display())
+    })?;
 
     let target_dir = target_dir.canonicalize()?;
 
     std::fs::create_dir_all(target_dir.join("atoms")).map_err(|e| {
-        anyhow::anyhow!("cannot create /atoms dir in {}: {e}", target_dir.display())
+        anyhow::anyhow!(
+            "cannot create /atoms dir in {}: {e}",
+            target_dir.display()
+        )
     })?;
 
     let mut atoms_from_file = Vec::new();
@@ -984,8 +1051,11 @@ pub(super) fn prepare_directory_from_single_wasm_file(
         target_paths.push((atom_name, atom_path));
     }
 
-    let prefix_map = PrefixMapCompilation::from_input(&atoms_from_file, prefix, false)
-        .with_context(|| anyhow::anyhow!("prepare_directory_from_single_wasm_file"))?;
+    let prefix_map =
+        PrefixMapCompilation::from_input(&atoms_from_file, prefix, false)
+            .with_context(|| {
+                anyhow::anyhow!("prepare_directory_from_single_wasm_file")
+            })?;
 
     let module_infos = compile_atoms(
         &atoms_from_file,
@@ -1026,8 +1096,8 @@ fn get_module_infos(
     directory: &Path,
     atoms: &[(String, Vec<u8>)],
 ) -> Result<BTreeMap<String, ModuleInfo>, anyhow::Error> {
-    let mut entrypoint =
-        get_entrypoint(directory).with_context(|| anyhow::anyhow!("get module infos"))?;
+    let mut entrypoint = get_entrypoint(directory)
+        .with_context(|| anyhow::anyhow!("get module infos"))?;
 
     let mut module_infos = BTreeMap::new();
     for (atom_name, atom_bytes) in atoms {
@@ -1058,7 +1128,10 @@ pub(crate) fn create_header_files_in_dir(
     use object::{Object, ObjectSection};
 
     std::fs::create_dir_all(directory.join("include")).map_err(|e| {
-        anyhow::anyhow!("cannot create /include dir in {}: {e}", directory.display())
+        anyhow::anyhow!(
+            "cannot create /include dir in {}: {e}",
+            directory.display()
+        )
     })?;
 
     let prefixes = PrefixMapCompilation::from_input(atoms, prefixes, false)
@@ -1066,13 +1139,15 @@ pub(crate) fn create_header_files_in_dir(
 
     for atom in entrypoint.atoms.iter_mut() {
         let atom_name = &atom.atom;
-        let prefix = prefixes
-            .get_prefix_for_atom(atom_name)
-            .ok_or_else(|| anyhow::anyhow!("cannot get prefix for atom {atom_name}"))?;
+        let prefix =
+            prefixes.get_prefix_for_atom(atom_name).ok_or_else(|| {
+                anyhow::anyhow!("cannot get prefix for atom {atom_name}")
+            })?;
 
         let object_file_src = directory.join(&atom.path);
-        let object_file = std::fs::read(&object_file_src)
-            .map_err(|e| anyhow::anyhow!("could not read {}: {e}", object_file_src.display()))?;
+        let object_file = std::fs::read(&object_file_src).map_err(|e| {
+            anyhow::anyhow!("could not read {}: {e}", object_file_src.display())
+        })?;
         let obj_file = object::File::parse(&*object_file)?;
         let sections = obj_file
             .sections()
@@ -1091,22 +1166,23 @@ pub(crate) fn create_header_files_in_dir(
             })?;
         let metadata_length = section.len();
 
-        let module_info = atom
-            .module_info
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("no module info for atom {atom_name:?}"))?;
+        let module_info = atom.module_info.as_ref().ok_or_else(|| {
+            anyhow::anyhow!("no module info for atom {atom_name:?}")
+        })?;
 
-        let base_path = Path::new("include").join(format!("static_defs_{prefix}.h"));
+        let base_path =
+            Path::new("include").join(format!("static_defs_{prefix}.h"));
         let header_file_path = directory.join(&base_path);
 
-        let header_file_src = crate::c_gen::staticlib_header::generate_header_file(
-            &prefix,
-            module_info,
-            &ModuleMetadataSymbolRegistry {
-                prefix: prefix.clone(),
-            },
-            metadata_length,
-        );
+        let header_file_src =
+            crate::c_gen::staticlib_header::generate_header_file(
+                &prefix,
+                module_info,
+                &ModuleMetadataSymbolRegistry {
+                    prefix: prefix.clone(),
+                },
+                metadata_length,
+            );
 
         std::fs::write(&header_file_path, &header_file_src).map_err(|e| {
             anyhow::anyhow!(
@@ -1134,25 +1210,27 @@ fn link_exe_from_dir(
     atoms: &[(String, Vec<u8>)],
     prefixes: &[String],
 ) -> anyhow::Result<()> {
-    let entrypoint =
-        get_entrypoint(directory).with_context(|| anyhow::anyhow!("link exe from dir"))?;
+    let entrypoint = get_entrypoint(directory)
+        .with_context(|| anyhow::anyhow!("link exe from dir"))?;
 
     let prefixes = PrefixMapCompilation::from_input(atoms, prefixes, false)
         .with_context(|| anyhow::anyhow!("link_exe_from_dir"))?;
 
-    let wasmer_main_c = generate_wasmer_main_c(&entrypoint, &prefixes).map_err(|e| {
-        anyhow::anyhow!(
-            "could not generate wasmer_main.c in dir {}: {e}",
-            directory.display()
-        )
-    })?;
+    let wasmer_main_c =
+        generate_wasmer_main_c(&entrypoint, &prefixes).map_err(|e| {
+            anyhow::anyhow!(
+                "could not generate wasmer_main.c in dir {}: {e}",
+                directory.display()
+            )
+        })?;
 
-    std::fs::write(directory.join("wasmer_main.c"), wasmer_main_c.as_bytes()).map_err(|e| {
-        anyhow::anyhow!(
-            "could not write wasmer_main.c in dir {}: {e}",
-            directory.display()
-        )
-    })?;
+    std::fs::write(directory.join("wasmer_main.c"), wasmer_main_c.as_bytes())
+        .map_err(|e| {
+            anyhow::anyhow!(
+                "could not write wasmer_main.c in dir {}: {e}",
+                directory.display()
+            )
+        })?;
 
     let library_path = &cross_compilation.library;
 
@@ -1214,7 +1292,8 @@ fn link_exe_from_dir(
     // compilation done, now link
     if cross_compilation.zig_binary_path.is_none()
         || (cross_compilation.target == Triple::host()
-            && cross_compilation.target.operating_system == OperatingSystem::Windows)
+            && cross_compilation.target.operating_system
+                == OperatingSystem::Windows)
     {
         #[cfg(not(windows))]
         let linker = "cc";
@@ -1242,10 +1321,13 @@ fn link_exe_from_dir(
         );
     }
 
-    let zig_binary_path = cross_compilation
-        .zig_binary_path
-        .as_ref()
-        .ok_or_else(|| anyhow::anyhow!("could not find zig in $PATH {}", directory.display()))?;
+    let zig_binary_path =
+        cross_compilation.zig_binary_path.as_ref().ok_or_else(|| {
+            anyhow::anyhow!(
+                "could not find zig in $PATH {}",
+                directory.display()
+            )
+        })?;
 
     let mut cmd = Command::new(zig_binary_path);
     cmd.arg("build-exe");
@@ -1326,8 +1408,13 @@ fn link_exe_from_dir(
         let files_winsdk = std::fs::read_dir(winsdk_path)
             .ok()
             .map(|res| {
-                res.filter_map(|r| Some(normalize_path(&format!("{}", r.ok()?.path().display()))))
-                    .collect::<Vec<_>>()
+                res.filter_map(|r| {
+                    Some(normalize_path(&format!(
+                        "{}",
+                        r.ok()?.path().display()
+                    )))
+                })
+                .collect::<Vec<_>>()
             })
             .unwrap_or_default();
 
@@ -1368,7 +1455,8 @@ fn link_exe_from_dir(
     }
 
     // remove file if it exists - if not done, can lead to errors on copy
-    let output_path_normalized = normalize_path(&format!("{}", output_path.display()));
+    let output_path_normalized =
+        normalize_path(&format!("{}", output_path.display()));
     let _ = std::fs::remove_file(output_path_normalized);
     std::fs::copy(
         normalize_path(&format!("{}", out_path.display())),
@@ -1415,7 +1503,8 @@ fn link_objects_system_linker(
 
     for include_dir in include_dirs {
         command = command.arg("-I");
-        command = command.arg(normalize_path(&format!("{}", include_dir.display())));
+        command =
+            command.arg(normalize_path(&format!("{}", include_dir.display())));
     }
     let mut include_path = libwasmer_path.clone();
     include_path.pop();
@@ -1426,17 +1515,21 @@ fn link_objects_system_linker(
         return Err(anyhow::anyhow!("Wasmer include path {} does not exist, maybe library path {} is wrong (expected /lib/libwasmer.a)?", include_path.display(), libwasmer_path.display()));
     }
     command = command.arg("-I");
-    command = command.arg(normalize_path(&format!("{}", include_path.display())));
+    command =
+        command.arg(normalize_path(&format!("{}", include_path.display())));
 
     // Add libraries required per platform.
     // We need userenv, sockets (Ws2_32), advapi32 for some system calls and bcrypt for random numbers.
     let mut additional_libraries = additional_libraries.to_vec();
     if target.operating_system == OperatingSystem::Windows {
-        additional_libraries.extend(LINK_SYSTEM_LIBRARIES_WINDOWS.iter().map(|s| s.to_string()));
+        additional_libraries
+            .extend(LINK_SYSTEM_LIBRARIES_WINDOWS.iter().map(|s| s.to_string()));
     } else {
-        additional_libraries.extend(LINK_SYSTEM_LIBRARIES_UNIX.iter().map(|s| s.to_string()));
+        additional_libraries
+            .extend(LINK_SYSTEM_LIBRARIES_UNIX.iter().map(|s| s.to_string()));
     }
-    let link_against_extra_libs = additional_libraries.iter().map(|lib| format!("-l{}", lib));
+    let link_against_extra_libs =
+        additional_libraries.iter().map(|lib| format!("-l{}", lib));
     let command = command.args(link_against_extra_libs);
     let command = command.arg("-o").arg(output_path);
     if debug {
@@ -1593,7 +1686,9 @@ pub(super) mod utils {
 
     use anyhow::{anyhow, Context};
     use target_lexicon::{Architecture, Environment, OperatingSystem, Triple};
-    use wasmer_compiler::types::target::{self as wasmer_types, CpuFeature, Target};
+    use wasmer_compiler::types::target::{
+        self as wasmer_types, CpuFeature, Target,
+    };
 
     use crate::config::WasmerEnv;
 
@@ -1603,7 +1698,8 @@ pub(super) mod utils {
         target_triple: &Triple,
         cpu_features: &[CpuFeature],
     ) -> Target {
-        let mut features = cpu_features.iter().fold(CpuFeature::set(), |a, b| a | *b);
+        let mut features =
+            cpu_features.iter().fold(CpuFeature::set(), |a, b| a | *b);
         // Cranelift requires SSE2, so we have this "hack" for now to facilitate
         // usage
         if target_triple.architecture == Architecture::X86_64 {
@@ -1657,12 +1753,13 @@ pub(super) mod utils {
             let (filename, tarball_dir) = find_filename(local_tarball, target)?;
             Some(tarball_dir.join(filename))
         } else {
-            let wasmer_cache_dir =
-                if *target_triple == Triple::host() && std::env::var("WASMER_DIR").is_ok() {
-                    Some(env.cache_dir().to_path_buf())
-                } else {
-                    get_libwasmer_cache_path(env).ok()
-                };
+            let wasmer_cache_dir = if *target_triple == Triple::host()
+                && std::env::var("WASMER_DIR").is_ok()
+            {
+                Some(env.cache_dir().to_path_buf())
+            } else {
+                get_libwasmer_cache_path(env).ok()
+            };
 
             // check if the tarball for the target already exists locally
             let local_tarball = wasmer_cache_dir.as_ref().and_then(|wc| {
@@ -1680,27 +1777,46 @@ pub(super) mod utils {
                     .find(|p| crate::commands::utils::filter_tarball(p, target))
             });
 
-            if let Some(UrlOrVersion::Url(wasmer_release)) = specific_release.as_ref() {
-                let tarball = super::http_fetch::download_url(env, wasmer_release.as_ref())?;
+            if let Some(UrlOrVersion::Url(wasmer_release)) =
+                specific_release.as_ref()
+            {
+                let tarball = super::http_fetch::download_url(
+                    env,
+                    wasmer_release.as_ref(),
+                )?;
                 let (filename, tarball_dir) = find_filename(&tarball, target)?;
                 Some(tarball_dir.join(filename))
-            } else if let Some(UrlOrVersion::Version(wasmer_release)) = specific_release.as_ref() {
-                let release = super::http_fetch::get_release(Some(wasmer_release.clone()))?;
-                let tarball = super::http_fetch::download_release(env, release, target.clone())?;
+            } else if let Some(UrlOrVersion::Version(wasmer_release)) =
+                specific_release.as_ref()
+            {
+                let release = super::http_fetch::get_release(Some(
+                    wasmer_release.clone(),
+                ))?;
+                let tarball = super::http_fetch::download_release(
+                    env,
+                    release,
+                    target.clone(),
+                )?;
                 let (filename, tarball_dir) = find_filename(&tarball, target)?;
                 Some(tarball_dir.join(filename))
             } else if let Some(local_tarball) = local_tarball.as_ref() {
-                let (filename, tarball_dir) = find_filename(local_tarball, target)?;
+                let (filename, tarball_dir) =
+                    find_filename(local_tarball, target)?;
                 Some(tarball_dir.join(filename))
             } else {
                 let release = super::http_fetch::get_release(None)?;
-                let tarball = super::http_fetch::download_release(env, release, target.clone())?;
+                let tarball = super::http_fetch::download_release(
+                    env,
+                    release,
+                    target.clone(),
+                )?;
                 let (filename, tarball_dir) = find_filename(&tarball, target)?;
                 Some(tarball_dir.join(filename))
             }
         };
 
-        let library = library.ok_or_else(|| anyhow!("libwasmer.a / wasmer.lib not found"))?;
+        let library = library
+            .ok_or_else(|| anyhow!("libwasmer.a / wasmer.lib not found"))?;
 
         let ccs = CrossCompileSetup {
             target: target.clone(),
@@ -1731,12 +1847,16 @@ pub(super) mod utils {
             return None;
         }
 
-        if filename.contains("wamr") || filename.contains("v8") || filename.contains("wasmi") {
+        if filename.contains("wamr")
+            || filename.contains("v8")
+            || filename.contains("wasmi")
+        {
             return None;
         }
 
         if target.environment == Environment::Musl && !filename.contains("musl")
-            || filename.contains("musl") && target.environment != Environment::Musl
+            || filename.contains("musl")
+                && target.environment != Environment::Musl
         {
             return None;
         }
@@ -1752,7 +1872,9 @@ pub(super) mod utils {
                 if !filename.contains("gnu64") {
                     return None;
                 }
-            } else if !(filename.contains("x86_64") || filename.contains("amd64")) {
+            } else if !(filename.contains("x86_64")
+                || filename.contains("amd64"))
+            {
                 return None;
             }
         }
@@ -1795,15 +1917,16 @@ pub(super) mod utils {
         std::fs::create_dir_all(&target_file_path)
             .map_err(|e| anyhow!("{e}"))
             .with_context(|| anyhow!("{}", target_file_path.display()))?;
-        let files =
-            super::http_fetch::untar(local_tarball, &target_file_path).with_context(|| {
-                anyhow!(
-                    "{} -> {}",
-                    local_tarball.display(),
-                    target_file_path.display()
-                )
-            })?;
-        let tarball_dir = target_file_path.canonicalize().unwrap_or(target_file_path);
+        let files = super::http_fetch::untar(local_tarball, &target_file_path)
+            .with_context(|| {
+            anyhow!(
+                "{} -> {}",
+                local_tarball.display(),
+                target_file_path.display()
+            )
+        })?;
+        let tarball_dir =
+            target_file_path.canonicalize().unwrap_or(target_file_path);
         let file = find_libwasmer_in_files(target, &files)?;
         Ok((file, tarball_dir))
     }
@@ -1846,7 +1969,9 @@ pub(super) mod utils {
     pub(super) fn triple_to_zig_triple(target_triple: &Triple) -> String {
         let arch = match target_triple.architecture {
             Architecture::X86_64 => "x86_64".into(),
-            Architecture::Aarch64(wasmer_types::Aarch64Architecture::Aarch64) => "aarch64".into(),
+            Architecture::Aarch64(
+                wasmer_types::Aarch64Architecture::Aarch64,
+            ) => "aarch64".into(),
             v => v.to_string(),
         };
         let os = match target_triple.operating_system {
@@ -1864,7 +1989,9 @@ pub(super) mod utils {
         format!("{}-{}-{}", arch, os, env)
     }
 
-    pub(super) fn get_wasmer_include_directory(env: &WasmerEnv) -> anyhow::Result<PathBuf> {
+    pub(super) fn get_wasmer_include_directory(
+        env: &WasmerEnv,
+    ) -> anyhow::Result<PathBuf> {
         let mut path = env.dir().to_path_buf();
         if path.clone().join("wasmer.h").exists() {
             return Ok(path);
@@ -1872,7 +1999,10 @@ pub(super) mod utils {
         path.push("include");
         if !path.clone().join("wasmer.h").exists() {
             if !path.exists() {
-                return Err(anyhow!("WASMER_DIR path {} does not exist", path.display()));
+                return Err(anyhow!(
+                    "WASMER_DIR path {} does not exist",
+                    path.display()
+                ));
             }
             println!(
                 "wasmer.h does not exist in {}, will probably default to the system path",
@@ -1883,7 +2013,9 @@ pub(super) mod utils {
     }
 
     /// path to the static libwasmer
-    pub(super) fn get_libwasmer_path(env: &WasmerEnv) -> anyhow::Result<PathBuf> {
+    pub(super) fn get_libwasmer_path(
+        env: &WasmerEnv,
+    ) -> anyhow::Result<PathBuf> {
         let path = env.dir().to_path_buf();
 
         // TODO: prefer headless Wasmer if/when it's a separate library.
@@ -1900,7 +2032,9 @@ pub(super) mod utils {
     }
 
     /// path to library tarball cache dir
-    pub(super) fn get_libwasmer_cache_path(env: &WasmerEnv) -> anyhow::Result<PathBuf> {
+    pub(super) fn get_libwasmer_cache_path(
+        env: &WasmerEnv,
+    ) -> anyhow::Result<PathBuf> {
         let mut path = env.dir().to_path_buf();
         path.push("cache");
         std::fs::create_dir_all(&path)?;
@@ -1918,7 +2052,9 @@ pub(super) mod utils {
         }
     }
 
-    pub(super) fn find_zig_binary(path: Option<PathBuf>) -> Result<PathBuf, anyhow::Error> {
+    pub(super) fn find_zig_binary(
+        path: Option<PathBuf>,
+    ) -> Result<PathBuf, anyhow::Error> {
         use std::env::split_paths;
         #[cfg(unix)]
         use std::os::unix::ffi::OsStrExt;
@@ -1933,7 +2069,10 @@ pub(super) mod utils {
             if p.exists() {
                 p
             } else {
-                return Err(anyhow!("Could not find `zig` binary in {}.", p.display()));
+                return Err(anyhow!(
+                    "Could not find `zig` binary in {}.",
+                    p.display()
+                ));
             }
         } else {
             let mut retval = None;
@@ -1953,7 +2092,8 @@ pub(super) mod utils {
                     break;
                 }
             }
-            retval.ok_or_else(|| anyhow!("Could not find `zig` binary in PATH."))?
+            retval
+                .ok_or_else(|| anyhow!("Could not find `zig` binary in PATH."))?
         };
 
         let version = std::process::Command::new(&retval)
@@ -1976,8 +2116,10 @@ pub(super) mod utils {
         };
 
         let version_slice = String::from_utf8_lossy(version_slice);
-        let version_semver = semver::Version::parse(&version_slice)
-            .map_err(|e| anyhow!("could not parse zig version: {version_slice}: {e}"))?;
+        let version_semver =
+            semver::Version::parse(&version_slice).map_err(|e| {
+                anyhow!("could not parse zig version: {version_slice}: {e}")
+            })?;
 
         if version_semver < semver::Version::parse("0.10.0").unwrap() {
             Err(anyhow!("`zig` binary in PATH (`{}`) is not a new enough version (`{version_slice}`): please use version `0.10.0` or newer.", retval.display()))
@@ -2159,9 +2301,12 @@ mod http_fetch {
 
         if let Some(releases) = response.as_array_mut() {
             releases.retain(|r| {
-                r["tag_name"].is_string() && !r["tag_name"].as_str().unwrap().is_empty()
+                r["tag_name"].is_string()
+                    && !r["tag_name"].as_str().unwrap().is_empty()
             });
-            releases.sort_by_cached_key(|r| r["tag_name"].as_str().unwrap_or_default().to_string());
+            releases.sort_by_cached_key(|r| {
+                r["tag_name"].as_str().unwrap_or_default().to_string()
+            });
             match release_version {
                 Some(specific_version) => {
                     let mut all_versions = Vec::new();
@@ -2171,8 +2316,12 @@ mod http_fetch {
                         {
                             return Ok(r.clone());
                         } else {
-                            all_versions
-                                .push(r["tag_name"].as_str().unwrap_or_default().to_string());
+                            all_versions.push(
+                                r["tag_name"]
+                                    .as_str()
+                                    .unwrap_or_default()
+                                    .to_string(),
+                            );
                         }
                     }
                     return Err(anyhow::anyhow!(
@@ -2207,8 +2356,11 @@ mod http_fetch {
             });
 
             if let Ok(mut entries) = paths {
-                entries.retain(|p| p.to_str().map(|p| p.ends_with(".tar.gz")).unwrap_or(false));
-                entries.retain(|p| super::utils::filter_tarball(p, &target_triple));
+                entries.retain(|p| {
+                    p.to_str().map(|p| p.ends_with(".tar.gz")).unwrap_or(false)
+                });
+                entries
+                    .retain(|p| super::utils::filter_tarball(p, &target_triple));
                 if !entries.is_empty() {
                     cache_path.push(&entries[0]);
                     if cache_path.exists() {
@@ -2245,13 +2397,14 @@ mod http_fetch {
             ));
         }
 
-        let browser_download_url = if let Some(url) = assets[0]["browser_download_url"].as_str() {
-            url.to_string()
-        } else {
-            return Err(anyhow!(
-                "Could not get download url from Github API response."
-            ));
-        };
+        let browser_download_url =
+            if let Some(url) = assets[0]["browser_download_url"].as_str() {
+                url.to_string()
+            } else {
+                return Err(anyhow!(
+                    "Could not get download url from Github API response."
+                ));
+            };
 
         download_url(env, &browser_download_url)
     }
@@ -2306,7 +2459,10 @@ mod http_fetch {
                         cache_path.display()
                     ))
                 } else {
-                    eprintln!("Cached tarball to cache path `{}`.", cache_path.display());
+                    eprintln!(
+                        "Cached tarball to cache path `{}`.",
+                        cache_path.display()
+                    );
                     Ok(cache_path)
                 }
             }

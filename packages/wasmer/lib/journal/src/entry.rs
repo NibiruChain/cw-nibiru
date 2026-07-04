@@ -5,9 +5,10 @@ use std::time::{Duration, SystemTime};
 use std::{borrow::Cow, ops::Range};
 use virtual_net::{IpCidr, StreamSecurity};
 use wasmer_wasix_types::wasi::{
-    Addressfamily, Advice, EpollCtl, EpollEventCtl, EventFdFlags, ExitCode, Fdflags, FileDelta,
-    Filesize, Fstflags, LookupFlags, Oflags, Rights, SiFlags, Snapshot0Clockid, SockProto,
-    Sockoption, Socktype, Timestamp, Tty, Whence,
+    Addressfamily, Advice, EpollCtl, EpollEventCtl, EventFdFlags, ExitCode,
+    Fdflags, FileDelta, Filesize, Fstflags, LookupFlags, Oflags, Rights,
+    SiFlags, Snapshot0Clockid, SockProto, Sockoption, Socktype, Timestamp, Tty,
+    Whence,
 };
 use wasmer_wasix_types::wasix::{ThreadStartType, WasiMemoryLayout};
 
@@ -38,7 +39,18 @@ pub enum SocketJournalEvent {
     },
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    PartialOrd,
+    Ord,
+    PartialEq,
+    Eq,
+    Hash,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum SocketShutdownHow {
     Read,
@@ -64,7 +76,18 @@ impl From<SocketShutdownHow> for Shutdown {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    PartialOrd,
+    Ord,
+    PartialEq,
+    Eq,
+    Hash,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum SocketOptTimeType {
     ReadTimeout,
@@ -78,7 +101,9 @@ pub enum SocketOptTimeType {
 /// Represents a log entry in a snapshot log stream that represents the total
 /// state of a WASM process at a point in time.
 #[allow(clippy::large_enum_variant)]
-#[derive(derive_more::Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(
+    derive_more::Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum JournalEntry<'a> {
     InitModuleV1 {
@@ -372,7 +397,9 @@ pub enum JournalEntry<'a> {
 impl<'a> JournalEntry<'a> {
     pub fn into_owned(self) -> JournalEntry<'static> {
         match self {
-            Self::InitModuleV1 { wasm_hash } => JournalEntry::InitModuleV1 { wasm_hash },
+            Self::InitModuleV1 { wasm_hash } => {
+                JournalEntry::InitModuleV1 { wasm_hash }
+            }
             Self::ClearEtherealV1 => JournalEntry::ClearEtherealV1,
             Self::UpdateMemoryRegionV1 {
                 region,
@@ -381,7 +408,9 @@ impl<'a> JournalEntry<'a> {
                 region,
                 compressed_data: compressed_data.into_owned().into(),
             },
-            Self::ProcessExitV1 { exit_code } => JournalEntry::ProcessExitV1 { exit_code },
+            Self::ProcessExitV1 { exit_code } => {
+                JournalEntry::ProcessExitV1 { exit_code }
+            }
             Self::SetThreadV1 {
                 id,
                 call_stack,
@@ -399,7 +428,9 @@ impl<'a> JournalEntry<'a> {
                 layout,
                 is_64bit,
             },
-            Self::CloseThreadV1 { id, exit_code } => JournalEntry::CloseThreadV1 { id, exit_code },
+            Self::CloseThreadV1 { id, exit_code } => {
+                JournalEntry::CloseThreadV1 { id, exit_code }
+            }
             Self::FileDescriptorSeekV1 { fd, offset, whence } => {
                 JournalEntry::FileDescriptorSeekV1 { fd, offset, whence }
             }
@@ -417,7 +448,9 @@ impl<'a> JournalEntry<'a> {
             Self::SetClockTimeV1 { clock_id, time } => {
                 JournalEntry::SetClockTimeV1 { clock_id, time }
             }
-            Self::CloseFileDescriptorV1 { fd } => JournalEntry::CloseFileDescriptorV1 { fd },
+            Self::CloseFileDescriptorV1 { fd } => {
+                JournalEntry::CloseFileDescriptorV1 { fd }
+            }
             Self::OpenFileDescriptorV1 {
                 fd,
                 dirfd,
@@ -447,14 +480,18 @@ impl<'a> JournalEntry<'a> {
                 original_fd,
                 copied_fd,
             },
-            Self::CreateDirectoryV1 { fd, path } => JournalEntry::CreateDirectoryV1 {
-                fd,
-                path: path.into_owned().into(),
-            },
-            Self::RemoveDirectoryV1 { fd, path } => JournalEntry::RemoveDirectoryV1 {
-                fd,
-                path: path.into_owned().into(),
-            },
+            Self::CreateDirectoryV1 { fd, path } => {
+                JournalEntry::CreateDirectoryV1 {
+                    fd,
+                    path: path.into_owned().into(),
+                }
+            }
+            Self::RemoveDirectoryV1 { fd, path } => {
+                JournalEntry::RemoveDirectoryV1 {
+                    fd,
+                    path: path.into_owned().into(),
+                }
+            }
             Self::PathSetTimesV1 {
                 fd,
                 flags,
@@ -547,9 +584,11 @@ impl<'a> JournalEntry<'a> {
                 new_fd,
                 new_path: new_path.into_owned().into(),
             },
-            Self::ChangeDirectoryV1 { path } => JournalEntry::ChangeDirectoryV1 {
-                path: path.into_owned().into(),
-            },
+            Self::ChangeDirectoryV1 { path } => {
+                JournalEntry::ChangeDirectoryV1 {
+                    path: path.into_owned().into(),
+                }
+            }
             Self::EpollCreateV1 { fd } => JournalEntry::EpollCreateV1 { fd },
             Self::EpollCtlV1 {
                 epfd,
@@ -562,8 +601,12 @@ impl<'a> JournalEntry<'a> {
                 fd,
                 event,
             },
-            Self::TtySetV1 { tty, line_feeds } => JournalEntry::TtySetV1 { tty, line_feeds },
-            Self::CreatePipeV1 { fd1, fd2 } => JournalEntry::CreatePipeV1 { fd1, fd2 },
+            Self::TtySetV1 { tty, line_feeds } => {
+                JournalEntry::TtySetV1 { tty, line_feeds }
+            }
+            Self::CreatePipeV1 { fd1, fd2 } => {
+                JournalEntry::CreatePipeV1 { fd1, fd2 }
+            }
             Self::CreateEventV1 {
                 initial_val,
                 flags,
@@ -587,7 +630,9 @@ impl<'a> JournalEntry<'a> {
             },
             Self::PortUnbridgeV1 => JournalEntry::PortUnbridgeV1,
             Self::PortDhcpAcquireV1 => JournalEntry::PortDhcpAcquireV1,
-            Self::PortGatewaySetV1 { ip } => JournalEntry::PortGatewaySetV1 { ip },
+            Self::PortGatewaySetV1 { ip } => {
+                JournalEntry::PortGatewaySetV1 { ip }
+            }
             Self::PortRouteAddV1 {
                 cidr,
                 via_router,
@@ -601,9 +646,15 @@ impl<'a> JournalEntry<'a> {
             },
             Self::PortRouteClearV1 => JournalEntry::PortRouteClearV1,
             Self::PortRouteDelV1 { ip } => JournalEntry::PortRouteDelV1 { ip },
-            Self::SocketOpenV1 { af, ty, pt, fd } => JournalEntry::SocketOpenV1 { af, ty, pt, fd },
-            Self::SocketListenV1 { fd, backlog } => JournalEntry::SocketListenV1 { fd, backlog },
-            Self::SocketBindV1 { fd, addr } => JournalEntry::SocketBindV1 { fd, addr },
+            Self::SocketOpenV1 { af, ty, pt, fd } => {
+                JournalEntry::SocketOpenV1 { af, ty, pt, fd }
+            }
+            Self::SocketListenV1 { fd, backlog } => {
+                JournalEntry::SocketListenV1 { fd, backlog }
+            }
+            Self::SocketBindV1 { fd, addr } => {
+                JournalEntry::SocketBindV1 { fd, addr }
+            }
             Self::SocketConnectedV1 {
                 fd,
                 local_addr,
@@ -708,8 +759,12 @@ impl<'a> JournalEntry<'a> {
             Self::SocketSetOptTimeV1 { fd, ty, time } => {
                 JournalEntry::SocketSetOptTimeV1 { fd, ty, time }
             }
-            Self::SocketShutdownV1 { fd, how } => JournalEntry::SocketShutdownV1 { fd, how },
-            Self::SnapshotV1 { when, trigger } => JournalEntry::SnapshotV1 { when, trigger },
+            Self::SocketShutdownV1 { fd, how } => {
+                JournalEntry::SocketShutdownV1 { fd, how }
+            }
+            Self::SnapshotV1 { when, trigger } => {
+                JournalEntry::SnapshotV1 { when, trigger }
+            }
         }
     }
 
@@ -727,18 +782,33 @@ impl<'a> JournalEntry<'a> {
                 memory_stack,
                 store_data,
                 ..
-            } => base_size + call_stack.len() + memory_stack.len() + store_data.len(),
+            } => {
+                base_size
+                    + call_stack.len()
+                    + memory_stack.len()
+                    + store_data.len()
+            }
             JournalEntry::CloseThreadV1 { .. } => base_size,
             JournalEntry::FileDescriptorSeekV1 { .. } => base_size,
-            JournalEntry::FileDescriptorWriteV1 { data, .. } => base_size + data.len(),
+            JournalEntry::FileDescriptorWriteV1 { data, .. } => {
+                base_size + data.len()
+            }
             JournalEntry::SetClockTimeV1 { .. } => base_size,
             JournalEntry::CloseFileDescriptorV1 { .. } => base_size,
-            JournalEntry::OpenFileDescriptorV1 { path, .. } => base_size + path.as_bytes().len(),
+            JournalEntry::OpenFileDescriptorV1 { path, .. } => {
+                base_size + path.as_bytes().len()
+            }
             JournalEntry::RenumberFileDescriptorV1 { .. } => base_size,
             JournalEntry::DuplicateFileDescriptorV1 { .. } => base_size,
-            JournalEntry::CreateDirectoryV1 { path, .. } => base_size + path.as_bytes().len(),
-            JournalEntry::RemoveDirectoryV1 { path, .. } => base_size + path.as_bytes().len(),
-            JournalEntry::PathSetTimesV1 { path, .. } => base_size + path.as_bytes().len(),
+            JournalEntry::CreateDirectoryV1 { path, .. } => {
+                base_size + path.as_bytes().len()
+            }
+            JournalEntry::RemoveDirectoryV1 { path, .. } => {
+                base_size + path.as_bytes().len()
+            }
+            JournalEntry::PathSetTimesV1 { path, .. } => {
+                base_size + path.as_bytes().len()
+            }
             JournalEntry::FileDescriptorSetTimesV1 { .. } => base_size,
             JournalEntry::FileDescriptorSetFlagsV1 { .. } => base_size,
             JournalEntry::FileDescriptorSetRightsV1 { .. } => base_size,
@@ -747,15 +817,25 @@ impl<'a> JournalEntry<'a> {
             JournalEntry::FileDescriptorAllocateV1 { .. } => base_size,
             JournalEntry::CreateHardLinkV1 {
                 old_path, new_path, ..
-            } => base_size + old_path.as_bytes().len() + new_path.as_bytes().len(),
+            } => {
+                base_size + old_path.as_bytes().len() + new_path.as_bytes().len()
+            }
             JournalEntry::CreateSymbolicLinkV1 {
                 old_path, new_path, ..
-            } => base_size + old_path.as_bytes().len() + new_path.as_bytes().len(),
-            JournalEntry::UnlinkFileV1 { path, .. } => base_size + path.as_bytes().len(),
+            } => {
+                base_size + old_path.as_bytes().len() + new_path.as_bytes().len()
+            }
+            JournalEntry::UnlinkFileV1 { path, .. } => {
+                base_size + path.as_bytes().len()
+            }
             JournalEntry::PathRenameV1 {
                 old_path, new_path, ..
-            } => base_size + old_path.as_bytes().len() + new_path.as_bytes().len(),
-            JournalEntry::ChangeDirectoryV1 { path } => base_size + path.as_bytes().len(),
+            } => {
+                base_size + old_path.as_bytes().len() + new_path.as_bytes().len()
+            }
+            JournalEntry::ChangeDirectoryV1 { path } => {
+                base_size + path.as_bytes().len()
+            }
             JournalEntry::EpollCreateV1 { .. } => base_size,
             JournalEntry::EpollCtlV1 { .. } => base_size,
             JournalEntry::TtySetV1 { .. } => base_size,

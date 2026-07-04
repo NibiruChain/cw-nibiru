@@ -9,7 +9,9 @@ use sha2::Digest;
 use shared_buffer::{MmapError, OwnedBuffer};
 use url::Url;
 #[allow(deprecated)]
-use wasmer_config::package::{CommandV1, CommandV2, Manifest as WasmerManifest, Package};
+use wasmer_config::package::{
+    CommandV1, CommandV2, Manifest as WasmerManifest, Package,
+};
 use webc::{
     indexmap::{self, IndexMap},
     metadata::AtomSignature,
@@ -18,10 +20,11 @@ use webc::{
 
 use webc::metadata::{
     annotations::{
-        Atom as AtomAnnotation, FileSystemMapping, FileSystemMappings, VolumeSpecificPath, Wapm,
-        Wasi,
+        Atom as AtomAnnotation, FileSystemMapping, FileSystemMappings,
+        VolumeSpecificPath, Wapm, Wasi,
     },
-    Atom, Binding, Command, Manifest as WebcManifest, UrlOrManifest, WaiBindings, WitBindings,
+    Atom, Binding, Command, Manifest as WebcManifest, UrlOrManifest,
+    WaiBindings, WitBindings,
 };
 
 use super::{FsVolume, Strictness};
@@ -79,7 +82,9 @@ pub enum ManifestError {
         key: String,
     },
     /// A command uses a non-existent module.
-    #[error("The \"{command}\" command uses a non-existent module, \"{module}\"")]
+    #[error(
+        "The \"{command}\" command uses a non-existent module, \"{module}\""
+    )]
     InvalidModuleReference {
         /// The command name.
         command: String,
@@ -96,7 +101,9 @@ pub enum ManifestError {
     },
     /// Unable to deserialize custom annotations from the `wasmer.toml`
     /// manifest.
-    #[error("Unable to deserialize custom annotations from the wasmer.toml manifest")]
+    #[error(
+        "Unable to deserialize custom annotations from the wasmer.toml manifest"
+    )]
     WasmerTomlAnnotations {
         /// The underlying error.
         #[source]
@@ -119,7 +126,9 @@ pub enum ManifestError {
         base_dir: PathBuf,
     },
     /// File based commands are not supported for in-memory package creation
-    #[error("File based commands are not supported for in-memory package creation")]
+    #[error(
+        "File based commands are not supported for in-memory package creation"
+    )]
     FileNotSupported,
 }
 
@@ -134,10 +143,15 @@ pub(crate) fn wasmer_manifest_to_webc(
     // Note: We need to clone the [fs] table because the wasmer-toml crate has
     // already upgraded to indexmap v2.0, but the webc crate needs to stay at
     // 1.9.2 for backwards compatibility reasons.
-    let fs: IndexMap<String, PathBuf> = manifest.fs.clone().into_iter().collect();
+    let fs: IndexMap<String, PathBuf> =
+        manifest.fs.clone().into_iter().collect();
 
-    let package =
-        transform_package_annotations(manifest.package.as_ref(), &fs, base_dir, strictness)?;
+    let package = transform_package_annotations(
+        manifest.package.as_ref(),
+        &fs,
+        base_dir,
+        strictness,
+    )?;
     let (atoms, atom_files) = transform_atoms(manifest, base_dir)?;
     let commands = transform_commands(manifest, base_dir)?;
     let bindings = transform_bindings(manifest, base_dir)?;
@@ -165,9 +179,11 @@ pub(crate) fn in_memory_wasmer_manifest_to_webc(
     // Note: We need to clone the [fs] table because the wasmer-toml crate has
     // already upgraded to indexmap v2.0, but the webc crate needs to stay at
     // 1.9.2 for backwards compatibility reasons.
-    let fs: IndexMap<String, PathBuf> = manifest.fs.clone().into_iter().collect();
+    let fs: IndexMap<String, PathBuf> =
+        manifest.fs.clone().into_iter().collect();
 
-    let package = transform_in_memory_package_annotations(manifest.package.as_ref(), &fs)?;
+    let package =
+        transform_in_memory_package_annotations(manifest.package.as_ref(), &fs)?;
     let (atoms, atom_files) = transform_in_memory_atoms(atoms)?;
     let commands = transform_in_memory_commands(manifest)?;
     let bindings = transform_in_memory_bindings(manifest)?;
@@ -208,7 +224,10 @@ fn transform_in_memory_package_annotations(
 fn transform_package_annotations_shared(
     package: Option<&wasmer_config::package::Package>,
     fs: &IndexMap<String, PathBuf>,
-    transform_package_meta_to_annotations: impl Fn(&Package) -> Result<Wapm, ManifestError>,
+    transform_package_meta_to_annotations: impl Fn(
+        &Package,
+    )
+        -> Result<Wapm, ManifestError>,
 ) -> Result<IndexMap<String, Value>, ManifestError> {
     let mut annotations = IndexMap::new();
 
@@ -237,8 +256,9 @@ fn transform_dependencies(
 
         // Note: the wasmer.toml format forces you to go through a registry for
         // all dependencies. There's no way to specify a URL-based dependency.
-        let dependency_specifier =
-            UrlOrManifest::RegistryDependentUrl(format!("{namespace}/{package_name}@{version}"));
+        let dependency_specifier = UrlOrManifest::RegistryDependentUrl(format!(
+            "{namespace}/{package_name}@{version}"
+        ));
 
         dependencies.insert(dep.clone(), dependency_specifier);
     }
@@ -271,11 +291,12 @@ fn transform_atoms(
     for module in &manifest.modules {
         let name = &module.name;
         let path = base_dir.join(&module.source);
-        let file = open_file(&path).map_err(|error| ManifestError::ReadAtomFile {
-            module: name.clone(),
-            path,
-            error,
-        })?;
+        let file =
+            open_file(&path).map_err(|error| ManifestError::ReadAtomFile {
+                module: name.clone(),
+                path,
+                error,
+            })?;
 
         atom_entries.insert(name.clone(), (module.kind.clone(), file));
     }
@@ -320,10 +341,13 @@ fn atom_signature(atom: &[u8]) -> String {
 /// Map the "kind" field in a `[module]` to the corresponding URI.
 fn atom_kind(kind: Option<&str>) -> Result<Url, ManifestError> {
     const WASM_ATOM_KIND: &str = "https://webc.org/kind/wasm";
-    const TENSORFLOW_SAVED_MODEL_KIND: &str = "https://webc.org/kind/tensorflow-SavedModel";
+    const TENSORFLOW_SAVED_MODEL_KIND: &str =
+        "https://webc.org/kind/tensorflow-SavedModel";
 
     let url = match kind {
-        Some("wasm") | None => WASM_ATOM_KIND.parse().expect("Should never fail"),
+        Some("wasm") | None => {
+            WASM_ATOM_KIND.parse().expect("Should never fail")
+        }
         Some("tensorflow-SavedModel") => TENSORFLOW_SAVED_MODEL_KIND
             .parse()
             .expect("Should never fail"),
@@ -460,7 +484,12 @@ fn transform_in_memory_package_meta_to_annotations(
 
 fn transform_package_meta_to_annotations_shared(
     package: &wasmer_config::package::Package,
-    volume_specific_path: impl Fn(Option<&PathBuf>) -> Result<Option<VolumeSpecificPath>, ManifestError>,
+    volume_specific_path: impl Fn(
+        Option<&PathBuf>,
+    ) -> Result<
+        Option<VolumeSpecificPath>,
+        ManifestError,
+    >,
 ) -> Result<Wapm, ManifestError> {
     let mut wapm = Wapm::new(
         package.name.clone(),
@@ -509,15 +538,24 @@ fn trasform_commands_shared(
 
     for command in &manifest.commands {
         let cmd = match command {
-            wasmer_config::package::Command::V1(cmd) => transform_command_v1(cmd)?,
-            wasmer_config::package::Command::V2(cmd) => transform_command_v2(cmd)?,
+            wasmer_config::package::Command::V1(cmd) => {
+                transform_command_v1(cmd)?
+            }
+            wasmer_config::package::Command::V2(cmd) => {
+                transform_command_v2(cmd)?
+            }
         };
 
         // If a command uses a module from a dependency, then ensure that
         // the dependency is declared.
         match command.get_module() {
-            wasmer_config::package::ModuleReference::CurrentPackage { .. } => {}
-            wasmer_config::package::ModuleReference::Dependency { dependency, .. } => {
+            wasmer_config::package::ModuleReference::CurrentPackage {
+                ..
+            } => {}
+            wasmer_config::package::ModuleReference::Dependency {
+                dependency,
+                ..
+            } => {
                 if !manifest.dependencies.contains_key(dependency) {
                     return Err(ManifestError::UndeclaredCommandDependency {
                         command: command.get_name().to_string(),
@@ -597,10 +635,11 @@ fn transform_command_v2(
     base_dir: &Path,
 ) -> Result<Command, ManifestError> {
     transform_command_v2_shared(cmd, || {
-        cmd.get_annotations(base_dir)
-            .map_err(|error| ManifestError::WasmerTomlAnnotations {
+        cmd.get_annotations(base_dir).map_err(|error| {
+            ManifestError::WasmerTomlAnnotations {
                 error: error.into(),
-            })
+            }
+        })
     })
 }
 
@@ -614,7 +653,9 @@ fn transform_in_memory_command_v2(
                 wasmer_config::package::CommandAnnotations::File(_) => {
                     Err(ManifestError::FileNotSupported)
                 }
-                wasmer_config::package::CommandAnnotations::Raw(v) => Ok(toml_to_cbor_value(v)),
+                wasmer_config::package::CommandAnnotations::Raw(v) => {
+                    Ok(toml_to_cbor_value(v))
+                }
             })
             .transpose()
     })
@@ -627,7 +668,12 @@ fn transform_command_v2_shared(
     let runner = RunnerKind::from_name(&cmd.runner)?;
     let mut annotations = IndexMap::new();
 
-    runner.runner_specific_annotations(&mut annotations, &cmd.module, None, None)?;
+    runner.runner_specific_annotations(
+        &mut annotations,
+        &cmd.module,
+        None,
+        None,
+    )?;
 
     let custom_annotations = custom_annotations()?;
 
@@ -660,7 +706,9 @@ fn transform_command_v2_shared(
 fn toml_to_cbor_value(val: &toml::value::Value) -> ciborium::Value {
     match val {
         toml::Value::String(s) => ciborium::Value::Text(s.clone()),
-        toml::Value::Integer(i) => ciborium::Value::Integer(ciborium::value::Integer::from(*i)),
+        toml::Value::Integer(i) => {
+            ciborium::Value::Integer(ciborium::value::Integer::from(*i))
+        }
         toml::Value::Float(f) => ciborium::Value::Float(*f),
         toml::Value::Boolean(b) => ciborium::Value::Bool(*b),
         toml::Value::Datetime(d) => ciborium::Value::Text(format!("{}", d)),
@@ -669,7 +717,9 @@ fn toml_to_cbor_value(val: &toml::value::Value) -> ciborium::Value {
         }
         toml::Value::Table(m) => ciborium::Value::Map(
             m.iter()
-                .map(|(k, v)| (ciborium::Value::Text(k.clone()), toml_to_cbor_value(v)))
+                .map(|(k, v)| {
+                    (ciborium::Value::Text(k.clone()), toml_to_cbor_value(v))
+                })
                 .collect(),
         ),
     }
@@ -720,19 +770,27 @@ enum RunnerKind {
 impl RunnerKind {
     fn from_name(name: &str) -> Result<Self, ManifestError> {
         match name {
-            "wasi" | "wasi@unstable_" | webc::metadata::annotations::WASI_RUNNER_URI => {
+            "wasi"
+            | "wasi@unstable_"
+            | webc::metadata::annotations::WASI_RUNNER_URI => {
                 Ok(RunnerKind::Wasi)
             }
             "generic" => {
                 // This is what you get with a CommandV1 and abi = "none"
                 Ok(RunnerKind::Wasi)
             }
-            "wcgi" | webc::metadata::annotations::WCGI_RUNNER_URI => Ok(RunnerKind::Wcgi),
-            "wasm4" | webc::metadata::annotations::WASM4_RUNNER_URI => Ok(RunnerKind::Wasm4),
+            "wcgi" | webc::metadata::annotations::WCGI_RUNNER_URI => {
+                Ok(RunnerKind::Wcgi)
+            }
+            "wasm4" | webc::metadata::annotations::WASM4_RUNNER_URI => {
+                Ok(RunnerKind::Wasm4)
+            }
             other => {
                 if let Ok(other) = Url::parse(other) {
                     Ok(RunnerKind::Other(other))
-                } else if let Ok(other) = format!("https://webc.org/runner/{other}").parse() {
+                } else if let Ok(other) =
+                    format!("https://webc.org/runner/{other}").parse()
+                {
                     // fall back to something under webc.org
                     Ok(RunnerKind::Other(other))
                 } else {
@@ -760,12 +818,13 @@ impl RunnerKind {
         main_args: Option<Vec<String>>,
     ) -> Result<(), ManifestError> {
         let atom_annotation = match module {
-            wasmer_config::package::ModuleReference::CurrentPackage { module } => {
-                AtomAnnotation::new(module, None)
-            }
-            wasmer_config::package::ModuleReference::Dependency { dependency, module } => {
-                AtomAnnotation::new(module, dependency.to_string())
-            }
+            wasmer_config::package::ModuleReference::CurrentPackage {
+                module,
+            } => AtomAnnotation::new(module, None),
+            wasmer_config::package::ModuleReference::Dependency {
+                dependency,
+                module,
+            } => AtomAnnotation::new(module, dependency.to_string()),
         };
         insert_annotation(annotations, AtomAnnotation::KEY, atom_annotation)?;
 
@@ -814,7 +873,9 @@ fn transform_bindings(
     )
 }
 
-fn transform_in_memory_bindings(manifest: &WasmerManifest) -> Result<Vec<Binding>, ManifestError> {
+fn transform_in_memory_bindings(
+    manifest: &WasmerManifest,
+) -> Result<Vec<Binding>, ManifestError> {
     transform_bindings_shared(
         manifest,
         transform_in_memory_wit_bindings,
@@ -837,8 +898,12 @@ fn transform_bindings_shared(
 
     for module in &manifest.modules {
         let b = match &module.bindings {
-            Some(wasmer_config::package::Bindings::Wit(wit)) => wit_binding(wit, module)?,
-            Some(wasmer_config::package::Bindings::Wai(wai)) => wai_binding(wai, module)?,
+            Some(wasmer_config::package::Bindings::Wit(wit)) => {
+                wit_binding(wit, module)?
+            }
+            Some(wasmer_config::package::Bindings::Wai(wai)) => {
+                wai_binding(wai, module)?
+            }
             None => continue,
         };
         bindings.push(b);
@@ -852,7 +917,9 @@ fn transform_wai_bindings(
     module: &wasmer_config::package::Module,
     base_dir: &Path,
 ) -> Result<Binding, ManifestError> {
-    transform_wai_bindings_shared(wai, module, |path| metadata_volume_uri(path, base_dir))
+    transform_wai_bindings_shared(wai, module, |path| {
+        metadata_volume_uri(path, base_dir)
+    })
 }
 
 fn transform_in_memory_wai_bindings(
@@ -898,7 +965,10 @@ fn transform_wai_bindings_shared(
     })
 }
 
-fn metadata_volume_uri(path: &Path, base_dir: &Path) -> Result<String, ManifestError> {
+fn metadata_volume_uri(
+    path: &Path,
+    base_dir: &Path,
+) -> Result<String, ManifestError> {
     make_relative_path(path, base_dir)
         .map(sanitize_path)
         .map(|p| format!("{METADATA_VOLUME}:/{p}"))
@@ -909,7 +979,9 @@ fn transform_wit_bindings(
     module: &wasmer_config::package::Module,
     base_dir: &Path,
 ) -> Result<Binding, ManifestError> {
-    transform_wit_bindings_shared(wit, module, |path| metadata_volume_uri(path, base_dir))
+    transform_wit_bindings_shared(wit, module, |path| {
+        metadata_volume_uri(path, base_dir)
+    })
 }
 
 fn transform_in_memory_wit_bindings(
@@ -952,7 +1024,10 @@ fn transform_wit_bindings_shared(
 
 /// Resolve an item relative to the base directory, returning an error if the
 /// file lies outside of it.
-fn make_relative_path(path: &Path, base_dir: &Path) -> Result<PathBuf, ManifestError> {
+fn make_relative_path(
+    path: &Path,
+    base_dir: &Path,
+) -> Result<PathBuf, ManifestError> {
     let absolute_path = base_dir.join(path);
 
     match absolute_path.strip_prefix(base_dir) {
@@ -995,7 +1070,8 @@ mod tests {
         std::fs::write(temp.path().join("file.wasm"), b"\0asm...").unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         let command = &transformed.commands["command"];
         assert_eq!(command.annotation::<u32>("first").unwrap(), Some(42));
@@ -1018,7 +1094,8 @@ mod tests {
         let manifest: WasmerManifest = toml::from_str(wasmer_toml).unwrap();
 
         let (transformed, atoms) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         assert!(atoms.is_empty());
         insta::with_settings! {
@@ -1047,7 +1124,8 @@ mod tests {
         std::fs::write(dir.join("file.wasm"), b"\0asm...").unwrap();
 
         let (transformed, atoms) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         assert_eq!(atoms.len(), 1);
         assert_eq!(atoms["first"].as_slice(), b"\0asm...");
@@ -1080,7 +1158,8 @@ mod tests {
         std::fs::write(temp.path().join("python.wasm"), b"\0asm...").unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         assert_eq!(transformed.commands.len(), 1);
         let python = &transformed.commands["python"];
@@ -1125,7 +1204,8 @@ mod tests {
         std::fs::write(temp.path().join("python.wasm"), b"\0asm...").unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         assert_eq!(transformed.commands.len(), 3);
         assert!(transformed.commands.contains_key("first"));
@@ -1161,7 +1241,8 @@ mod tests {
         std::fs::write(temp.path().join("python.wasm"), b"\0asm...").unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         assert_eq!(transformed.commands.len(), 1);
         let cmd = &transformed.commands["python"];
@@ -1203,7 +1284,8 @@ mod tests {
         std::fs::write(temp.path().join("bash.wasm"), b"\0asm...").unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         insta::with_settings! {
             { description => wasmer_toml },
@@ -1234,12 +1316,15 @@ mod tests {
             imports = []
         "#;
         let manifest: WasmerManifest = toml::from_str(wasmer_toml).unwrap();
-        std::fs::write(temp.path().join("wasmer_pack_wasm.wasm"), b"\0asm...").unwrap();
-        std::fs::write(temp.path().join("wasmer-pack.exports.wai"), b"").unwrap();
+        std::fs::write(temp.path().join("wasmer_pack_wasm.wasm"), b"\0asm...")
+            .unwrap();
+        std::fs::write(temp.path().join("wasmer-pack.exports.wai"), b"")
+            .unwrap();
         std::fs::write(temp.path().join("README.md"), b"").unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         insta::with_settings! {
             { description => wasmer_toml },
@@ -1279,7 +1364,8 @@ mod tests {
         std::fs::write(bin.join("python.wasm"), b"\0asm...").unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         insta::with_settings! {
             { description => wasmer_toml },
@@ -1304,7 +1390,8 @@ mod tests {
         std::fs::write(temp.path().join("python.wasm"), b"\0asm...").unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         let fs = transformed.filesystem().unwrap().unwrap();
         assert_eq!(
@@ -1341,7 +1428,8 @@ mod tests {
         let manifest: WasmerManifest = toml::from_str(wasmer_toml).unwrap();
         let bin = temp.path().join("bin");
         std::fs::create_dir_all(&bin).unwrap();
-        let res = wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict);
+        let res =
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict);
 
         assert!(matches!(
             res,
@@ -1369,10 +1457,12 @@ mod tests {
             runner = "https://webc.org/runner/wcgi"
         "#;
         let manifest: WasmerManifest = toml::from_str(wasmer_toml).unwrap();
-        std::fs::write(temp.path().join("wcgi-always-panic.wasm"), b"\0asm...").unwrap();
+        std::fs::write(temp.path().join("wcgi-always-panic.wasm"), b"\0asm...")
+            .unwrap();
 
         let (transformed, _) =
-            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict).unwrap();
+            wasmer_manifest_to_webc(&manifest, temp.path(), Strictness::Strict)
+                .unwrap();
 
         let cmd = &transformed.commands["wcgi"];
         assert_eq!(cmd.runner, webc::metadata::annotations::WCGI_RUNNER_URI);

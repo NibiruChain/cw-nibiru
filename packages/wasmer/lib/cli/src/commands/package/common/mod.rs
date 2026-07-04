@@ -30,7 +30,9 @@ pub(super) fn on_error(e: anyhow::Error) -> anyhow::Error {
 // are cleaner ways to achieve this, but for now we're just going to
 // clear out the whole GraphQL query cache.
 // See https://github.com/wasmerio/wasmer/pull/3983 for more
-pub(super) fn invalidate_graphql_query_cache(cache_dir: &Path) -> Result<(), anyhow::Error> {
+pub(super) fn invalidate_graphql_query_cache(
+    cache_dir: &Path,
+) -> Result<(), anyhow::Error> {
     let cache_dir = cache_dir.join("queries");
     std::fs::remove_dir_all(cache_dir)?;
 
@@ -111,7 +113,9 @@ pub(super) async fn upload(
     let session_uri = headers
         .get("location")
         .ok_or_else(|| {
-            anyhow::anyhow!("The upload server did not provide the upload URL correctly")
+            anyhow::anyhow!(
+                "The upload server did not provide the upload URL correctly"
+            )
         })?
         .clone();
 
@@ -168,7 +172,9 @@ pub(super) async fn upload(
     res.send()
         .await
         .map(|response| response.error_for_status())
-        .map_err(|e| anyhow::anyhow!("error uploading package to {session_uri}: {e}",))??;
+        .map_err(|e| {
+            anyhow::anyhow!("error uploading package to {session_uri}: {e}",)
+        })??;
 
     Ok(session_uri)
 }
@@ -179,7 +185,12 @@ pub(super) async fn upload(
 // this function returns an error if no manifest is found.
 pub(super) fn get_manifest(path: &Path) -> anyhow::Result<(PathBuf, Manifest)> {
     load_package_manifest(path).and_then(|j| {
-        j.ok_or_else(|| anyhow::anyhow!("No valid manifest found in path '{}'", path.display()))
+        j.ok_or_else(|| {
+            anyhow::anyhow!(
+                "No valid manifest found in path '{}'",
+                path.display()
+            )
+        })
     })
 }
 
@@ -227,7 +238,10 @@ pub(super) async fn login_user(
     env.client()
 }
 
-pub(super) fn make_package_url(client: &WasmerClient, pkg: &NamedPackageIdent) -> String {
+pub(super) fn make_package_url(
+    client: &WasmerClient,
+    pkg: &NamedPackageIdent,
+) -> String {
     let host = client.graphql_endpoint().domain().unwrap_or("wasmer.io");
 
     // Our special cases..

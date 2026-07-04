@@ -1,6 +1,12 @@
 /// Defines an HTTP request.
 #[derive(
-    schemars::JsonSchema, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Debug,
+    schemars::JsonSchema,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialEq,
+    Eq,
+    Clone,
+    Debug,
 )]
 pub struct HttpRequest {
     /// Request path.
@@ -32,7 +38,13 @@ pub struct HttpRequest {
 
 /// Definition for an HTTP header.
 #[derive(
-    schemars::JsonSchema, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Debug,
+    schemars::JsonSchema,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialEq,
+    Eq,
+    Clone,
+    Debug,
 )]
 pub struct HttpHeader {
     pub name: String,
@@ -41,7 +53,13 @@ pub struct HttpHeader {
 
 /// Validation checks for an [`HttpRequest`].
 #[derive(
-    schemars::JsonSchema, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Debug,
+    schemars::JsonSchema,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialEq,
+    Eq,
+    Clone,
+    Debug,
 )]
 pub struct HttpRequestExpect {
     /// Expected HTTP status codes.

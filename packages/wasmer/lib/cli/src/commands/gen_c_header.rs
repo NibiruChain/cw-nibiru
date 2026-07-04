@@ -58,7 +58,9 @@ impl GenCHeader {
     /// Runs logic for the `gen-c-header` subcommand
     pub fn execute(&self) -> Result<(), Error> {
         let file: Bytes = std::fs::read(&self.path)
-            .with_context(|| format!("Unable to read \"{}\"", self.path.display()))?
+            .with_context(|| {
+                format!("Unable to read \"{}\"", self.path.display())
+            })?
             .into();
         let prefix = match self.prefix.as_deref() {
             Some(s) => s.to_string(),
@@ -74,16 +76,20 @@ impl GenCHeader {
                 file.into()
             }
             Err(other) => {
-                return Err(Error::new(other).context("Unable to parse the webc file"));
+                return Err(
+                    Error::new(other).context("Unable to parse the webc file")
+                );
             }
         };
 
-        let target_triple = self.target_triple.clone().unwrap_or_else(Triple::host);
+        let target_triple =
+            self.target_triple.clone().unwrap_or_else(Triple::host);
         let target = crate::commands::create_exe::utils::target_triple_to_target(
             &target_triple,
             &self.cpu_features,
         );
-        let (engine, _) = CompilerOptions::default().get_engine_for_target(target.clone())?;
+        let (engine, _) =
+            CompilerOptions::default().get_engine_for_target(target.clone())?;
         let engine_inner = engine.inner();
         let compiler = engine_inner.compiler()?;
         let features = engine_inner.features();
@@ -102,20 +108,23 @@ impl GenCHeader {
             .serialize()
             .map_err(|e| anyhow::anyhow!("failed to serialize: {e}"))?;
         let mut metadata_binary = vec![];
-        metadata_binary.extend(MetadataHeader::new(serialized_data.len()).into_bytes());
+        metadata_binary
+            .extend(MetadataHeader::new(serialized_data.len()).into_bytes());
         metadata_binary.extend(serialized_data);
         let metadata_length = metadata_binary.len();
 
-        let header_file_src = crate::c_gen::staticlib_header::generate_header_file(
-            &prefix,
-            &metadata.compile_info.module,
-            &ModuleMetadataSymbolRegistry {
-                prefix: prefix.clone(),
-            },
-            metadata_length,
-        );
+        let header_file_src =
+            crate::c_gen::staticlib_header::generate_header_file(
+                &prefix,
+                &metadata.compile_info.module,
+                &ModuleMetadataSymbolRegistry {
+                    prefix: prefix.clone(),
+                },
+                metadata_length,
+            );
 
-        let output = crate::common::normalize_path(&self.output.display().to_string());
+        let output =
+            crate::common::normalize_path(&self.output.display().to_string());
 
         std::fs::write(&output, header_file_src)
             .map_err(|e| anyhow::anyhow!("{e}"))
@@ -135,9 +144,14 @@ impl GenCHeader {
                 Some(name) => atoms
                     .get(name)
                     .cloned()
-                    .with_context(|| format!("The file doesn't contain a \"{name}\" atom"))
                     .with_context(|| {
-                        format!("-> note: available atoms are: {}", atom_names.join(", "))
+                        format!("The file doesn't contain a \"{name}\" atom")
+                    })
+                    .with_context(|| {
+                        format!(
+                            "-> note: available atoms are: {}",
+                            atom_names.join(", ")
+                        )
                     }),
                 None => {
                     let err = Error::msg("file has multiple atoms, please specify which atom to generate the header file for")

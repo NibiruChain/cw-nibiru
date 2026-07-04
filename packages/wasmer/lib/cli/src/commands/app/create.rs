@@ -28,7 +28,10 @@ use crate::{
     utils::{load_package_manifest, prompts::PackageCheckMode},
 };
 
-async fn write_app_config(app_config: &AppConfigV1, dir: Option<PathBuf>) -> anyhow::Result<()> {
+async fn write_app_config(
+    app_config: &AppConfigV1,
+    dir: Option<PathBuf>,
+) -> anyhow::Result<()> {
     let raw_app_config = app_config.clone().to_yaml()?;
 
     let app_dir = match dir {
@@ -130,7 +133,12 @@ pub struct CmdAppCreate {
 
 impl CmdAppCreate {
     #[inline]
-    fn get_app_config(&self, owner: &str, name: &str, package: &str) -> AppConfigV1 {
+    fn get_app_config(
+        &self,
+        owner: &str,
+        name: &str,
+        package: &str,
+    ) -> AppConfigV1 {
         AppConfigV1 {
             name: Some(String::from(name)),
             owner: Some(String::from(owner)),
@@ -179,7 +187,10 @@ impl CmdAppCreate {
         )
     }
 
-    async fn get_owner(&self, client: Option<&WasmerClient>) -> anyhow::Result<String> {
+    async fn get_owner(
+        &self,
+        client: Option<&WasmerClient>,
+    ) -> anyhow::Result<String> {
         if let Some(owner) = &self.owner {
             return Ok(owner.clone());
         }
@@ -190,11 +201,20 @@ impl CmdAppCreate {
         }
 
         let user = if let Some(client) = client {
-            Some(wasmer_backend_api::query::current_user_with_namespaces(client, None).await?)
+            Some(
+                wasmer_backend_api::query::current_user_with_namespaces(
+                    client, None,
+                )
+                .await?,
+            )
         } else {
             None
         };
-        crate::utils::prompts::prompt_for_namespace("Who should own this app?", None, user.as_ref())
+        crate::utils::prompts::prompt_for_namespace(
+            "Who should own this app?",
+            None,
+            user.as_ref(),
+        )
     }
 
     async fn get_output_dir(&self, app_name: &str) -> anyhow::Result<PathBuf> {
@@ -242,7 +262,9 @@ impl CmdAppCreate {
             None => std::env::current_dir()?,
         };
 
-        let (manifest_path, _) = if let Some(res) = load_package_manifest(&app_dir)? {
+        let (manifest_path, _) = if let Some(res) =
+            load_package_manifest(&app_dir)?
+        {
             res
         } else if self.use_local_manifest {
             anyhow::bail!("The --use_local_manifest flag was passed, but path {} does not contain a valid package manifest.", app_dir.display())
@@ -301,7 +323,8 @@ impl CmdAppCreate {
             )
             .await?;
 
-            let app_config = self.get_app_config(owner, app_name, &package_id.to_string());
+            let app_config =
+                self.get_app_config(owner, app_name, &package_id.to_string());
             write_app_config(&app_config, Some(output_path.clone())).await?;
             self.try_deploy(owner, app_name, Some(&output_path)).await?;
             return Ok(true);
@@ -315,9 +338,13 @@ impl CmdAppCreate {
         Ok(false)
     }
 
-    fn persist_in_cache<S: serde::Serialize>(path: &Path, data: &S) -> Result<(), anyhow::Error> {
+    fn persist_in_cache<S: serde::Serialize>(
+        path: &Path,
+        data: &S,
+    ) -> Result<(), anyhow::Error> {
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent).context("could not create cache dir")?;
+            std::fs::create_dir_all(parent)
+                .context("could not create cache dir")?;
         }
 
         let data = serde_json::to_vec(data)?;
@@ -342,29 +369,34 @@ impl CmdAppCreate {
 
         let cache_path = cache_dir.join(cache_filename);
 
-        let cached_items = match Self::load_cached::<Vec<AppTemplate>>(&cache_path) {
-            Ok((items, age)) => {
-                if age <= MAX_CACHE_AGE {
-                    return Ok(items);
+        let cached_items =
+            match Self::load_cached::<Vec<AppTemplate>>(&cache_path) {
+                Ok((items, age)) => {
+                    if age <= MAX_CACHE_AGE {
+                        return Ok(items);
+                    }
+                    items
                 }
-                items
-            }
-            Err(e) => {
-                tracing::trace!(error = &*e, "could not load templates from local cache");
-                Vec::new()
-            }
-        };
+                Err(e) => {
+                    tracing::trace!(
+                        error = &*e,
+                        "could not load templates from local cache"
+                    );
+                    Vec::new()
+                }
+            };
 
         // Either no cache present, or cache has exceeded max age.
         // Fetch the first page.
         // If first item matches, then no need to re-fetch.
         //
-        let stream = wasmer_backend_api::query::fetch_all_app_templates_from_language(
-            client,
-            10,
-            Some(wasmer_backend_api::types::AppTemplatesSortBy::Newest),
-            language.to_string(),
-        );
+        let stream =
+            wasmer_backend_api::query::fetch_all_app_templates_from_language(
+                client,
+                10,
+                Some(wasmer_backend_api::types::AppTemplatesSortBy::Newest),
+                language.to_string(),
+            );
 
         futures_util::pin_mut!(stream);
 
@@ -430,25 +462,31 @@ impl CmdAppCreate {
 
         let cache_path = cache_dir.join(CACHE_FILENAME);
 
-        let cached_items = match Self::load_cached::<Vec<TemplateLanguage>>(&cache_path) {
-            Ok((items, age)) => {
-                if age <= MAX_CACHE_AGE {
-                    return Ok(items);
+        let cached_items =
+            match Self::load_cached::<Vec<TemplateLanguage>>(&cache_path) {
+                Ok((items, age)) => {
+                    if age <= MAX_CACHE_AGE {
+                        return Ok(items);
+                    }
+                    items
                 }
-                items
-            }
-            Err(e) => {
-                tracing::trace!(error = &*e, "could not load templates from local cache");
-                Vec::new()
-            }
-        };
+                Err(e) => {
+                    tracing::trace!(
+                        error = &*e,
+                        "could not load templates from local cache"
+                    );
+                    Vec::new()
+                }
+            };
         //
         // Either no cache present, or cache has exceeded max age.
         // Fetch the first page.
         // If first item matches, then no need to re-fetch.
-        let mut stream = Box::pin(wasmer_backend_api::query::fetch_all_app_template_languages(
-            client, None,
-        ));
+        let mut stream = Box::pin(
+            wasmer_backend_api::query::fetch_all_app_template_languages(
+                client, None,
+            ),
+        );
 
         let first_page = match stream.try_next().await? {
             Some(items) => items,
@@ -484,17 +522,26 @@ impl CmdAppCreate {
     }
 
     // A utility function used to fetch the URL of the template to use.
-    async fn get_template_url(&self, client: &WasmerClient) -> anyhow::Result<url::Url> {
+    async fn get_template_url(
+        &self,
+        client: &WasmerClient,
+    ) -> anyhow::Result<url::Url> {
         let mut url = if let Some(template) = &self.template {
             if let Ok(url) = url::Url::parse(template) {
                 url
             } else if let Some(template) =
-                wasmer_backend_api::query::fetch_app_template_from_slug(client, template.clone())
-                    .await?
+                wasmer_backend_api::query::fetch_app_template_from_slug(
+                    client,
+                    template.clone(),
+                )
+                .await?
             {
                 url::Url::parse(&template.repo_url)?
             } else {
-                anyhow::bail!("Template '{}' not found in the registry", template)
+                anyhow::bail!(
+                    "Template '{}' not found in the registry",
+                    template
+                )
             }
         } else {
             if self.non_interactive {
@@ -508,16 +555,23 @@ impl CmdAppCreate {
                 .host_str()
                 .unwrap_or("unknown_registry")
                 .replace('.', "_");
-            let cache_dir = self.env.cache_dir().join("templates").join(registry);
+            let cache_dir =
+                self.env.cache_dir().join("templates").join(registry);
 
-            let languages = Self::fetch_template_languages_cached(client, &cache_dir).await?;
+            let languages =
+                Self::fetch_template_languages_cached(client, &cache_dir)
+                    .await?;
 
-            let items = languages.iter().map(|t| t.name.clone()).collect::<Vec<_>>();
+            let items =
+                languages.iter().map(|t| t.name.clone()).collect::<Vec<_>>();
 
             // Note: this should really use `dialoger::FuzzySelect`, but that
             // breaks the formatting.
             let dialog = dialoguer::Select::with_theme(&theme)
-                .with_prompt(format!("Select a language ({} available)", items.len()))
+                .with_prompt(format!(
+                    "Select a language ({} available)",
+                    items.len()
+                ))
                 .items(&items)
                 .max_length(10)
                 .clear(true)
@@ -530,8 +584,12 @@ impl CmdAppCreate {
                 .get(selection)
                 .ok_or(anyhow::anyhow!("Invalid selection!"))?;
 
-            let templates =
-                Self::fetch_templates_cached(client, &cache_dir, &selected_language.slug).await?;
+            let templates = Self::fetch_templates_cached(
+                client,
+                &cache_dir,
+                &selected_language.slug,
+            )
+            .await?;
 
             let items = templates
                 .iter()
@@ -546,7 +604,10 @@ impl CmdAppCreate {
                 .collect::<Vec<_>>();
 
             let dialog = dialoguer::Select::with_theme(&theme)
-                .with_prompt(format!("Select a template ({} available)", items.len()))
+                .with_prompt(format!(
+                    "Select a template ({} available)",
+                    items.len()
+                ))
                 .items(&items)
                 .max_length(10)
                 .clear(true)
@@ -574,7 +635,9 @@ impl CmdAppCreate {
             url::Url::parse(&selected_template.repo_url)?
         };
 
-        let url = if url.path().contains("archive/refs/heads") || url.path().contains("/zipball/") {
+        let url = if url.path().contains("archive/refs/heads")
+            || url.path().contains("/zipball/")
+        {
             url
         } else {
             let old_path = url.path();
@@ -660,8 +723,11 @@ impl CmdAppCreate {
             }
         }
         pb.set_style(
-            indicatif::ProgressStyle::with_template(&format!("{} {{msg}}", "✔".green().bold()))
-                .unwrap(),
+            indicatif::ProgressStyle::with_template(&format!(
+                "{} {{msg}}",
+                "✔".green().bold()
+            ))
+            .unwrap(),
         );
         pb.finish_with_message(format!("{}", "Unpacked template".bold()));
 
@@ -671,7 +737,8 @@ impl CmdAppCreate {
 
         if app_yaml_path.exists() && app_yaml_path.is_file() {
             let contents = tokio::fs::read_to_string(&app_yaml_path).await?;
-            let mut raw_yaml: serde_yaml::Value = serde_yaml::from_str(&contents)?;
+            let mut raw_yaml: serde_yaml::Value =
+                serde_yaml::from_str(&contents)?;
 
             if let serde_yaml::Value::Mapping(m) = &mut raw_yaml {
                 m.insert("name".into(), app_name.into());
@@ -800,23 +867,36 @@ impl AsyncCliCommand for CmdAppCreate {
                     let theme = ColorfulTheme::default();
                     let choice = Select::with_theme(&theme)
                         .with_prompt("What would you like to deploy?")
-                        .items(&["Start with a template", "Choose an existing package"])
+                        .items(&[
+                            "Start with a template",
+                            "Choose an existing package",
+                        ])
                         .default(0)
                         .interact()?;
                     match choice {
                         0 => {
-                            self.create_from_template(client.as_ref(), &owner, &app_name)
-                                .await?
+                            self.create_from_template(
+                                client.as_ref(),
+                                &owner,
+                                &app_name,
+                            )
+                            .await?
                         }
                         1 => {
-                            self.create_from_package(client.as_ref(), &owner, &app_name)
-                                .await?
+                            self.create_from_package(
+                                client.as_ref(),
+                                &owner,
+                                &app_name,
+                            )
+                            .await?
                         }
                         x => panic!("unhandled selection {x}"),
                     };
                 }
             } else {
-                eprintln!("Warning: the creation process did not produce any result.");
+                eprintln!(
+                    "Warning: the creation process did not produce any result."
+                );
             }
         }
 

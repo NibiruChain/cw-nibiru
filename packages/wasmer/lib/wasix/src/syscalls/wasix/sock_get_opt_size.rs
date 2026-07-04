@@ -21,8 +21,10 @@ pub fn sock_get_opt_size<M: MemorySize>(
         sock,
         Rights::empty(),
         |socket, _| match opt {
-            Sockoption::RecvBufSize => socket.recv_buf_size().map(|a| a as Filesize),
-            Sockoption::SendBufSize => socket.send_buf_size().map(|a| a as Filesize),
+            Sockoption::RecvBufSize =>
+                socket.recv_buf_size().map(|a| a as Filesize),
+            Sockoption::SendBufSize =>
+                socket.send_buf_size().map(|a| a as Filesize),
             Sockoption::Ttl => socket.ttl().map(|a| a as Filesize),
             Sockoption::MulticastTtlV4 => {
                 socket.multicast_ttl_v4().map(|a| a as Filesize)

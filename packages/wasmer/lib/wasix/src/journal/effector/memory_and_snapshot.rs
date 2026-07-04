@@ -2,7 +2,8 @@ use std::collections::{hash_map, BTreeMap};
 
 #[allow(unused)]
 use lz4_flex::{
-    self, block, compress_prepend_size, decompress, decompress_into, decompress_size_prepended,
+    self, block, compress_prepend_size, decompress, decompress_into,
+    decompress_size_prepended,
 };
 
 use crate::os::task::process::MemorySnapshotRegion;
@@ -53,7 +54,8 @@ impl JournalEffector {
         let mut regions = Vec::<MemorySnapshotRegion>::new();
         while cur < memory.data_size() {
             //let mut again = false;
-            let next = ((cur + MEMORY_REGION_RESOLUTION) / MEMORY_REGION_RESOLUTION)
+            let next = ((cur + MEMORY_REGION_RESOLUTION)
+                / MEMORY_REGION_RESOLUTION)
                 * MEMORY_REGION_RESOLUTION;
             let end = memory.data_size().min(next);
             /*
@@ -121,7 +123,9 @@ impl JournalEffector {
             // been saved to the journal once already
             let hash = {
                 let h: [u8; 32] = blake3::hash(data).into();
-                u64::from_be_bytes([h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7]])
+                u64::from_be_bytes([
+                    h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7],
+                ])
             };
             match guard.snapshot_memory_hash.entry(region) {
                 hash_map::Entry::Occupied(mut val) => {
@@ -169,7 +173,8 @@ impl JournalEffector {
             // reduces the memory process
             #[cfg(feature = "sys")]
             let compressed_data = compress_prepend_size(unsafe {
-                &memory.data_unchecked()[region.start as usize..region.end as usize]
+                &memory.data_unchecked()
+                    [region.start as usize..region.end as usize]
             });
 
             // Now we write it to the snap snapshot capturer
@@ -206,21 +211,27 @@ impl JournalEffector {
     ) -> anyhow::Result<()> {
         let (env, mut store) = ctx.data_and_store_mut();
 
-        let (uncompressed_size, compressed_data) = block::uncompressed_size(compressed_data)
-            .map_err(|err| anyhow::anyhow!("failed to decompress - {}", err))?;
+        let (uncompressed_size, compressed_data) =
+            block::uncompressed_size(compressed_data).map_err(|err| {
+                anyhow::anyhow!("failed to decompress - {}", err)
+            })?;
 
         let memory = unsafe { env.memory() };
-        memory.grow_at_least(&mut store, region.end + uncompressed_size as u64)?;
+        memory
+            .grow_at_least(&mut store, region.end + uncompressed_size as u64)?;
 
         // Write the data to the memory
         let memory = unsafe { env.memory_view(&store) };
 
         #[cfg(not(feature = "sys"))]
         {
-            let decompressed_data = decompress(compressed_data, uncompressed_size)?;
+            let decompressed_data =
+                decompress(compressed_data, uncompressed_size)?;
             memory
                 .write(region.start, &decompressed_data)
-                .map_err(|err| WasiRuntimeError::Runtime(RuntimeError::user(err.into())))?;
+                .map_err(|err| {
+                    WasiRuntimeError::Runtime(RuntimeError::user(err.into()))
+                })?;
 
             // Break the region down into chunks that align with the resolution
             let mut decompressed_data = &decompressed_data[..];
@@ -233,8 +244,11 @@ impl JournalEffector {
                 // Compute the hash and update it
                 let size = region.end - region.start;
                 let hash = {
-                    let h: [u8; 32] = blake3::hash(&decompressed_data[..size as usize]).into();
-                    u64::from_be_bytes([h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7]])
+                    let h: [u8; 32] =
+                        blake3::hash(&decompressed_data[..size as usize]).into();
+                    u64::from_be_bytes([
+                        h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7],
+                    ])
                 };
                 env.process
                     .inner
@@ -267,8 +281,12 @@ impl JournalEffector {
 
                 // Compute the hash and update it
                 let hash = {
-                    let h: [u8; 32] = blake3::hash(&data[offset as usize..next as usize]).into();
-                    u64::from_be_bytes([h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7]])
+                    let h: [u8; 32] =
+                        blake3::hash(&data[offset as usize..next as usize])
+                            .into();
+                    u64::from_be_bytes([
+                        h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7],
+                    ])
                 };
                 env.process
                     .inner

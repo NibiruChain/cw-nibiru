@@ -139,7 +139,8 @@ fn compile_wasm_for_version(
         fc
     };
 
-    let temp_wasi_rs_file_name = temp_dir.join(format!("wasi_modified_version_{}.rs", rs_mod_name));
+    let temp_wasi_rs_file_name =
+        temp_dir.join(format!("wasi_modified_version_{}.rs", rs_mod_name));
     {
         let mut actual_file = fs::OpenOptions::new()
             .write(true)
@@ -167,7 +168,8 @@ fn compile_wasm_for_version(
         .arg(&wasm_out_name);
     println!("Command {:?}", command);
 
-    let wasm_compilation_out = command.output().expect("Failed to compile program to wasm");
+    let wasm_compilation_out =
+        command.output().expect("Failed to compile program to wasm");
     util::print_info_on_error(&wasm_compilation_out, "WASM COMPILATION");
     println!(
         "Removing file `{}`",
@@ -195,7 +197,8 @@ fn compile_wasm_for_version(
 /// Returns the a Vec of the test modules created
 fn compile(temp_dir: &Path, file: &str, wasi_versions: &[WasiVersion]) {
     let src_code: String = fs::read_to_string(file).unwrap();
-    let options: WasiOptions = extract_args_from_source_file(&src_code).unwrap_or_default();
+    let options: WasiOptions =
+        extract_args_from_source_file(&src_code).unwrap_or_default();
 
     assert!(file.ends_with(".rs"));
     let rs_mod_name = {
@@ -210,8 +213,14 @@ fn compile(temp_dir: &Path, file: &str, wasi_versions: &[WasiVersion]) {
         stdout,
         stderr,
         result,
-    } = generate_native_output(temp_dir, file, &rs_mod_name, &options.args, &options)
-        .expect("Generate native output");
+    } = generate_native_output(
+        temp_dir,
+        file,
+        &rs_mod_name,
+        &options.args,
+        &options,
+    )
+    .expect("Generate native output");
 
     let test = WasiTest {
         wasm_prog_name: format!("{}.wasm", rs_mod_name),
@@ -244,7 +253,8 @@ fn compile(temp_dir: &Path, file: &str, wasi_versions: &[WasiVersion]) {
         }).for_each(drop); // Do nothing with it, but let the iterator be consumed/iterated.
 }
 
-const WASI_TEST_SRC_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/wasi/tests/*.rs");
+const WASI_TEST_SRC_DIR: &str =
+    concat!(env!("CARGO_MANIFEST_DIR"), "/wasi/tests/*.rs");
 pub fn build(wasi_versions: &[WasiVersion], specific_tests: &[&str]) {
     let temp_dir = tempfile::TempDir::new().unwrap();
     for entry in glob(WASI_TEST_SRC_DIR).unwrap() {
@@ -252,7 +262,9 @@ pub fn build(wasi_versions: &[WasiVersion], specific_tests: &[&str]) {
             Ok(path) => {
                 let test = path.to_str().unwrap();
                 if !specific_tests.is_empty() {
-                    if let Some(filename) = path.file_stem().and_then(|f| f.to_str()) {
+                    if let Some(filename) =
+                        path.file_stem().and_then(|f| f.to_str())
+                    {
                         if specific_tests.contains(&filename) {
                             compile(temp_dir.path(), test, wasi_versions);
                         }
@@ -389,9 +401,9 @@ fn extract_args_from_source_file(source_code: &str) -> Option<WasiOptions> {
         {
             let arg_line = arg_line.strip_prefix("// ").unwrap();
             let arg_line = arg_line.trim();
-            let colon_idx = arg_line
-                .find(':')
-                .expect("directives provided at the top must be separated by a `:`");
+            let colon_idx = arg_line.find(':').expect(
+                "directives provided at the top must be separated by a `:`",
+            );
 
             let (command_name, value) = arg_line.split_at(colon_idx);
             let value = value.strip_prefix(':').unwrap();
@@ -401,20 +413,34 @@ fn extract_args_from_source_file(source_code: &str) -> Option<WasiOptions> {
                 "mapdir" =>
                 // We try first splitting by `::`
                 {
-                    if let [alias, real_dir] = value.split("::").collect::<Vec<&str>>()[..] {
-                        args.mapdir.push((alias.to_string(), real_dir.to_string()));
-                    } else if let [alias, real_dir] = value.split(':').collect::<Vec<&str>>()[..] {
+                    if let [alias, real_dir] =
+                        value.split("::").collect::<Vec<&str>>()[..]
+                    {
+                        args.mapdir
+                            .push((alias.to_string(), real_dir.to_string()));
+                    } else if let [alias, real_dir] =
+                        value.split(':').collect::<Vec<&str>>()[..]
+                    {
                         // And then we try splitting by `:` (for compatibility with previous API)
-                        args.mapdir.push((alias.to_string(), real_dir.to_string()));
+                        args.mapdir
+                            .push((alias.to_string(), real_dir.to_string()));
                     } else {
-                        eprintln!("Parse error in mapdir {} not parsed correctly", value);
+                        eprintln!(
+                            "Parse error in mapdir {} not parsed correctly",
+                            value
+                        );
                     }
                 }
                 "env" => {
-                    if let [name, val] = value.split('=').collect::<Vec<&str>>()[..] {
+                    if let [name, val] =
+                        value.split('=').collect::<Vec<&str>>()[..]
+                    {
                         args.env.push((name.to_string(), val.to_string()));
                     } else {
-                        eprintln!("Parse error in env {} not parsed correctly", value);
+                        eprintln!(
+                            "Parse error in env {} not parsed correctly",
+                            value
+                        );
                     }
                 }
                 "dir" => {
@@ -429,7 +455,9 @@ fn extract_args_from_source_file(source_code: &str) -> Option<WasiOptions> {
                 "stdin" => {
                     assert!(args.stdin.is_none(), "Only the first `stdin` directive is used! Please correct this or update this code");
                     let s = value;
-                    let s = s.strip_prefix('"').expect("expected leading '\"' in stdin");
+                    let s = s
+                        .strip_prefix('"')
+                        .expect("expected leading '\"' in stdin");
                     let s = s
                         .trim_end()
                         .strip_suffix('\"')

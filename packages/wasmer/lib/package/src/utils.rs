@@ -25,7 +25,9 @@ fn is_tarball(mut file: impl Read + Seek) -> bool {
     result
 }
 
-pub fn from_disk(path: impl AsRef<Path>) -> Result<Container, WasmerPackageError> {
+pub fn from_disk(
+    path: impl AsRef<Path>,
+) -> Result<Container, WasmerPackageError> {
     let path = path.as_ref();
 
     if path.is_dir() {
@@ -55,13 +57,16 @@ pub fn from_disk(path: impl AsRef<Path>) -> Result<Container, WasmerPackageError
                     error,
                 })?;
 
-            Container::from_bytes_and_version(buffer.into(), other).map_err(Into::into)
+            Container::from_bytes_and_version(buffer.into(), other)
+                .map_err(Into::into)
         }
         Err(e) => Err(ContainerError::Detect(e).into()),
     }
 }
 
-pub fn from_bytes(bytes: impl Into<Bytes>) -> Result<Container, WasmerPackageError> {
+pub fn from_bytes(
+    bytes: impl Into<Bytes>,
+) -> Result<Container, WasmerPackageError> {
     let bytes: Bytes = bytes.into();
 
     if is_tarball(std::io::Cursor::new(&bytes)) {

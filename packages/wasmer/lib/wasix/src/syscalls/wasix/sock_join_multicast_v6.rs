@@ -26,12 +26,16 @@ pub fn sock_join_multicast_v6<M: MemorySize>(
 
     #[cfg(feature = "journal")]
     if ctx.data().enable_journal {
-        JournalEffector::save_sock_join_ipv6_multicast(&mut ctx, sock, multiaddr, iface).map_err(
-            |err| {
-                tracing::error!("failed to save sock_join_ipv6_multicast event - {}", err);
-                WasiError::Exit(ExitCode::from(Errno::Fault))
-            },
-        )?;
+        JournalEffector::save_sock_join_ipv6_multicast(
+            &mut ctx, sock, multiaddr, iface,
+        )
+        .map_err(|err| {
+            tracing::error!(
+                "failed to save sock_join_ipv6_multicast event - {}",
+                err
+            );
+            WasiError::Exit(ExitCode::from(Errno::Fault))
+        })?;
     }
 
     Ok(Errno::Success)
@@ -44,8 +48,11 @@ pub(crate) fn sock_join_multicast_v6_internal(
     iface: u32,
 ) -> Result<Result<(), Errno>, WasiError> {
     let env = ctx.data();
-    wasi_try_ok_ok!(__sock_actor_mut(ctx, sock, Rights::empty(), |socket, _| {
-        socket.join_multicast_v6(multiaddr, iface)
-    }));
+    wasi_try_ok_ok!(__sock_actor_mut(
+        ctx,
+        sock,
+        Rights::empty(),
+        |socket, _| { socket.join_multicast_v6(multiaddr, iface) }
+    ));
     Ok(Ok(()))
 }

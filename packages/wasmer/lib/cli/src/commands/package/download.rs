@@ -75,8 +75,9 @@ impl PackageDownload {
                     }
                 }
                 Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                    std::fs::create_dir_all(parent)
-                        .context("could not create parent directory of output file")?;
+                    std::fs::create_dir_all(parent).context(
+                        "could not create parent directory of output file",
+                    )?;
                 }
                 Err(err) => return Err(err.into()),
             }
@@ -121,10 +122,10 @@ impl PackageDownload {
                 )
                     })?;
 
-                let download_url = package
-                    .distribution_v3
-                    .pirita_download_url
-                    .context("registry did not provide a container download URL")?;
+                let download_url =
+                    package.distribution_v3.pirita_download_url.context(
+                        "registry did not provide a container download URL",
+                    )?;
 
                 let ident = format!("{}@{}", full_name, package.version);
                 let filename = if let Some(ns) = &package.package.namespace {
@@ -135,7 +136,10 @@ impl PackageDownload {
                         package.version
                     )
                 } else {
-                    format!("{}@{}.webc", package.package.package_name, package.version)
+                    format!(
+                        "{}@{}.webc",
+                        package.package.package_name, package.version
+                    )
                 };
 
                 (download_url, ident, filename)
@@ -155,8 +159,12 @@ impl PackageDownload {
 
                 (pkg.webc_url, ident, filename)
             }
-            PackageSource::Path(p) => bail!("cannot download a package from a local path: '{p}'"),
-            PackageSource::Url(url) => bail!("cannot download a package from a URL: '{}'", url),
+            PackageSource::Path(p) => {
+                bail!("cannot download a package from a local path: '{p}'")
+            }
+            PackageSource::Url(url) => {
+                bail!("cannot download a package from a URL: '{}'", url)
+            }
         };
 
         let builder = {
@@ -166,7 +174,8 @@ impl PackageDownload {
             }
             builder
         };
-        let client = builder.build().context("failed to create reqwest client")?;
+        let client =
+            builder.build().context("failed to create reqwest client")?;
 
         let b = client
             .get(download_url)
@@ -203,7 +212,9 @@ impl PackageDownload {
         // Set the length of the progress bar
         pb.set_length(webc_total_size);
 
-        let mut tmpfile = if let Some(parent) = self.out_path.as_ref().and_then(|p| p.parent()) {
+        let mut tmpfile = if let Some(parent) =
+            self.out_path.as_ref().and_then(|p| p.parent())
+        {
             NamedTempFile::new_in(parent)?
         } else {
             NamedTempFile::new()?

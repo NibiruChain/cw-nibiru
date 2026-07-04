@@ -19,7 +19,10 @@ impl ReadableJournal for NullJournal {
 }
 
 impl WritableJournal for NullJournal {
-    fn write<'a>(&'a self, entry: JournalEntry<'a>) -> anyhow::Result<LogWriteResult> {
+    fn write<'a>(
+        &'a self,
+        entry: JournalEntry<'a>,
+    ) -> anyhow::Result<LogWriteResult> {
         if self.debug_print {
             tracing::debug!("journal event: {:?}", entry);
         }

@@ -33,7 +33,8 @@ impl hyper::rt::Read for HyperProxyStream {
         if self.terminated {
             return Poll::Ready(Err(io::ErrorKind::ConnectionReset.into()));
         }
-        if let Poll::Ready(Some(_)) = Pin::new(&mut self.terminate).poll_next(cx) {
+        if let Poll::Ready(Some(_)) = Pin::new(&mut self.terminate).poll_next(cx)
+        {
             return Poll::Ready(Err(io::ErrorKind::ConnectionReset.into()));
         }
         Poll::Pending
@@ -52,7 +53,8 @@ impl hyper::rt::Write for HyperProxyStream {
         if self.terminated {
             return Poll::Ready(Err(io::ErrorKind::ConnectionReset.into()));
         }
-        if let Poll::Ready(Some(_)) = Pin::new(&mut self.terminate).poll_next(cx) {
+        if let Poll::Ready(Some(_)) = Pin::new(&mut self.terminate).poll_next(cx)
+        {
             return Poll::Ready(Err(io::ErrorKind::ConnectionReset.into()));
         }
         Poll::Pending
@@ -68,7 +70,8 @@ impl hyper::rt::Write for HyperProxyStream {
         if self.terminated {
             return Poll::Ready(Err(io::ErrorKind::ConnectionReset.into()));
         }
-        if let Poll::Ready(Some(_)) = Pin::new(&mut self.terminate).poll_next(cx) {
+        if let Poll::Ready(Some(_)) = Pin::new(&mut self.terminate).poll_next(cx)
+        {
             return Poll::Ready(Err(io::ErrorKind::ConnectionReset.into()));
         }
         Poll::Pending
@@ -84,7 +87,8 @@ impl hyper::rt::Write for HyperProxyStream {
         if self.terminated {
             return Poll::Ready(Err(io::ErrorKind::ConnectionReset.into()));
         }
-        if let Poll::Ready(Some(_)) = Pin::new(&mut self.terminate).poll_next(cx) {
+        if let Poll::Ready(Some(_)) = Pin::new(&mut self.terminate).poll_next(cx)
+        {
             return Poll::Ready(Err(io::ErrorKind::ConnectionReset.into()));
         }
         Poll::Pending

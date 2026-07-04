@@ -40,12 +40,17 @@ mod codegen {
     fn build_jsonschema_map() -> HashMap<String, String> {
         let mut map = HashMap::new();
 
-        fn add_schema<T: schemars::JsonSchema>(map: &mut HashMap<String, String>, name: &str) {
-            let gen =
-                schemars::gen::SchemaGenerator::new(schemars::gen::SchemaSettings::draft2019_09());
+        fn add_schema<T: schemars::JsonSchema>(
+            map: &mut HashMap<String, String>,
+            name: &str,
+        ) {
+            let gen = schemars::gen::SchemaGenerator::new(
+                schemars::gen::SchemaSettings::draft2019_09(),
+            );
             map.insert(
                 format!("{name}.schema.json"),
-                serde_json::to_string_pretty(&gen.into_root_schema_for::<T>()).unwrap(),
+                serde_json::to_string_pretty(&gen.into_root_schema_for::<T>())
+                    .unwrap(),
             );
         }
         add_schema::<wasmer_config::app::AppConfigV1>(&mut map, "AppConfigV1");
@@ -54,8 +59,8 @@ mod codegen {
 
     /// Get the local path to the directory where generated schemas are stored.
     fn schema_dir() -> std::path::PathBuf {
-        let crate_dir =
-            std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR env var to be set");
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR")
+            .expect("CARGO_MANIFEST_DIR env var to be set");
         let root_dir = std::path::Path::new(&crate_dir)
             .parent()
             .unwrap()

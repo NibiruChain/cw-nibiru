@@ -282,7 +282,8 @@ mod tests {
 
     #[test]
     fn middleware_error_be_converted_to_wasm_error() {
-        let error = WasmError::from(MiddlewareError::new("manipulator3000", "foo"));
+        let error =
+            WasmError::from(MiddlewareError::new("manipulator3000", "foo"));
         match error {
             WasmError::Middleware(MiddlewareError { name, message }) => {
                 assert_eq!(name, "manipulator3000");

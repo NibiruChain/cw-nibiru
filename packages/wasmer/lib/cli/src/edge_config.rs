@@ -17,7 +17,8 @@ impl EdgeConfig {
 
     pub fn from_slice(data: &[u8]) -> Result<Self, anyhow::Error> {
         let data_str = std::str::from_utf8(data)?;
-        let value: toml::Value = toml::from_str(data_str).context("failed to parse config TOML")?;
+        let value: toml::Value =
+            toml::from_str(data_str).context("failed to parse config TOML")?;
 
         let version = value
             .get("version")
@@ -62,7 +63,10 @@ impl LoadedEdgeConfig {
     }
 
     #[allow(dead_code)]
-    pub fn set_network_token(&mut self, token: String) -> Result<(), anyhow::Error> {
+    pub fn set_network_token(
+        &mut self,
+        token: String,
+    ) -> Result<(), anyhow::Error> {
         self.config.network_token = Some(token);
         self.save()?;
         Ok(())
@@ -70,8 +74,9 @@ impl LoadedEdgeConfig {
 
     pub fn save(&self) -> Result<(), anyhow::Error> {
         let data = toml::to_string(&self.config)?;
-        std::fs::write(&self.path, data)
-            .with_context(|| format!("failed to write config to '{}'", self.path.display()))?;
+        std::fs::write(&self.path, data).with_context(|| {
+            format!("failed to write config to '{}'", self.path.display())
+        })?;
         Ok(())
     }
 }
@@ -84,13 +89,16 @@ pub fn default_config_path() -> Result<PathBuf, anyhow::Error> {
         // (this also depends on general wasmer config moving there.)
 
         #[allow(deprecated)]
-        let home = std::env::home_dir().context("failed to get home directory")?;
+        let home =
+            std::env::home_dir().context("failed to get home directory")?;
         let path = home.join(".wasmer").join(CONFIG_FILE_NAME);
         Ok(path)
     }
 }
 
-pub fn load_config(custom_path: Option<PathBuf>) -> Result<LoadedEdgeConfig, anyhow::Error> {
+pub fn load_config(
+    custom_path: Option<PathBuf>,
+) -> Result<LoadedEdgeConfig, anyhow::Error> {
     let default_path = default_config_path()?;
 
     let path = if let Some(p) = custom_path {
@@ -125,9 +133,11 @@ pub fn load_config(custom_path: Option<PathBuf>) -> Result<LoadedEdgeConfig, any
 }
 
 fn try_load_config(path: &Path) -> Result<EdgeConfig, anyhow::Error> {
-    let data = std::fs::read(path)
-        .with_context(|| format!("failed to read config file at '{}'", path.display()))?;
-    let config = EdgeConfig::from_slice(&data)
-        .with_context(|| format!("failed to parse config file at '{}'", path.display()))?;
+    let data = std::fs::read(path).with_context(|| {
+        format!("failed to read config file at '{}'", path.display())
+    })?;
+    let config = EdgeConfig::from_slice(&data).with_context(|| {
+        format!("failed to parse config file at '{}'", path.display())
+    })?;
     Ok(config)
 }

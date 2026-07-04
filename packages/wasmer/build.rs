@@ -9,8 +9,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 use test_generator::{
-    test_directory, test_directory_module, wasi_processor, wast_processor, with_test_module,
-    Testsuite,
+    test_directory, test_directory_module, wasi_processor, wast_processor,
+    with_test_module, Testsuite,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -20,11 +20,14 @@ fn main() -> anyhow::Result<()> {
         .expect("Can't get directory");
     build_deps::rerun_if_changed_paths("tests/wasi-wast/wasi/snapshot1/*")
         .expect("Can't get directory");
-    build_deps::rerun_if_changed_paths("tests/wasi-wast/wasi/nightly-2022-10-18/*")
-        .expect("Can't get directory");
+    build_deps::rerun_if_changed_paths(
+        "tests/wasi-wast/wasi/nightly-2022-10-18/*",
+    )
+    .expect("Can't get directory");
 
     let out_dir = PathBuf::from(
-        env::var_os("OUT_DIR").expect("The OUT_DIR environment variable must be set"),
+        env::var_os("OUT_DIR")
+            .expect("The OUT_DIR environment variable must be set"),
     );
 
     // Spectests test generation
@@ -35,13 +38,18 @@ fn main() -> anyhow::Result<()> {
         };
 
         with_test_module(&mut spectests, "spec", |spectests| {
-            let _spec_tests = test_directory(spectests, "tests/wast/spec", wast_processor)?;
+            let _spec_tests =
+                test_directory(spectests, "tests/wast/spec", wast_processor)?;
             test_directory_module(
                 spectests,
                 "tests/wast/spec/proposals/multi-value",
                 wast_processor,
             )?;
-            test_directory_module(spectests, "tests/wast/spec/proposals/simd", wast_processor)?;
+            test_directory_module(
+                spectests,
+                "tests/wast/spec/proposals/simd",
+                wast_processor,
+            )?;
             test_directory_module(
                 spectests,
                 "tests/wast/spec/proposals/threads",
@@ -51,7 +59,8 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         })?;
         with_test_module(&mut spectests, "wasmer", |spectests| {
-            let _spec_tests = test_directory(spectests, "tests/wast/wasmer", wast_processor)?;
+            let _spec_tests =
+                test_directory(spectests, "tests/wast/wasmer", wast_processor)?;
             Ok(())
         })?;
 
@@ -73,7 +82,8 @@ fn main() -> anyhow::Result<()> {
         };
 
         with_test_module(&mut wasitests, "wasitests", |wasitests| {
-            for wasi_version in &["unstable", "snapshot1", "nightly_2022_10_18"] {
+            for wasi_version in &["unstable", "snapshot1", "nightly_2022_10_18"]
+            {
                 with_test_module(wasitests, wasi_version, |wasitests| {
                     for (wasi_filesystem_test_name, wasi_filesystem_kind) in &[
                         ("host_fs", "WasiFileSystemKind::Host"),
@@ -83,13 +93,26 @@ fn main() -> anyhow::Result<()> {
                         ("union_fs", "WasiFileSystemKind::UnionHostMemory"),
                         ("root_fs", "WasiFileSystemKind::RootFileSystemBuilder"),
                     ] {
-                        with_test_module(wasitests, wasi_filesystem_test_name, |wasitests| {
-                            test_directory(
-                                wasitests,
-                                format!("tests/wasi-wast/wasi/{}", wasi_version),
-                                |out, path| wasi_processor(out, path, wasi_filesystem_kind),
-                            )
-                        })?;
+                        with_test_module(
+                            wasitests,
+                            wasi_filesystem_test_name,
+                            |wasitests| {
+                                test_directory(
+                                    wasitests,
+                                    format!(
+                                        "tests/wasi-wast/wasi/{}",
+                                        wasi_version
+                                    ),
+                                    |out, path| {
+                                        wasi_processor(
+                                            out,
+                                            path,
+                                            wasi_filesystem_kind,
+                                        )
+                                    },
+                                )
+                            },
+                        )?;
                     }
 
                     Ok(())

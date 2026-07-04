@@ -1,8 +1,11 @@
 use crate::{
-    VMExternObj, VMFunction, VMFunctionEnvironment, VMGlobal, VMInstance, VMMemory, VMTable,
+    VMExternObj, VMFunction, VMFunctionEnvironment, VMGlobal, VMInstance,
+    VMMemory, VMTable,
 };
 use core::slice::Iter;
-use std::{cell::UnsafeCell, fmt, marker::PhantomData, num::NonZeroUsize, ptr::NonNull};
+use std::{
+    cell::UnsafeCell, fmt, marker::PhantomData, num::NonZeroUsize, ptr::NonNull,
+};
 use wasmer_types::StoreId;
 
 /// Trait to represent an object managed by a context. This is implemented on
@@ -184,7 +187,10 @@ impl<T: StoreObject> StoreHandle<T> {
     ///
     /// # Safety
     /// Handling `InternalStoreHandle` values is unsafe because they do not track context ID.
-    pub unsafe fn from_internal(id: StoreId, internal: InternalStoreHandle<T>) -> Self {
+    pub unsafe fn from_internal(
+        id: StoreId,
+        internal: InternalStoreHandle<T>,
+    ) -> Self {
         Self { id, internal }
     }
 }
@@ -202,7 +208,10 @@ pub struct InternalStoreHandle<T> {
 
 #[cfg(feature = "artifact-size")]
 impl<T> loupe::MemoryUsage for InternalStoreHandle<T> {
-    fn size_of_val(&self, _tracker: &mut dyn loupe::MemoryUsageTracker) -> usize {
+    fn size_of_val(
+        &self,
+        _tracker: &mut dyn loupe::MemoryUsageTracker,
+    ) -> usize {
         std::mem::size_of_val(&self)
     }
 }

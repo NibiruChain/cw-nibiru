@@ -6,8 +6,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::tcp_pair::TcpSocketHalf;
 use crate::{
-    InterestHandler, IpAddr, IpCidr, Ipv4Addr, Ipv6Addr, NetworkError, VirtualIoSource,
-    VirtualNetworking, VirtualTcpListener, VirtualTcpSocket,
+    InterestHandler, IpAddr, IpCidr, Ipv4Addr, Ipv6Addr, NetworkError,
+    VirtualIoSource, VirtualNetworking, VirtualTcpListener, VirtualTcpSocket,
 };
 use virtual_mio::InterestType;
 
@@ -45,9 +45,10 @@ impl LoopbackNetworking {
             IpAddr::V4(Ipv4Addr::UNSPECIFIED) => {
                 SocketAddr::new(Ipv4Addr::new(127, 0, 0, 100).into(), port)
             }
-            IpAddr::V6(Ipv6Addr::UNSPECIFIED) => {
-                SocketAddr::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 100).into(), port)
-            }
+            IpAddr::V6(Ipv6Addr::UNSPECIFIED) => SocketAddr::new(
+                Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 100).into(),
+                port,
+            ),
             ip => SocketAddr::new(ip, port),
         };
 
@@ -109,7 +110,8 @@ impl VirtualNetworking for LoopbackNetworking {
     }
 
     async fn ip_list(&self) -> crate::Result<Vec<IpCidr>> {
-        let state: std::sync::MutexGuard<'_, LoopbackNetworkingState> = self.state.lock().unwrap();
+        let state: std::sync::MutexGuard<'_, LoopbackNetworkingState> =
+            self.state.lock().unwrap();
         Ok(state.ip_addresses.clone())
     }
 
@@ -162,8 +164,11 @@ impl LoopbackTcpListener {
 
     pub fn connect_to(&self, addr_local: SocketAddr) -> TcpSocketHalf {
         let mut state = self.state.lock().unwrap();
-        let (half1, half2) =
-            TcpSocketHalf::channel(DEFAULT_MAX_BUFFER_SIZE, state.addr_local, addr_local);
+        let (half1, half2) = TcpSocketHalf::channel(
+            DEFAULT_MAX_BUFFER_SIZE,
+            state.addr_local,
+            addr_local,
+        );
 
         state.backlog.push_back(half1);
         if let Some(handler) = state.handler.as_mut() {
@@ -181,7 +186,10 @@ impl VirtualIoSource for LoopbackTcpListener {
         state.handler.take();
     }
 
-    fn poll_read_ready(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<usize>> {
+    fn poll_read_ready(
+        &mut self,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result<usize>> {
         let mut state = self.state.lock().unwrap();
         if !state.backlog.is_empty() {
             return Poll::Ready(Ok(state.backlog.len()));
@@ -192,7 +200,10 @@ impl VirtualIoSource for LoopbackTcpListener {
         Poll::Pending
     }
 
-    fn poll_write_ready(&mut self, _cx: &mut Context<'_>) -> Poll<crate::Result<usize>> {
+    fn poll_write_ready(
+        &mut self,
+        _cx: &mut Context<'_>,
+    ) -> Poll<crate::Result<usize>> {
         Poll::Pending
     }
 }
@@ -200,7 +211,8 @@ impl VirtualIoSource for LoopbackTcpListener {
 impl VirtualTcpListener for LoopbackTcpListener {
     fn try_accept(
         &mut self,
-    ) -> crate::Result<(Box<dyn crate::VirtualTcpSocket + Sync>, SocketAddr)> {
+    ) -> crate::Result<(Box<dyn crate::VirtualTcpSocket + Sync>, SocketAddr)>
+    {
         let mut state = self.state.lock().unwrap();
         let next = state.backlog.pop_front();
         if let Some(next) = next {

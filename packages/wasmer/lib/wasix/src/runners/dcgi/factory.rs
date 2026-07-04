@@ -1,7 +1,9 @@
 use std::sync::{Arc, Mutex};
 
 use virtual_fs::Pipe;
-use wasmer_wasix_types::types::{__WASI_STDERR_FILENO, __WASI_STDIN_FILENO, __WASI_STDOUT_FILENO};
+use wasmer_wasix_types::types::{
+    __WASI_STDERR_FILENO, __WASI_STDIN_FILENO, __WASI_STDOUT_FILENO,
+};
 
 use crate::{
     runners::wcgi::{CreateEnvConfig, CreateEnvResult, RecycleEnvConfig},
@@ -38,14 +40,20 @@ impl DcgiInstanceFactory {
         });
     }
 
-    pub async fn acquire(&self, conf: &mut CreateEnvConfig) -> Option<CreateEnvResult> {
+    pub async fn acquire(
+        &self,
+        conf: &mut CreateEnvConfig,
+    ) -> Option<CreateEnvResult> {
         let mut state = self.state.lock().unwrap();
         if let Some(inst) = state.instance.take() {
             tracing::debug!("attempting to reinitialize DCGI instance");
             match convert_instance(inst, conf) {
                 Ok(converted) => return Some(converted),
                 Err(err) => {
-                    tracing::warn!("failed to reinitialize DCGI instance - {}", err);
+                    tracing::warn!(
+                        "failed to reinitialize DCGI instance - {}",
+                        err
+                    );
                 }
             }
         }

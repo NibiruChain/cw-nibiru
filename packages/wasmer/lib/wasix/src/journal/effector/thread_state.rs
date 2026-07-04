@@ -53,9 +53,13 @@ impl JournalEffector {
                     "unable to restore a main thread via this method"
                 ));
             }
-            ThreadStartType::ThreadSpawn { start_ptr } => start_ptr
-                .try_into()
-                .map_err(|_| anyhow::format_err!("overflow while processing thread restoration"))?,
+            ThreadStartType::ThreadSpawn { start_ptr } => {
+                start_ptr.try_into().map_err(|_| {
+                    anyhow::format_err!(
+                        "overflow while processing thread restoration"
+                    )
+                })?
+            }
         };
 
         // Create the thread for this ID
@@ -83,7 +87,9 @@ impl JournalEffector {
                 RewindResultType::RewindRestart,
             )),
         )
-        .map_err(|err| anyhow::format_err!("failed to spawn thread - {}", err))?;
+        .map_err(|err| {
+            anyhow::format_err!("failed to spawn thread - {}", err)
+        })?;
 
         Ok(())
     }

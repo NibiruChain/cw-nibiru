@@ -5,7 +5,9 @@
 //! once the type reflection is added to the WebAssembly JS API.
 //! https://github.com/WebAssembly/js-types/
 
-use crate::externals::{Extern, Function, Global, Memory, Table, VMExternToExtern};
+use crate::externals::{
+    Extern, Function, Global, Memory, Table, VMExternToExtern,
+};
 use crate::store::{AsStoreMut, AsStoreRef};
 use rusty_jsc::{JSObject, JSObjectCallAsFunctionCallback, JSValue};
 use std::any::Any;
@@ -13,7 +15,8 @@ use std::fmt;
 use tracing::trace;
 use wasmer_types::RawValue;
 use wasmer_types::{
-    FunctionType, GlobalType, MemoryError, MemoryType, Pages, TableType, WASM_PAGE_SIZE,
+    FunctionType, GlobalType, MemoryError, MemoryType, Pages, TableType,
+    WASM_PAGE_SIZE,
 };
 
 /// Represents linear memory that is managed by the javascript runtime
@@ -51,15 +54,26 @@ impl VMMemory {
     }
 
     /// Copies this memory to a new memory
-    pub fn copy(&self, store: &impl AsStoreRef) -> Result<VMMemory, wasmer_types::MemoryError> {
+    pub fn copy(
+        &self,
+        store: &impl AsStoreRef,
+    ) -> Result<VMMemory, wasmer_types::MemoryError> {
         let new_memory =
-            crate::jsc::externals::memory::Memory::js_memory_from_type(&store, &self.ty)?;
+            crate::jsc::externals::memory::Memory::js_memory_from_type(
+                &store, &self.ty,
+            )?;
 
         trace!("memory copy started");
 
-        let src = crate::jsc::externals::memory_view::MemoryView::new_raw(&self.memory, store);
+        let src = crate::jsc::externals::memory_view::MemoryView::new_raw(
+            &self.memory,
+            store,
+        );
         let amount = src.data_size() as usize;
-        let mut dst = crate::jsc::externals::memory_view::MemoryView::new_raw(&new_memory, store);
+        let mut dst = crate::jsc::externals::memory_view::MemoryView::new_raw(
+            &new_memory,
+            store,
+        );
         let dst_size = dst.data_size() as usize;
 
         // if amount > dst_size {
@@ -84,7 +98,10 @@ impl VMMemory {
         // }
 
         src.copy_to_memory(amount as u64, &dst).map_err(|err| {
-            wasmer_types::MemoryError::Generic(format!("failed to copy the memory - {}", err))
+            wasmer_types::MemoryError::Generic(format!(
+                "failed to copy the memory - {}",
+                err
+            ))
         })?;
 
         trace!("memory copy finished (size={})", dst.size().bytes().0);
@@ -191,7 +208,9 @@ pub enum VMExtern {
 impl VMExternToExtern for VMExtern {
     fn to_extern(self, store: &mut impl AsStoreMut) -> Extern {
         match self {
-            Self::Function(f) => Extern::Function(Function::from_vm_extern(store, f)),
+            Self::Function(f) => {
+                Extern::Function(Function::from_vm_extern(store, f))
+            }
             Self::Memory(m) => Extern::Memory(Memory::from_vm_extern(store, m)),
             Self::Global(g) => Extern::Global(Global::from_vm_extern(store, g)),
             Self::Table(t) => Extern::Table(Table::from_vm_extern(store, t)),

@@ -4,6 +4,8 @@ pub struct PackageUnpack {}
 
 impl PackageUnpack {
     pub(crate) fn execute(&self) -> Result<(), anyhow::Error> {
-        anyhow::bail!("This command was renamed: use 'wasmer package unpack instead'");
+        anyhow::bail!(
+            "This command was renamed: use 'wasmer package unpack instead'"
+        );
     }
 }

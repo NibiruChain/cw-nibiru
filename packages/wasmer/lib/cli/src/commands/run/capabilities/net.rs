@@ -13,8 +13,8 @@ use colored::Colorize;
 use dialoguer::theme::ColorfulTheme;
 use virtual_net::{
     DynVirtualNetworking, IpCidr, IpRoute, NetworkError, Result, StreamSecurity,
-    UnsupportedVirtualNetworking, VirtualIcmpSocket, VirtualNetworking, VirtualRawSocket,
-    VirtualTcpListener, VirtualTcpSocket, VirtualUdpSocket,
+    UnsupportedVirtualNetworking, VirtualIcmpSocket, VirtualNetworking,
+    VirtualRawSocket, VirtualTcpListener, VirtualTcpSocket, VirtualUdpSocket,
 };
 
 /// A custom implementation of the [`virtual_net::VirtualNetwork`] that asks users if they want to
@@ -84,7 +84,8 @@ impl FromStr for UserSelection {
             anyhow::bail!("No input!")
         }
 
-        if let Some(c) = s.trim().chars().next().map(|c| c.to_ascii_lowercase()) {
+        if let Some(c) = s.trim().chars().next().map(|c| c.to_ascii_lowercase())
+        {
             Ok(match c {
                 'n' => UserSelection::No,
                 'y' => UserSelection::Yes,
@@ -98,13 +99,18 @@ impl FromStr for UserSelection {
 }
 
 impl AskingNetworking {
-    pub(crate) fn new(pkg_cache_path: PathBuf, capable_networking: DynVirtualNetworking) -> Self {
+    pub(crate) fn new(
+        pkg_cache_path: PathBuf,
+        capable_networking: DynVirtualNetworking,
+    ) -> Self {
         let enable_networking = OnceLock::new();
 
         Self {
             enable: enable_networking,
             capable: capable_networking,
-            unsupported: std::sync::Arc::new(UnsupportedVirtualNetworking::default()),
+            unsupported: std::sync::Arc::new(
+                UnsupportedVirtualNetworking::default(),
+            ),
             pkg_cache_path,
         }
     }
@@ -283,7 +289,10 @@ impl VirtualNetworking for AskingNetworking {
 
     /// Creates a socket that can be used to send and receive ICMP packets
     /// from a paritcular IP address
-    async fn bind_icmp(&self, addr: IpAddr) -> Result<Box<dyn VirtualIcmpSocket + Sync>> {
+    async fn bind_icmp(
+        &self,
+        addr: IpAddr,
+    ) -> Result<Box<dyn VirtualIcmpSocket + Sync>> {
         call!(self, bind_icmp, addr);
     }
 

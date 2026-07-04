@@ -3,7 +3,8 @@ use tokio::sync::{mpsc::UnboundedSender, watch};
 use virtual_mio::{InterestHandler, InterestType};
 use virtual_net::net_error_into_io_err;
 use wasmer_wasix_types::wasi::{
-    EpollCtl, EpollEvent, EpollEventCtl, EpollType, SubscriptionClock, SubscriptionUnion, Userdata,
+    EpollCtl, EpollEvent, EpollEventCtl, EpollType, SubscriptionClock,
+    SubscriptionUnion, Userdata,
 };
 
 use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
@@ -13,8 +14,9 @@ use futures::Future;
 use super::*;
 use crate::{
     fs::{
-        EpollFd, EpollInterest, EpollJoinGuard, InodeValFilePollGuard, InodeValFilePollGuardJoin,
-        InodeValFilePollGuardMode, POLL_GUARD_MAX_RET,
+        EpollFd, EpollInterest, EpollJoinGuard, InodeValFilePollGuard,
+        InodeValFilePollGuardJoin, InodeValFilePollGuardMode,
+        POLL_GUARD_MAX_RET,
     },
     state::PollEventSet,
     syscalls::*,
@@ -62,10 +64,11 @@ pub fn epoll_ctl<M: MemorySize + 'static>(
 
     #[cfg(feature = "journal")]
     if env.enable_journal {
-        JournalEffector::save_epoll_ctl(&mut ctx, epfd, op, fd, event_ctl).map_err(|err| {
-            tracing::error!("failed to save epoll_create event - {}", err);
-            WasiError::Exit(ExitCode::from(Errno::Fault))
-        })?;
+        JournalEffector::save_epoll_ctl(&mut ctx, epfd, op, fd, event_ctl)
+            .map_err(|err| {
+                tracing::error!("failed to save epoll_create event - {}", err);
+                WasiError::Exit(ExitCode::from(Errno::Fault))
+            })?;
     }
 
     Ok(Errno::Success)
@@ -122,8 +125,9 @@ pub(crate) fn epoll_ctl_internal(
 
                     // Now we register the epoll waker
                     let tx = tx.clone();
-                    let mut fd_guards =
-                        wasi_try_ok_ok!(register_epoll_waker(&env.state, &epoll_fd, tx));
+                    let mut fd_guards = wasi_try_ok_ok!(register_epoll_waker(
+                        &env.state, &epoll_fd, tx
+                    ));
 
                     // After the guards are created we need to attach them to the subscription
                     let mut guard = subscriptions.lock().unwrap();
@@ -256,7 +260,9 @@ pub(super) fn register_epoll_waker(
     if event.events.contains(EpollType::EPOLLERR) {
         peb = peb.add(PollEvent::PollError);
     }
-    if event.events.contains(EpollType::EPOLLHUP) | event.events.contains(EpollType::EPOLLRDHUP) {
+    if event.events.contains(EpollType::EPOLLHUP)
+        | event.events.contains(EpollType::EPOLLRDHUP)
+    {
         peb = peb.add(PollEvent::PollHangUp);
     }
 

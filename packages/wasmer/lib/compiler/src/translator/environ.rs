@@ -11,10 +11,10 @@ use wasmer_types::entity::PrimaryMap;
 use wasmer_types::FunctionType;
 use wasmer_types::WasmResult;
 use wasmer_types::{
-    CustomSectionIndex, DataIndex, DataInitializer, DataInitializerLocation, ElemIndex,
-    ExportIndex, FunctionIndex, GlobalIndex, GlobalInit, GlobalType, ImportIndex,
-    LocalFunctionIndex, MemoryIndex, MemoryType, ModuleInfo, SignatureIndex, TableIndex,
-    TableInitializer, TableType,
+    CustomSectionIndex, DataIndex, DataInitializer, DataInitializerLocation,
+    ElemIndex, ExportIndex, FunctionIndex, GlobalIndex, GlobalInit, GlobalType,
+    ImportIndex, LocalFunctionIndex, MemoryIndex, MemoryType, ModuleInfo,
+    SignatureIndex, TableIndex, TableInitializer, TableType,
 };
 
 /// Contains function data: bytecode and its offset in the module.
@@ -63,7 +63,8 @@ pub struct ModuleEnvironment<'data> {
     pub module: ModuleInfo,
 
     /// References to the function bodies.
-    pub function_body_inputs: PrimaryMap<LocalFunctionIndex, FunctionBodyData<'data>>,
+    pub function_body_inputs:
+        PrimaryMap<LocalFunctionIndex, FunctionBodyData<'data>>,
 
     /// References to the data initializers.
     pub data_initializers: Vec<DataInitializer<'data>>,
@@ -93,7 +94,11 @@ impl<'data> ModuleEnvironment<'data> {
         Ok(self)
     }
 
-    pub(crate) fn declare_export(&mut self, export: ExportIndex, name: &str) -> WasmResult<()> {
+    pub(crate) fn declare_export(
+        &mut self,
+        export: ExportIndex,
+        name: &str,
+    ) -> WasmResult<()> {
         self.module.exports.insert(String::from(name), export);
         Ok(())
     }
@@ -123,7 +128,10 @@ impl<'data> ModuleEnvironment<'data> {
         Ok(())
     }
 
-    pub(crate) fn declare_signature(&mut self, sig: FunctionType) -> WasmResult<()> {
+    pub(crate) fn declare_signature(
+        &mut self,
+        sig: FunctionType,
+    ) -> WasmResult<()> {
         // TODO: Deduplicate signatures.
         self.module.signatures.push(sig);
         Ok(())
@@ -164,7 +172,9 @@ impl<'data> ModuleEnvironment<'data> {
             "Imported tables must be declared first"
         );
         self.declare_import(
-            ImportIndex::Table(TableIndex::from_u32(self.module.num_imported_tables as _)),
+            ImportIndex::Table(TableIndex::from_u32(
+                self.module.num_imported_tables as _,
+            )),
             module,
             field,
         )?;
@@ -208,7 +218,9 @@ impl<'data> ModuleEnvironment<'data> {
             "Imported globals must be declared first"
         );
         self.declare_import(
-            ImportIndex::Global(GlobalIndex::from_u32(self.module.num_imported_globals as _)),
+            ImportIndex::Global(GlobalIndex::from_u32(
+                self.module.num_imported_globals as _,
+            )),
             module,
             field,
         )?;
@@ -230,7 +242,10 @@ impl<'data> ModuleEnvironment<'data> {
         Ok(())
     }
 
-    pub(crate) fn declare_func_type(&mut self, sig_index: SignatureIndex) -> WasmResult<()> {
+    pub(crate) fn declare_func_type(
+        &mut self,
+        sig_index: SignatureIndex,
+    ) -> WasmResult<()> {
         self.module.functions.push(sig_index);
         Ok(())
     }
@@ -254,7 +269,10 @@ impl<'data> ModuleEnvironment<'data> {
         Ok(())
     }
 
-    pub(crate) fn declare_memory(&mut self, memory: MemoryType) -> WasmResult<()> {
+    pub(crate) fn declare_memory(
+        &mut self,
+        memory: MemoryType,
+    ) -> WasmResult<()> {
         self.module.memories.push(memory);
         Ok(())
     }
@@ -313,13 +331,19 @@ impl<'data> ModuleEnvironment<'data> {
         self.declare_export(ExportIndex::Global(global_index), name)
     }
 
-    pub(crate) fn declare_start_function(&mut self, func_index: FunctionIndex) -> WasmResult<()> {
+    pub(crate) fn declare_start_function(
+        &mut self,
+        func_index: FunctionIndex,
+    ) -> WasmResult<()> {
         debug_assert!(self.module.start_function.is_none());
         self.module.start_function = Some(func_index);
         Ok(())
     }
 
-    pub(crate) fn reserve_table_initializers(&mut self, num: u32) -> WasmResult<()> {
+    pub(crate) fn reserve_table_initializers(
+        &mut self,
+        num: u32,
+    ) -> WasmResult<()> {
         self.module
             .table_initializers
             .reserve_exact(usize::try_from(num).unwrap());
@@ -369,7 +393,10 @@ impl<'data> ModuleEnvironment<'data> {
         Ok(())
     }
 
-    pub(crate) fn reserve_data_initializers(&mut self, num: u32) -> WasmResult<()> {
+    pub(crate) fn reserve_data_initializers(
+        &mut self,
+        num: u32,
+    ) -> WasmResult<()> {
         self.data_initializers
             .reserve_exact(usize::try_from(num).unwrap());
         Ok(())
@@ -412,7 +439,10 @@ impl<'data> ModuleEnvironment<'data> {
         Ok(())
     }
 
-    pub(crate) fn declare_module_name(&mut self, name: &'data str) -> WasmResult<()> {
+    pub(crate) fn declare_module_name(
+        &mut self,
+        name: &'data str,
+    ) -> WasmResult<()> {
         self.module.name = Some(name.to_string());
         Ok(())
     }
@@ -440,7 +470,11 @@ impl<'data> ModuleEnvironment<'data> {
     }
 
     /// Indicates that a custom section has been found in the wasm file
-    pub(crate) fn custom_section(&mut self, name: &'data str, data: &'data [u8]) -> WasmResult<()> {
+    pub(crate) fn custom_section(
+        &mut self,
+        name: &'data str,
+        data: &'data [u8],
+    ) -> WasmResult<()> {
         let custom_section = CustomSectionIndex::from_u32(
             self.module.custom_sections_data.len().try_into().unwrap(),
         );
