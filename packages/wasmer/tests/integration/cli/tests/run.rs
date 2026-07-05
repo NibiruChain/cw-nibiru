@@ -194,12 +194,7 @@ fn run_python_create_temp_dir_in_subprocess() {
         .output()
         .unwrap();
 
-    if cfg!(not(feature = "wamr")) {
-        assert_eq!(output.stdout, "0".as_bytes().to_vec());
-    } else {
-        // WAMR can print spurious warnings to stdout when running python, so we can't assert that it's exactly `[48]`.
-        assert!(output.status.success())
-    }
+    assert_eq!(output.stdout, "0".as_bytes().to_vec());
 }
 
 #[test]
@@ -219,12 +214,7 @@ fn run_php_with_sqlite() {
         .output()
         .unwrap();
 
-    if cfg!(not(feature = "wamr")) {
-        assert_eq!(output.stdout, "0".as_bytes().to_vec());
-    } else {
-        // WAMR can print spurious warnings to stdout when running php, so we can't assert that it's exactly `[48]`.
-        assert!(output.status.success())
-    }
+    assert_eq!(output.stdout, "0".as_bytes().to_vec());
 }
 
 /// Ignored on Windows because running vendored packages does not work
@@ -369,13 +359,7 @@ fn test_wasmer_run_works() {
         .assert()
         .success();
 
-    if cfg!(not(feature = "wamr")) {
-        assert.stdout("hello\n");
-    } else {
-        // WAMR can print spurious warnings to stdout when running python, so it's better to use
-        // `contains` rather than asserting that stdout *is exactly* that
-        assert.stdout(contains("hello\n"));
-    }
+    assert.stdout("hello\n");
 
     // same test again, but this time with "wasmer run ..."
     let assert = Command::new(get_wasmer_path())
@@ -386,12 +370,7 @@ fn test_wasmer_run_works() {
         .assert()
         .success();
 
-    if cfg!(not(feature = "wamr")) {
-        assert.stdout("hello\n");
-    } else {
-        // See above
-        assert.stdout(contains("hello\n"));
-    }
+    assert.stdout("hello\n");
 
     // same test again, but this time without specifying the registry in the URL
     let assert = Command::new(get_wasmer_path())
@@ -403,12 +382,7 @@ fn test_wasmer_run_works() {
         .assert()
         .success();
 
-    if cfg!(not(feature = "wamr")) {
-        assert.stdout("hello\n");
-    } else {
-        // See above
-        assert.stdout(contains("hello\n"));
-    }
+    assert.stdout("hello\n");
 
     // same test again, but this time with only the command "python" (should be looked up locally)
     let assert = Command::new(get_wasmer_path())
@@ -420,12 +394,7 @@ fn test_wasmer_run_works() {
         .assert()
         .success();
 
-    if cfg!(not(feature = "wamr")) {
-        assert.stdout("hello\n");
-    } else {
-        // See above
-        assert.stdout(contains("hello\n"));
-    }
+    assert.stdout("hello\n");
 }
 
 #[test]
@@ -733,7 +702,6 @@ fn wasi_runner_on_disk_with_mounted_directories_and_webc_volumes() {
     all(target_env = "musl", target_os = "linux"),
     ignore = "wasmer run-unstable segfaults on musl"
 )]
-#[cfg_attr(feature = "wamr", ignore = "wamr does not support multiple memories")]
 fn wasi_runner_on_disk_with_dependencies() {
     let port = random_port();
     let mut cmd = Command::new(get_wasmer_path());
@@ -908,10 +876,6 @@ fn issue_3794_unable_to_mount_relative_paths() {
     windows,
     ignore = "FIXME(Michael-F-Bryan): Temporarily broken on Windows - https://github.com/wasmerio/wasmer/issues/3929"
 )]
-#[cfg_attr(
-    feature = "wamr",
-    ignore = "FIXME(xdoardo): Bash is currently not working in wamr"
-)]
 fn merged_filesystem_contains_all_files() {
     let assert = Command::new(get_wasmer_path())
         .arg("run")
@@ -981,7 +945,7 @@ fn error_if_no_start_function_found() {
     ignore = "wasmer run-unstable segfaults on musl"
 )]
 #[cfg_attr(
-    any(feature = "wamr", feature = "v8", feature = "wasmi"),
+    any(feature = "v8", feature = "wasmi"),
     ignore = "wasmer using a c_api backend only may not have the 'compile' command"
 )]
 fn run_a_pre_compiled_wasm_file() {
@@ -1081,10 +1045,6 @@ fn run_quickjs_via_url() {
 #[cfg_attr(
     windows,
     ignore = "TODO(Michael-F-Bryan): Figure out why WasiFs::get_inode_at_path_inner() returns Errno::notcapable on Windows"
-)]
-#[cfg_attr(
-    feature = "wamr",
-    ignore = "FIXME(xdoardo): Bash is currently not working in wamr"
 )]
 #[cfg_attr(
     feature = "wasmi",

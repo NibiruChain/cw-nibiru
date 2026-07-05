@@ -148,7 +148,6 @@ default = ["wat", "cache", "engine", "middlewares"]
 # That means: that is able to execute modules
 backend = []
 jsc = ["wasmer/jsc", "backend", "wat", "wasmer/std"]
-wamr = ["wasmer/wamr"]
 v8 = ["wasmer/v8"]
 wasmi = ["wasmer/wasmi"]
 engine = ["universal"]

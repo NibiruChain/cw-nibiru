@@ -3758,21 +3758,18 @@ impl<'a, M: Machine> FuncGen<'a, M> {
                 self.release_locations_only_regs(&[len, src_pos, dst_pos])?;
 
                 let memory_index = MemoryIndex::new(src_mem as usize);
-                let (memory_copy_index, memory_index) = if self
-                    .module
-                    .local_memory_index(memory_index)
-                    .is_some()
-                {
-                    (
-                        VMBuiltinFunctionIndex::get_memory_copy_index(),
-                        memory_index,
-                    )
-                } else {
-                    (
+                let (memory_copy_index, memory_index) =
+                    if self.module.local_memory_index(memory_index).is_some() {
+                        (
+                            VMBuiltinFunctionIndex::get_memory_copy_index(),
+                            memory_index,
+                        )
+                    } else {
+                        (
                         VMBuiltinFunctionIndex::get_imported_memory_copy_index(),
                         memory_index,
                     )
-                };
+                    };
 
                 self.machine.move_location(
                     Size::S64,
@@ -3814,21 +3811,18 @@ impl<'a, M: Machine> FuncGen<'a, M> {
                 self.release_locations_only_regs(&[len, val, dst])?;
 
                 let memory_index = MemoryIndex::new(mem as usize);
-                let (memory_fill_index, memory_index) = if self
-                    .module
-                    .local_memory_index(memory_index)
-                    .is_some()
-                {
-                    (
-                        VMBuiltinFunctionIndex::get_memory_fill_index(),
-                        memory_index,
-                    )
-                } else {
-                    (
+                let (memory_fill_index, memory_index) =
+                    if self.module.local_memory_index(memory_index).is_some() {
+                        (
+                            VMBuiltinFunctionIndex::get_memory_fill_index(),
+                            memory_index,
+                        )
+                    } else {
+                        (
                         VMBuiltinFunctionIndex::get_imported_memory_fill_index(),
                         memory_index,
                     )
-                };
+                    };
 
                 self.machine.move_location(
                     Size::S64,

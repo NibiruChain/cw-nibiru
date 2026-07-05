@@ -1835,7 +1835,7 @@ pub(super) mod utils {
         //
         // The filename scheme:
         // FILENAME := "wasmer-" [ FEATURE ] OS  PLATFORM  .
-        // FEATURE  := "wamr-" | "v8-" | "wasmi-" .
+        // FEATURE  := "v8-" | "wasmi-" .
         // OS       := "darwin" | "linux" | "linux-musl" | "windows" .
         // PLATFORM := "aarch64" | "amd64" | "gnu64" .
         //
@@ -1847,10 +1847,7 @@ pub(super) mod utils {
             return None;
         }
 
-        if filename.contains("wamr")
-            || filename.contains("v8")
-            || filename.contains("wasmi")
-        {
+        if filename.contains("v8") || filename.contains("wasmi") {
             return None;
         }
 

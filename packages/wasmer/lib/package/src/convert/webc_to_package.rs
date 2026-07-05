@@ -56,22 +56,21 @@ pub fn webc_to_package_dir(
                 // Not supported.
             }
             webc::metadata::UrlOrManifest::RegistryDependentUrl(raw) => {
-                let (name, version) = if let Some((name, version_raw)) =
-                    raw.split_once('@')
-                {
-                    let version = version_raw.parse().map_err(|err| {
-                        ConversionError::with_cause(
-                            format!(
+                let (name, version) =
+                    if let Some((name, version_raw)) = raw.split_once('@') {
+                        let version = version_raw.parse().map_err(|err| {
+                            ConversionError::with_cause(
+                                format!(
                                 "Could not parse version of dependency: '{}'",
                                 raw
                             ),
-                            err,
-                        )
-                    })?;
-                    (name.to_string(), version)
-                } else {
-                    (raw.to_string(), "*".parse().unwrap())
-                };
+                                err,
+                            )
+                        })?;
+                        (name.to_string(), version)
+                    } else {
+                        (raw.to_string(), "*".parse().unwrap())
+                    };
 
                 pkg_manifest.dependencies.insert(name, version);
             }

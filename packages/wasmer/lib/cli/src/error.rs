@@ -5,7 +5,6 @@ use colored::*;
 use std::fmt::{self, Debug, Write};
 #[cfg(not(any(
     feature = "jsc",
-    feature = "wamr",
     feature = "wasmi",
     feature = "v8"
 )))]
@@ -34,7 +33,6 @@ macro_rules! warning {
 
 #[cfg(not(any(
     feature = "jsc",
-    feature = "wamr",
     feature = "wasmi",
     feature = "v8"
 )))]
@@ -65,7 +63,6 @@ impl PrettyError {
 
 #[cfg(any(
     feature = "jsc",
-    feature = "wamr",
     feature = "wasmi",
     feature = "v8"
 ))]

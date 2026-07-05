@@ -1977,21 +1977,19 @@ impl<'ctx, 'a> CtxType<'ctx, 'a> {
         match cached_memory_grow.entry(memory_index) {
             Entry::Occupied(entry) => Ok(*entry.get()),
             Entry::Vacant(entry) => {
-                let (grow_fn, grow_fn_ty) = if wasm_module
-                    .local_memory_index(memory_index)
-                    .is_some()
-                {
-                    (
-                        VMBuiltinFunctionIndex::get_memory32_grow_index(),
-                        intrinsics.ptr_ty,
-                    )
-                } else {
-                    (
+                let (grow_fn, grow_fn_ty) =
+                    if wasm_module.local_memory_index(memory_index).is_some() {
+                        (
+                            VMBuiltinFunctionIndex::get_memory32_grow_index(),
+                            intrinsics.ptr_ty,
+                        )
+                    } else {
+                        (
                         VMBuiltinFunctionIndex::get_imported_memory32_grow_index(
                         ),
                         intrinsics.ptr_ty,
                     )
-                };
+                    };
                 let offset = offsets.vmctx_builtin_function(grow_fn);
                 let offset = intrinsics.i32_ty.const_int(offset.into(), false);
                 let grow_fn_ptr_ptr = unsafe {
@@ -2044,21 +2042,19 @@ impl<'ctx, 'a> CtxType<'ctx, 'a> {
         match cached_memory_size.entry(memory_index) {
             Entry::Occupied(entry) => Ok(*entry.get()),
             Entry::Vacant(entry) => {
-                let (size_fn, size_fn_ty) = if wasm_module
-                    .local_memory_index(memory_index)
-                    .is_some()
-                {
-                    (
-                        VMBuiltinFunctionIndex::get_memory32_size_index(),
-                        intrinsics.ptr_ty,
-                    )
-                } else {
-                    (
+                let (size_fn, size_fn_ty) =
+                    if wasm_module.local_memory_index(memory_index).is_some() {
+                        (
+                            VMBuiltinFunctionIndex::get_memory32_size_index(),
+                            intrinsics.ptr_ty,
+                        )
+                    } else {
+                        (
                         VMBuiltinFunctionIndex::get_imported_memory32_size_index(
                         ),
                         intrinsics.ptr_ty,
                     )
-                };
+                    };
                 let offset = offsets.vmctx_builtin_function(size_fn);
                 let offset = intrinsics.i32_ty.const_int(offset.into(), false);
                 let size_fn_ptr_ptr = unsafe {

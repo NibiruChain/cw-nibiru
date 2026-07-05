@@ -36,7 +36,6 @@ dirs = "4.0.0"
 [features]
 default = ["webc_runner"]
 webc_runner = []
-wamr = []
 v8 = []
 wasmi = []
 debug = []

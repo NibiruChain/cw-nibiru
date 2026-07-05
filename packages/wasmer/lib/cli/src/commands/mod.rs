@@ -508,10 +508,6 @@ fn print_version(verbose: bool) -> Result<(), anyhow::Error> {
 
     let mut interpreters = Vec::<&'static str>::new();
 
-    if cfg!(feature = "wamr") {
-        interpreters.push("wamr");
-    }
-
     if cfg!(feature = "wasmi") {
         // Can't use two different c_api backends together as of now, but maybe we'll support more
         // interepreters.

@@ -67,26 +67,51 @@ test *pkg:
 test-all:
   cargo test
 
-# Run vendored Wasmer package tests (same coverage as CI job `wasmer`).
+# Run vendored Wasmer lib unit tests + compilers/WAST integration (CI job `wasmer`).
 test-wasmer:
   #!/usr/bin/env bash
   # TODO: Wire Wasmer validation into `just test`, `just test-all`, and/or `just tidy`
   # once we decide how it should interact with root-workspace `cargo test` and
   # package `cosmwasm-vm` (separate Cargo workspace, longer runtime, cache paths).
   set -euo pipefail
-  manifest="packages/wasmer/Cargo.toml"
-  cargo test --manifest-path "$manifest" -p wasmer --lib --no-default-features --features cranelift,singlepass,wat
-  cargo test --manifest-path "$manifest" -p wasmer-vm --lib
-  cargo test --manifest-path "$manifest" -p wasmer-types --lib
-  cargo test --manifest-path "$manifest" -p wasmer-middlewares --lib
-  cargo test --manifest-path "$manifest" -p wasmer-compiler --lib
-  cargo test --manifest-path "$manifest" -p wasmer-compiler-singlepass --lib
-  cargo test --manifest-path "$manifest" -p wasmer-compiler-cranelift --lib
+  cd packages/wasmer
+  cargo test -p wasmer --lib --no-default-features --features cranelift,singlepass,wat
+  cargo test --lib \
+    -p wasmer-vm \
+    -p wasmer-types \
+    -p wasmer-middlewares \
+    -p wasmer-compiler \
+    -p wasmer-compiler-singlepass \
+    -p wasmer-compiler-cranelift
+  # WAST spectests + hand-written compiler integration (~452 pass, ~119 ignored).
+  cargo test --test compilers --features 'cranelift,singlepass'
+
+# Wasmer coverage: same three test passes as test-wasmer, merged lcov at repo root.
+test-wasmer-cov:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  root="$(git rev-parse --show-toplevel)"
+  output="${root}/lcov-wasmer.info"
+  cd "${root}/packages/wasmer"
+  cargo llvm-cov clean --workspace
+  cargo llvm-cov --no-report -p wasmer --lib \
+    --no-default-features --features cranelift,singlepass,wat
+  cargo llvm-cov --no-report --lib \
+    -p wasmer-vm \
+    -p wasmer-types \
+    -p wasmer-middlewares \
+    -p wasmer-compiler \
+    -p wasmer-compiler-singlepass \
+    -p wasmer-compiler-cranelift
+  cargo llvm-cov --no-report --test compilers --features 'cranelift,singlepass'
+  cargo llvm-cov report --lcov --output-path "${output}"
+  echo "Wrote ${output}"
 
 # Test everything and output coverage report.
 test-coverage:
   cargo llvm-cov --lcov --output-path lcov.info \
     --ignore-filename-regex .*buf\/[^\/]+\.rs$
+  # TODO: Include wasmer workspace in coverage reporting.
 
 alias t := tidy
 

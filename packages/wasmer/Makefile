@@ -394,9 +394,6 @@ build-wasmer:
 build-wasmer-v8:
 	$(CARGO_BINARY) build $(CARGO_TARGET_FLAG) --release --manifest-path lib/cli/Cargo.toml --no-default-features --features="v8" --bin wasmer --locked
 
-build-wasmer-wamr:
-	$(CARGO_BINARY) build $(CARGO_TARGET_FLAG) --release --manifest-path lib/cli/Cargo.toml --no-default-features --features="wamr" --bin wasmer --locked
-
 build-wasmer-wasmi:
 	$(CARGO_BINARY) build $(CARGO_TARGET_FLAG) --release --manifest-path lib/cli/Cargo.toml --no-default-features --features="wasmi" --bin wasmer --locked
 
@@ -578,11 +575,6 @@ test-v8: test-v8-api
 test-v8-api:
 	CARGO_TERM_VERBOSE=true cargo nextest run --package=wasmer --release --features=v8 --no-default-features
 
-test-wamr: test-wamr-api
-
-test-wamr-api:
-	cargo nextest run --package=wasmer --release --features=wamr --no-default-features
-
 test-wasmi: test-wasmi-api
 
 test-wasmi-api:
@@ -641,13 +633,9 @@ test-integration-cli-ci: require-nextest
 	rustup target add wasm32-wasi
 	$(CARGO_BINARY) nextest run $(CARGO_TARGET_FLAG) --features webc_runner -p wasmer-integration-tests-cli --locked
 
-test-integration-cli-wamr-ci: require-nextest build-wasmer-wamr
-	rustup target add wasm32-wasi
-	$(CARGO_BINARY) nextest run $(CARGO_TARGET_FLAG) --features webc_runner,wamr -p wasmer-integration-tests-cli --locked --no-fail-fast -E "not (test(deploy) | test(snapshot) | test(login) | test(init) | test(gen_c_header) | test(up_to_date) | test(publish) | test(create) | test(whoami) | test(config) | test(c_flags))"
-
 test-integration-cli-wasmi-ci: require-nextest build-wasmer-wasmi
 	rustup target add wasm32-wasi
-	$(CARGO_BINARY) nextest run $(CARGO_TARGET_FLAG) --features webc_runner,wamr -p wasmer-integration-tests-cli --locked --no-fail-fast -E "not (test(deploy) | test(snapshot) | test(login) | test(init) | test(gen_c_header) | test(up_to_date) | test(publish) | test(create) | test(whoami) | test(config) | test(c_flags))"
+	$(CARGO_BINARY) nextest run $(CARGO_TARGET_FLAG) --features webc_runner,wasmi -p wasmer-integration-tests-cli --locked --no-fail-fast -E "not (test(deploy) | test(snapshot) | test(login) | test(init) | test(gen_c_header) | test(up_to_date) | test(publish) | test(create) | test(whoami) | test(config) | test(c_flags))"
 
 
 #####
