@@ -105,7 +105,10 @@ impl<T, M: MemorySize> WasmPtr<T, M> {
     ///
     /// This method returns an error if an address overflow occurs.
     #[inline]
-    pub fn add_offset(self, offset: M::Offset) -> Result<Self, MemoryAccessError> {
+    pub fn add_offset(
+        self,
+        offset: M::Offset,
+    ) -> Result<Self, MemoryAccessError> {
         let base = self.offset.into();
         let index = offset.into();
         let offset = index
@@ -114,7 +117,8 @@ impl<T, M: MemorySize> WasmPtr<T, M> {
         let address = base
             .checked_add(offset)
             .ok_or(MemoryAccessError::Overflow)?;
-        let address = M::Offset::try_from(address).map_err(|_| MemoryAccessError::Overflow)?;
+        let address = M::Offset::try_from(address)
+            .map_err(|_| MemoryAccessError::Overflow)?;
         Ok(Self::new(address))
     }
 
@@ -123,7 +127,10 @@ impl<T, M: MemorySize> WasmPtr<T, M> {
     ///
     /// This method returns an error if an address underflow occurs.
     #[inline]
-    pub fn sub_offset(self, offset: M::Offset) -> Result<Self, MemoryAccessError> {
+    pub fn sub_offset(
+        self,
+        offset: M::Offset,
+    ) -> Result<Self, MemoryAccessError> {
         let base = self.offset.into();
         let index = offset.into();
         let offset = index
@@ -132,7 +139,8 @@ impl<T, M: MemorySize> WasmPtr<T, M> {
         let address = base
             .checked_sub(offset)
             .ok_or(MemoryAccessError::Overflow)?;
-        let address = M::Offset::try_from(address).map_err(|_| MemoryAccessError::Overflow)?;
+        let address = M::Offset::try_from(address)
+            .map_err(|_| MemoryAccessError::Overflow)?;
         Ok(Self::new(address))
     }
 }
@@ -153,7 +161,11 @@ impl<T: ValueType, M: MemorySize> WasmPtr<T, M> {
 
     /// Writes to the address pointed to by this `WasmPtr` in a memory.
     #[inline]
-    pub fn write(&self, view: &MemoryView, val: T) -> Result<(), MemoryAccessError> {
+    pub fn write(
+        &self,
+        view: &MemoryView,
+        val: T,
+    ) -> Result<(), MemoryAccessError> {
         self.deref(view).write(val)
     }
 
@@ -183,7 +195,8 @@ impl<T: ValueType, M: MemorySize> WasmPtr<T, M> {
     ) -> Result<Vec<T>, MemoryAccessError> {
         let mut vec = Vec::new();
         for i in 0u64.. {
-            let i = M::Offset::try_from(i).map_err(|_| MemoryAccessError::Overflow)?;
+            let i = M::Offset::try_from(i)
+                .map_err(|_| MemoryAccessError::Overflow)?;
             let val = self.add_offset(i)?.deref(view).read()?;
             if end(&val) {
                 break;

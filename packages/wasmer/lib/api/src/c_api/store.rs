@@ -14,7 +14,8 @@ pub(crate) struct Store {
 
 impl Store {
     pub(crate) fn new(engine: crate::engine::Engine) -> Self {
-        let inner: *mut wasm_store_t = unsafe { wasm_store_new(engine.0.inner.engine) };
+        let inner: *mut wasm_store_t =
+            unsafe { wasm_store_new(engine.0.inner.engine) };
         Store { inner, engine }
     }
 
@@ -223,7 +224,10 @@ mod objects {
         ///
         /// # Safety
         /// Handling `InternalStoreHandle` values is unsafe because they do not track context ID.
-        pub unsafe fn from_internal(id: StoreId, internal: InternalStoreHandle<T>) -> Self {
+        pub unsafe fn from_internal(
+            id: StoreId,
+            internal: InternalStoreHandle<T>,
+        ) -> Self {
             Self { id, internal }
         }
     }

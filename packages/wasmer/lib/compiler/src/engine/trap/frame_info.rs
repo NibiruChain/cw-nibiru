@@ -13,10 +13,12 @@
 //! ```
 
 use crate::types::address_map::{
-    ArchivedFunctionAddressMap, ArchivedInstructionAddressMap, FunctionAddressMap,
-    InstructionAddressMap,
+    ArchivedFunctionAddressMap, ArchivedInstructionAddressMap,
+    FunctionAddressMap, InstructionAddressMap,
 };
-use crate::types::function::{ArchivedCompiledFunctionFrameInfo, CompiledFunctionFrameInfo};
+use crate::types::function::{
+    ArchivedCompiledFunctionFrameInfo, CompiledFunctionFrameInfo,
+};
 use crate::ArtifactBuildFromArchive;
 use rkyv::vec::ArchivedVec;
 use std::collections::BTreeMap;
@@ -33,7 +35,8 @@ use wasmer_vm::FunctionBodyPtr;
 /// This global cache is used during `Trap` creation to symbolicate frames.
 /// This is populated on module compilation, and it is cleared out whenever
 /// all references to a module are dropped.
-pub static FRAME_INFO: LazyLock<RwLock<GlobalFrameInfo>> = LazyLock::new(RwLock::default);
+pub static FRAME_INFO: LazyLock<RwLock<GlobalFrameInfo>> =
+    LazyLock::new(RwLock::default);
 
 #[derive(Default)]
 pub struct GlobalFrameInfo {
@@ -121,7 +124,9 @@ impl GlobalFrameInfo {
             // boundary.
             Err(n) => {
                 let instr = &instr_map.instructions().get(n - 1);
-                if instr.code_offset <= rel_pos && rel_pos < instr.code_offset + instr.code_len {
+                if instr.code_offset <= rel_pos
+                    && rel_pos < instr.code_offset + instr.code_len
+                {
                     Some(n - 1)
                 } else {
                     None
@@ -154,7 +159,9 @@ impl GlobalFrameInfo {
         let debug_info = module.function_debug_info(func.local_index);
         let traps = debug_info.traps();
         let idx = traps
-            .binary_search_by_key(&((pc - func.start) as u32), |info| info.code_offset)
+            .binary_search_by_key(&((pc - func.start) as u32), |info| {
+                info.code_offset
+            })
             .ok()?;
         Some(traps[idx])
     }
@@ -202,9 +209,14 @@ pub enum FrameInfosVariant {
 
 impl FrameInfosVariant {
     /// Gets the frame info for a given local function index
-    pub fn get(&self, index: LocalFunctionIndex) -> Option<CompiledFunctionFrameInfoVariant> {
+    pub fn get(
+        &self,
+        index: LocalFunctionIndex,
+    ) -> Option<CompiledFunctionFrameInfoVariant> {
         match self {
-            Self::Owned(map) => map.get(index).map(CompiledFunctionFrameInfoVariant::Ref),
+            Self::Owned(map) => {
+                map.get(index).map(CompiledFunctionFrameInfoVariant::Ref)
+            }
             Self::Archived(archive) => archive
                 .get_frame_info_ref()
                 .get(index)
@@ -242,7 +254,9 @@ impl CompiledFunctionFrameInfoVariant<'_> {
                 VecTrapInformationVariant::Ref(&info.traps)
             }
             CompiledFunctionFrameInfoVariant::Archived(info) => {
-                let traps = rkyv::deserialize::<_, rkyv::rancor::Error>(&info.traps).unwrap();
+                let traps =
+                    rkyv::deserialize::<_, rkyv::rancor::Error>(&info.traps)
+                        .unwrap();
                 VecTrapInformationVariant::Owned(traps)
             }
         }
@@ -290,7 +304,8 @@ impl FunctionAddressMapVariant<'_> {
         match self {
             FunctionAddressMapVariant::Ref(map) => map.start_srcloc,
             FunctionAddressMapVariant::Archived(map) => {
-                rkyv::deserialize::<_, rkyv::rancor::Error>(&map.start_srcloc).unwrap()
+                rkyv::deserialize::<_, rkyv::rancor::Error>(&map.start_srcloc)
+                    .unwrap()
             }
         }
     }
@@ -299,7 +314,8 @@ impl FunctionAddressMapVariant<'_> {
         match self {
             FunctionAddressMapVariant::Ref(map) => map.end_srcloc,
             FunctionAddressMapVariant::Archived(map) => {
-                rkyv::deserialize::<_, rkyv::rancor::Error>(&map.end_srcloc).unwrap()
+                rkyv::deserialize::<_, rkyv::rancor::Error>(&map.end_srcloc)
+                    .unwrap()
             }
         }
     }
@@ -307,14 +323,18 @@ impl FunctionAddressMapVariant<'_> {
     pub fn body_offset(&self) -> usize {
         match self {
             FunctionAddressMapVariant::Ref(map) => map.body_offset,
-            FunctionAddressMapVariant::Archived(map) => map.body_offset.to_native() as usize,
+            FunctionAddressMapVariant::Archived(map) => {
+                map.body_offset.to_native() as usize
+            }
         }
     }
 
     pub fn body_len(&self) -> usize {
         match self {
             FunctionAddressMapVariant::Ref(map) => map.body_len,
-            FunctionAddressMapVariant::Archived(map) => map.body_len.to_native() as usize,
+            FunctionAddressMapVariant::Archived(map) => {
+                map.body_len.to_native() as usize
+            }
         }
     }
 }
@@ -332,22 +352,31 @@ impl FunctionAddressMapInstructionVariant<'_> {
                 instructions.binary_search_by_key(&key, |map| map.code_offset)
             }
             FunctionAddressMapInstructionVariant::Archived(instructions) => {
-                instructions.binary_search_by_key(&key, |map| map.code_offset.to_native() as usize)
+                instructions.binary_search_by_key(&key, |map| {
+                    map.code_offset.to_native() as usize
+                })
             }
         }
     }
 
     pub fn get(&self, index: usize) -> InstructionAddressMap {
         match self {
-            FunctionAddressMapInstructionVariant::Owned(instructions) => instructions[index],
-            FunctionAddressMapInstructionVariant::Archived(instructions) => instructions
-                .get(index)
-                .map(|map| InstructionAddressMap {
-                    srcloc: rkyv::deserialize::<_, rkyv::rancor::Error>(&map.srcloc).unwrap(),
-                    code_offset: map.code_offset.to_native() as usize,
-                    code_len: map.code_len.to_native() as usize,
-                })
-                .unwrap(),
+            FunctionAddressMapInstructionVariant::Owned(instructions) => {
+                instructions[index]
+            }
+            FunctionAddressMapInstructionVariant::Archived(instructions) => {
+                instructions
+                    .get(index)
+                    .map(|map| InstructionAddressMap {
+                        srcloc: rkyv::deserialize::<_, rkyv::rancor::Error>(
+                            &map.srcloc,
+                        )
+                        .unwrap(),
+                        code_offset: map.code_offset.to_native() as usize,
+                        code_len: map.code_len.to_native() as usize,
+                    })
+                    .unwrap()
+            }
         }
     }
 }

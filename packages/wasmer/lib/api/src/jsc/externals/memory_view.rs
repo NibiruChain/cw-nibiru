@@ -23,11 +23,17 @@ pub struct MemoryView<'a> {
 }
 
 impl<'a> MemoryView<'a> {
-    pub(crate) fn new(memory: &Memory, store: &'a (impl AsStoreRef + ?Sized)) -> Self {
+    pub(crate) fn new(
+        memory: &Memory,
+        store: &'a (impl AsStoreRef + ?Sized),
+    ) -> Self {
         Self::new_raw(&memory.handle.memory, store)
     }
 
-    pub(crate) fn new_raw(memory: &JSObject, store: &'a (impl AsStoreRef + ?Sized)) -> Self {
+    pub(crate) fn new_raw(
+        memory: &JSObject,
+        store: &'a (impl AsStoreRef + ?Sized),
+    ) -> Self {
         let store_ref = store.as_store_ref();
         let engine = store_ref.engine();
         let context = engine.0.context();
@@ -36,9 +42,11 @@ impl<'a> MemoryView<'a> {
             .get_property(&context, "buffer".to_string())
             .to_object(&context)
             .unwrap();
-        let typed_buffer = JSObject::create_typed_array_from_buffer(&context, buffer).unwrap();
+        let typed_buffer =
+            JSObject::create_typed_array_from_buffer(&context, buffer).unwrap();
 
-        let mut buffer_data = typed_buffer.get_typed_array_buffer(&context).unwrap();
+        let mut buffer_data =
+            typed_buffer.get_typed_array_buffer(&context).unwrap();
         // println!("BUFFER DATA {}", buffer_data.to_string(&context));
 
         // let definition = memory.handle.get(store.as_store_ref().objects()).vmmemory();
@@ -122,7 +130,11 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent writes.
-    pub fn read(&self, offset: u64, buf: &mut [u8]) -> Result<(), MemoryAccessError> {
+    pub fn read(
+        &self,
+        offset: u64,
+        buf: &mut [u8],
+    ) -> Result<(), MemoryAccessError> {
         self.buffer.read(offset, buf)
     }
 
@@ -161,7 +173,11 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent reads/writes.
-    pub fn write(&self, offset: u64, data: &[u8]) -> Result<(), MemoryAccessError> {
+    pub fn write(
+        &self,
+        offset: u64,
+        data: &[u8],
+    ) -> Result<(), MemoryAccessError> {
         self.buffer.write(offset, data)
     }
 
@@ -169,7 +185,11 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent writes.
-    pub fn write_u8(&self, offset: u64, val: u8) -> Result<(), MemoryAccessError> {
+    pub fn write_u8(
+        &self,
+        offset: u64,
+        val: u8,
+    ) -> Result<(), MemoryAccessError> {
         let buf = [val];
         self.write(offset, &buf)?;
         Ok(())
@@ -183,7 +203,10 @@ impl<'a> MemoryView<'a> {
 
     #[allow(unused)]
     /// Copies a range of the memory and returns it as a vector of bytes
-    pub fn copy_range_to_vec(&self, range: Range<u64>) -> Result<Vec<u8>, MemoryAccessError> {
+    pub fn copy_range_to_vec(
+        &self,
+        range: Range<u64>,
+    ) -> Result<Vec<u8>, MemoryAccessError> {
         let mut new_memory = Vec::new();
         let mut offset = range.start;
         let end = range.end.min(self.data_size());
@@ -200,7 +223,11 @@ impl<'a> MemoryView<'a> {
 
     #[allow(unused)]
     /// Copies the memory to another new memory object
-    pub fn copy_to_memory(&self, amount: u64, new_memory: &Self) -> Result<(), MemoryAccessError> {
+    pub fn copy_to_memory(
+        &self,
+        amount: u64,
+        new_memory: &Self,
+    ) -> Result<(), MemoryAccessError> {
         let mut offset = 0;
         let mut chunk = [0u8; 40960];
         while offset < amount {

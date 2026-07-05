@@ -9,7 +9,9 @@ impl<'a, T> WasmSliceAccess<'a, T>
 where
     T: wasmer_types::ValueType,
 {
-    pub(crate) fn new(slice: WasmSlice<'a, T>) -> Result<Self, MemoryAccessError> {
+    pub(crate) fn new(
+        slice: WasmSlice<'a, T>,
+    ) -> Result<Self, MemoryAccessError> {
         let total_len = slice
             .len
             .checked_mul(mem::size_of::<T>() as u64)
@@ -28,7 +30,8 @@ where
             return Err(MemoryAccessError::HeapOutOfBounds);
         }
         let buf = unsafe {
-            let buf_ptr: *mut u8 = slice.buffer.0.base.add(slice.offset as usize);
+            let buf_ptr: *mut u8 =
+                slice.buffer.0.base.add(slice.offset as usize);
             let buf_ptr: *mut T = std::mem::transmute(buf_ptr);
             if !buf_ptr.is_aligned() {
                 return Err(MemoryAccessError::UnalignedPointerRead);

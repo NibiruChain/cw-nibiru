@@ -9,7 +9,9 @@ use crate::mmap::MmapType;
 use crate::threadconditions::ThreadConditions;
 pub use crate::threadconditions::{NotifyLocation, WaiterError};
 use crate::trap::Trap;
-use crate::{mmap::Mmap, store::MaybeInstanceOwned, vmcontext::VMMemoryDefinition};
+use crate::{
+    mmap::Mmap, store::MaybeInstanceOwned, vmcontext::VMMemoryDefinition,
+};
 use more_asserts::assert_ge;
 use std::cell::UnsafeCell;
 use std::convert::TryInto;
@@ -18,7 +20,9 @@ use std::rc::Rc;
 use std::slice;
 use std::sync::RwLock;
 use std::time::Duration;
-use wasmer_types::{Bytes, MemoryError, MemoryStyle, MemoryType, Pages, WASM_PAGE_SIZE};
+use wasmer_types::{
+    Bytes, MemoryError, MemoryStyle, MemoryType, Pages, WASM_PAGE_SIZE,
+};
 
 // The memory mapped area
 #[derive(Debug)]
@@ -44,19 +48,23 @@ impl WasmMmap {
         }
     }
 
-    fn grow(&mut self, delta: Pages, conf: VMMemoryConfig) -> Result<Pages, MemoryError> {
+    fn grow(
+        &mut self,
+        delta: Pages,
+        conf: VMMemoryConfig,
+    ) -> Result<Pages, MemoryError> {
         // Optimization of memory.grow 0 calls.
         if delta.0 == 0 {
             return Ok(self.size);
         }
 
-        let new_pages = self
-            .size
-            .checked_add(delta)
-            .ok_or(MemoryError::CouldNotGrow {
-                current: self.size,
-                attempted_delta: delta,
-            })?;
+        let new_pages =
+            self.size
+                .checked_add(delta)
+                .ok_or(MemoryError::CouldNotGrow {
+                    current: self.size,
+                    attempted_delta: delta,
+                })?;
         let prev_pages = self.size;
 
         if let Some(maximum) = conf.maximum {
@@ -88,19 +96,24 @@ impl WasmMmap {
             // have on hand, it's a dynamic heap and it can move.
             let guard_bytes = conf.offset_guard_size;
             let request_bytes =
-                new_bytes
-                    .checked_add(guard_bytes)
-                    .ok_or_else(|| MemoryError::CouldNotGrow {
+                new_bytes.checked_add(guard_bytes).ok_or_else(|| {
+                    MemoryError::CouldNotGrow {
                         current: new_pages,
                         attempted_delta: Bytes(guard_bytes).try_into().unwrap(),
-                    })?;
+                    }
+                })?;
 
-            let mut new_mmap =
-                Mmap::accessible_reserved(new_bytes, request_bytes, None, MmapType::Private)
-                    .map_err(MemoryError::Region)?;
+            let mut new_mmap = Mmap::accessible_reserved(
+                new_bytes,
+                request_bytes,
+                None,
+                MmapType::Private,
+            )
+            .map_err(MemoryError::Region)?;
 
             let copy_len = self.alloc.len() - conf.offset_guard_size;
-            new_mmap.as_mut_slice()[..copy_len].copy_from_slice(&self.alloc.as_slice()[..copy_len]);
+            new_mmap.as_mut_slice()[..copy_len]
+                .copy_from_slice(&self.alloc.as_slice()[..copy_len]);
 
             self.alloc = new_mmap;
         } else if delta_bytes > 0 {
@@ -125,7 +138,11 @@ impl WasmMmap {
 
     /// Grows the memory to at least a minimum size. If the memory is already big enough
     /// for the min size then this function does nothing
-    fn grow_at_least(&mut self, min_size: u64, conf: VMMemoryConfig) -> Result<(), MemoryError> {
+    fn grow_at_least(
+        &mut self,
+        min_size: u64,
+        conf: VMMemoryConfig,
+    ) -> Result<(), MemoryError> {
         let cur_size = self.size.bytes().0 as u64;
         if cur_size < min_size {
             let growth = min_size - cur_size;
@@ -152,12 +169,12 @@ impl WasmMmap {
             .map_err(MemoryError::Generic)?;
         let base_ptr = alloc.as_mut_ptr();
         Ok(Self {
-            vm_memory_definition: MaybeInstanceOwned::Host(Box::new(UnsafeCell::new(
-                VMMemoryDefinition {
+            vm_memory_definition: MaybeInstanceOwned::Host(Box::new(
+                UnsafeCell::new(VMMemoryDefinition {
                     base: base_ptr,
                     current_length: mem_length,
-                },
-            ))),
+                }),
+            )),
             alloc,
             size: self.size,
         })
@@ -208,8 +225,13 @@ impl VMOwnedMemory {
     ///
     /// This creates a `Memory` with owned metadata: this can be used to create a memory
     /// that will be imported into Wasm modules.
-    pub fn new(memory: &MemoryType, style: &MemoryStyle) -> Result<Self, MemoryError> {
-        unsafe { Self::new_internal(memory, style, None, None, MmapType::Private) }
+    pub fn new(
+        memory: &MemoryType,
+        style: &MemoryStyle,
+    ) -> Result<Self, MemoryError> {
+        unsafe {
+            Self::new_internal(memory, style, None, None, MmapType::Private)
+        }
     }
 
     /// Create a new linear memory instance with specified minimum and maximum number of wasm pages
@@ -224,7 +246,15 @@ impl VMOwnedMemory {
         backing_file: std::path::PathBuf,
         memory_type: MmapType,
     ) -> Result<Self, MemoryError> {
-        unsafe { Self::new_internal(memory, style, None, Some(backing_file), memory_type) }
+        unsafe {
+            Self::new_internal(
+                memory,
+                style,
+                None,
+                Some(backing_file),
+                memory_type,
+            )
+        }
     }
 
     /// Create a new linear memory instance with specified minimum and maximum number of wasm pages.
@@ -315,13 +345,18 @@ impl VMOwnedMemory {
             }
         };
         let minimum_bytes = minimum_pages.bytes().0;
-        let request_bytes = minimum_bytes.checked_add(offset_guard_bytes).unwrap();
+        let request_bytes =
+            minimum_bytes.checked_add(offset_guard_bytes).unwrap();
         let mapped_pages = memory.minimum;
         let mapped_bytes = mapped_pages.bytes();
 
-        let mut alloc =
-            Mmap::accessible_reserved(mapped_bytes.0, request_bytes, backing_file, memory_type)
-                .map_err(MemoryError::Region)?;
+        let mut alloc = Mmap::accessible_reserved(
+            mapped_bytes.0,
+            request_bytes,
+            backing_file,
+            memory_type,
+        )
+        .map_err(MemoryError::Region)?;
 
         let base_ptr = alloc.as_mut_ptr();
         let mem_length = memory
@@ -339,10 +374,12 @@ impl VMOwnedMemory {
                 }
                 MaybeInstanceOwned::Instance(mem_loc)
             } else {
-                MaybeInstanceOwned::Host(Box::new(UnsafeCell::new(VMMemoryDefinition {
-                    base: base_ptr,
-                    current_length: mem_length,
-                })))
+                MaybeInstanceOwned::Host(Box::new(UnsafeCell::new(
+                    VMMemoryDefinition {
+                        base: base_ptr,
+                        current_length: mem_length,
+                    },
+                )))
             },
             alloc,
             size: Bytes::from(mem_length).try_into().unwrap(),
@@ -450,7 +487,10 @@ impl VMSharedMemory {
     ///
     /// This creates a `Memory` with owned metadata: this can be used to create a memory
     /// that will be imported into Wasm modules.
-    pub fn new(memory: &MemoryType, style: &MemoryStyle) -> Result<Self, MemoryError> {
+    pub fn new(
+        memory: &MemoryType,
+        style: &MemoryStyle,
+    ) -> Result<Self, MemoryError> {
         Ok(VMOwnedMemory::new(memory, style)?.to_shared())
     }
 
@@ -466,7 +506,13 @@ impl VMSharedMemory {
         backing_file: std::path::PathBuf,
         memory_type: MmapType,
     ) -> Result<Self, MemoryError> {
-        Ok(VMOwnedMemory::new_with_file(memory, style, backing_file, memory_type)?.to_shared())
+        Ok(VMOwnedMemory::new_with_file(
+            memory,
+            style,
+            backing_file,
+            memory_type,
+        )?
+        .to_shared())
     }
 
     /// Create a new linear memory instance with specified minimum and maximum number of wasm pages.
@@ -481,7 +527,10 @@ impl VMSharedMemory {
         style: &MemoryStyle,
         vm_memory_location: NonNull<VMMemoryDefinition>,
     ) -> Result<Self, MemoryError> {
-        Ok(VMOwnedMemory::from_definition(memory, style, vm_memory_location)?.to_shared())
+        Ok(
+            VMOwnedMemory::from_definition(memory, style, vm_memory_location)?
+                .to_shared(),
+        )
     }
 
     /// Create a new linear memory instance with specified minimum and maximum number of wasm pages
@@ -670,7 +719,11 @@ impl LinearMemory for VMMemory {
     }
 
     /// Initialize memory with data
-    unsafe fn initialize_with_data(&self, start: usize, data: &[u8]) -> Result<(), Trap> {
+    unsafe fn initialize_with_data(
+        &self,
+        start: usize,
+        data: &[u8],
+    ) -> Result<(), Trap> {
         self.0.initialize_with_data(start, data)
     }
 
@@ -704,7 +757,10 @@ impl VMMemory {
     ///
     /// This creates a `Memory` with owned metadata: this can be used to create a memory
     /// that will be imported into Wasm modules.
-    pub fn new(memory: &MemoryType, style: &MemoryStyle) -> Result<Self, MemoryError> {
+    pub fn new(
+        memory: &MemoryType,
+        style: &MemoryStyle,
+    ) -> Result<Self, MemoryError> {
         Ok(if memory.shared {
             Self(Box::new(VMSharedMemory::new(memory, style)?))
         } else {
@@ -756,7 +812,9 @@ impl VMMemory {
     }
 
     /// Copies this memory to a new memory
-    pub fn copy(&mut self) -> Result<Box<dyn LinearMemory + 'static>, MemoryError> {
+    pub fn copy(
+        &mut self,
+    ) -> Result<Box<dyn LinearMemory + 'static>, MemoryError> {
         LinearMemory::copy(self)
     }
 }
@@ -768,7 +826,8 @@ pub unsafe fn initialize_memory_with_data(
     start: usize,
     data: &[u8],
 ) -> Result<(), Trap> {
-    let mem_slice = slice::from_raw_parts_mut(memory.base, memory.current_length);
+    let mem_slice =
+        slice::from_raw_parts_mut(memory.base, memory.current_length);
     let end = start + data.len();
     let to_init = &mut mem_slice[start..end];
     to_init.copy_from_slice(data);
@@ -821,7 +880,11 @@ where
     /// # Safety
     /// This function is unsafe because WebAssembly specification requires that data is always set at initialization time.
     /// It should be the implementors responsibility to make sure this respects the spec
-    unsafe fn initialize_with_data(&self, start: usize, data: &[u8]) -> Result<(), Trap> {
+    unsafe fn initialize_with_data(
+        &self,
+        start: usize,
+        data: &[u8],
+    ) -> Result<(), Trap> {
         let memory = self.vmmemory().as_ref();
 
         initialize_memory_with_data(memory, start, data)

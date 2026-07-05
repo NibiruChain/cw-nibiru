@@ -1,2 +1,0 @@
-// Keep this namespace, even when empty - otherwise binding generation will throw an error!
-namespace wasmer_swift { };

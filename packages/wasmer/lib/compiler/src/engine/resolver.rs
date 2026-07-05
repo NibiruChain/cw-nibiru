@@ -4,17 +4,21 @@ use crate::LinkError;
 use more_asserts::assert_ge;
 use wasmer_types::entity::{BoxedSlice, EntityRef, PrimaryMap};
 use wasmer_types::{
-    ExternType, FunctionIndex, ImportError, ImportIndex, MemoryIndex, ModuleInfo, TableIndex,
+    ExternType, FunctionIndex, ImportError, ImportIndex, MemoryIndex,
+    ModuleInfo, TableIndex,
 };
 
 use wasmer_vm::{
-    FunctionBodyPtr, Imports, LinearMemory, MemoryStyle, StoreObjects, TableStyle, VMExtern,
-    VMFunctionBody, VMFunctionImport, VMFunctionKind, VMGlobalImport, VMMemoryImport,
-    VMTableImport,
+    FunctionBodyPtr, Imports, LinearMemory, MemoryStyle, StoreObjects,
+    TableStyle, VMExtern, VMFunctionBody, VMFunctionImport, VMFunctionKind,
+    VMGlobalImport, VMMemoryImport, VMTableImport,
 };
 
 /// Get an `ExternType` given a import index.
-fn get_extern_from_import(module: &ModuleInfo, import_index: &ImportIndex) -> ExternType {
+fn get_extern_from_import(
+    module: &ModuleInfo,
+    import_index: &ImportIndex,
+) -> ExternType {
     match import_index {
         ImportIndex::Function(index) => {
             let func = module.signatures[module.functions[*index]].clone();
@@ -38,7 +42,9 @@ fn get_extern_from_import(module: &ModuleInfo, import_index: &ImportIndex) -> Ex
 /// Get an `ExternType` given an export (and Engine signatures in case is a function).
 fn get_extern_type(context: &StoreObjects, extern_: &VMExtern) -> ExternType {
     match extern_ {
-        VMExtern::Function(f) => ExternType::Function(f.get(context).signature.clone()),
+        VMExtern::Function(f) => {
+            ExternType::Function(f.get(context).signature.clone())
+        }
         VMExtern::Table(t) => ExternType::Table(*t.get(context).ty()),
         VMExtern::Memory(m) => ExternType::Memory(m.get(context).ty()),
         VMExtern::Global(g) => {
@@ -65,14 +71,21 @@ pub fn resolve_imports(
     module: &ModuleInfo,
     imports: &[VMExtern],
     context: &mut StoreObjects,
-    finished_dynamic_function_trampolines: &BoxedSlice<FunctionIndex, FunctionBodyPtr>,
+    finished_dynamic_function_trampolines: &BoxedSlice<
+        FunctionIndex,
+        FunctionBodyPtr,
+    >,
     memory_styles: &PrimaryMap<MemoryIndex, MemoryStyle>,
     _table_styles: &PrimaryMap<TableIndex, TableStyle>,
 ) -> Result<Imports, LinkError> {
-    let mut function_imports = PrimaryMap::with_capacity(module.num_imported_functions);
-    let mut table_imports = PrimaryMap::with_capacity(module.num_imported_tables);
-    let mut memory_imports = PrimaryMap::with_capacity(module.num_imported_memories);
-    let mut global_imports = PrimaryMap::with_capacity(module.num_imported_globals);
+    let mut function_imports =
+        PrimaryMap::with_capacity(module.num_imported_functions);
+    let mut table_imports =
+        PrimaryMap::with_capacity(module.num_imported_tables);
+    let mut memory_imports =
+        PrimaryMap::with_capacity(module.num_imported_memories);
+    let mut global_imports =
+        PrimaryMap::with_capacity(module.num_imported_globals);
 
     for (
         wasmer_types::ImportKey {
@@ -112,7 +125,8 @@ pub fn resolve_imports(
                         // reverse trampoline.
                         let index = FunctionIndex::new(function_imports.len());
                         let ptr = finished_dynamic_function_trampolines[index].0
-                            as *mut VMFunctionBody as _;
+                            as *mut VMFunctionBody
+                            as _;
                         // The logic is currently handling the "resolution" of dynamic imported functions at instantiation time.
                         // However, ideally it should be done even before then, as you may have dynamic imported functions that
                         // are linked at runtime and not instantiation time. And those will not work properly with the current logic.
@@ -121,7 +135,9 @@ pub fn resolve_imports(
                         unsafe { f.anyfunc.as_ptr().as_mut() }.func_ptr = ptr;
                         ptr
                     }
-                    VMFunctionKind::Static => unsafe { f.anyfunc.as_ptr().as_ref().func_ptr },
+                    VMFunctionKind::Static => unsafe {
+                        f.anyfunc.as_ptr().as_ref().func_ptr
+                    },
                 };
 
                 function_imports.push(VMFunctionImport {
@@ -140,7 +156,10 @@ pub fn resolve_imports(
                             return Err(LinkError::Import(
                                 module_name.to_string(),
                                 field.to_string(),
-                                ImportError::IncompatibleType(import_extern, extern_type),
+                                ImportError::IncompatibleType(
+                                    import_extern,
+                                    extern_type,
+                                ),
                             ));
                         }
 

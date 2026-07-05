@@ -1,10 +1,11 @@
 use crate::as_c::{param_from_c, result_to_value};
 use crate::bindings::{
-    wasm_extern_as_ref, wasm_func_as_ref, wasm_limits_t, wasm_ref_as_func, wasm_ref_as_trap,
-    wasm_ref_t, wasm_table_copy, wasm_table_get, wasm_table_grow, wasm_table_new, wasm_table_set,
-    wasm_table_size, wasm_table_type, wasm_tabletype_element, wasm_tabletype_limits,
-    wasm_tabletype_new, wasm_tabletype_t, wasm_val_t, wasm_valkind_enum_WASM_FUNCREF,
-    wasm_valtype_new,
+    wasm_extern_as_ref, wasm_func_as_ref, wasm_limits_t, wasm_ref_as_func,
+    wasm_ref_as_trap, wasm_ref_t, wasm_table_copy, wasm_table_get,
+    wasm_table_grow, wasm_table_new, wasm_table_set, wasm_table_size,
+    wasm_table_type, wasm_tabletype_element, wasm_tabletype_limits,
+    wasm_tabletype_new, wasm_tabletype_t, wasm_val_t,
+    wasm_valkind_enum_WASM_FUNCREF, wasm_valtype_new,
 };
 
 #[cfg(not(feature = "v8"))]
@@ -56,7 +57,11 @@ impl Table {
 
         Ok(Self {
             handle: unsafe {
-                wasm_table_new(store_mut.inner.store.inner, wasm_tablety, init.of.ref_)
+                wasm_table_new(
+                    store_mut.inner.store.inner,
+                    wasm_tablety,
+                    init.of.ref_,
+                )
             },
         })
     }
@@ -66,7 +71,8 @@ impl Table {
     }
 
     pub fn ty(&self, _store: &impl AsStoreRef) -> TableType {
-        let wamr_table_type: *mut wasm_tabletype_t = unsafe { wasm_table_type(self.handle) };
+        let wamr_table_type: *mut wasm_tabletype_t =
+            unsafe { wasm_table_type(self.handle) };
         let table_limits = unsafe { wasm_tabletype_limits(wamr_table_type) };
         let table_type = unsafe { wasm_tabletype_element(wamr_table_type) };
 
@@ -92,7 +98,9 @@ impl Table {
             }
 
             let kind = match self.ty(store).ty {
-                wasmer_types::Type::ExternRef => wasm_valkind_enum_WASM_EXTERNREF,
+                wasmer_types::Type::ExternRef => {
+                    wasm_valkind_enum_WASM_EXTERNREF
+                }
                 wasmer_types::Type::FuncRef => wasm_valkind_enum_WASM_FUNCREF,
                 ty => panic!("unsupported table type: {ty:?}"),
             } as u8;
@@ -186,7 +194,10 @@ impl Table {
         unimplemented!("Copying tables is currently not implemented!")
     }
 
-    pub(crate) fn from_vm_extern(_store: &mut impl AsStoreMut, vm_extern: VMExternTable) -> Self {
+    pub(crate) fn from_vm_extern(
+        _store: &mut impl AsStoreMut,
+        vm_extern: VMExternTable,
+    ) -> Self {
         Self { handle: vm_extern }
     }
 

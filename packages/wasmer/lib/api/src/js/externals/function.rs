@@ -1,10 +1,16 @@
 use crate::errors::RuntimeError;
-use crate::externals::function::{HostFunction, HostFunctionKind, WithEnv, WithoutEnv};
+use crate::externals::function::{
+    HostFunction, HostFunctionKind, WithEnv, WithoutEnv,
+};
 use crate::function_env::{FunctionEnv, FunctionEnvMut};
 use crate::js::as_js::{param_from_js, AsJs}; /* ValFuncRef */
 use crate::js::store::{InternalStoreHandle, StoreHandle};
-use crate::js::vm::{VMExtern, VMFuncRef, VMFunction, VMFunctionCallback, VMFunctionEnvironment};
-use crate::native_type::{FromToNativeWasmType, IntoResult, NativeWasmTypeInto, WasmTypeList};
+use crate::js::vm::{
+    VMExtern, VMFuncRef, VMFunction, VMFunctionCallback, VMFunctionEnvironment,
+};
+use crate::native_type::{
+    FromToNativeWasmType, IntoResult, NativeWasmTypeInto, WasmTypeList,
+};
 use crate::store::{AsStoreMut, AsStoreRef, StoreMut};
 use crate::value::Value;
 use std::fmt;
@@ -68,7 +74,10 @@ impl Function {
     ) -> Self
     where
         FT: Into<FunctionType>,
-        F: Fn(FunctionEnvMut<'_, T>, &[Value]) -> Result<Vec<Value>, RuntimeError>
+        F: Fn(
+                FunctionEnvMut<'_, T>,
+                &[Value],
+            ) -> Result<Vec<Value>, RuntimeError>
             + 'static
             + Send
             + Sync,
@@ -80,8 +89,10 @@ impl Function {
         let raw_env = env.clone();
         let wrapped_func: JsValue = match function_type.results().len() {
             0 => Closure::wrap(Box::new(move |args: &Array| {
-                let mut store: StoreMut = unsafe { StoreMut::from_raw(raw_store as _) };
-                let env: FunctionEnvMut<T> = raw_env.clone().into_mut(&mut store);
+                let mut store: StoreMut =
+                    unsafe { StoreMut::from_raw(raw_store as _) };
+                let env: FunctionEnvMut<T> =
+                    raw_env.clone().into_mut(&mut store);
                 let wasm_arguments = function_type
                     .params()
                     .iter()
@@ -94,8 +105,10 @@ impl Function {
                 as Box<dyn FnMut(&Array) -> Result<(), JsValue>>)
             .into_js_value(),
             1 => Closure::wrap(Box::new(move |args: &Array| {
-                let mut store: StoreMut = unsafe { StoreMut::from_raw(raw_store as _) };
-                let env: FunctionEnvMut<T> = raw_env.clone().into_mut(&mut store);
+                let mut store: StoreMut =
+                    unsafe { StoreMut::from_raw(raw_store as _) };
+                let env: FunctionEnvMut<T> =
+                    raw_env.clone().into_mut(&mut store);
                 let wasm_arguments = function_type
                     .params()
                     .iter()
@@ -108,8 +121,10 @@ impl Function {
                 as Box<dyn FnMut(&Array) -> Result<JsValue, JsValue>>)
             .into_js_value(),
             _n => Closure::wrap(Box::new(move |args: &Array| {
-                let mut store: StoreMut = unsafe { StoreMut::from_raw(raw_store as _) };
-                let env: FunctionEnvMut<T> = raw_env.clone().into_mut(&mut store);
+                let mut store: StoreMut =
+                    unsafe { StoreMut::from_raw(raw_store as _) };
+                let env: FunctionEnvMut<T> =
+                    raw_env.clone().into_mut(&mut store);
                 let wasm_arguments = function_type
                     .params()
                     .iter()
@@ -123,8 +138,10 @@ impl Function {
             .into_js_value(),
         };
 
-        let dyn_func =
-            JSFunction::new_with_args("f", "return f(Array.prototype.slice.call(arguments, 1))");
+        let dyn_func = JSFunction::new_with_args(
+            "f",
+            "return f(Array.prototype.slice.call(arguments, 1))",
+        );
         let binded_func = dyn_func.bind1(&JsValue::UNDEFINED, &wrapped_func);
         let vm_function = VMFunction::new(binded_func, func_ty);
         Self::from_vm_extern(&mut store, vm_function)
@@ -271,7 +288,10 @@ impl Function {
         }
     }
 
-    pub(crate) fn from_vm_extern(_store: &mut impl AsStoreMut, internal: VMFunction) -> Self {
+    pub(crate) fn from_vm_extern(
+        _store: &mut impl AsStoreMut,
+        internal: VMFunction,
+    ) -> Self {
         Self { handle: internal }
     }
 

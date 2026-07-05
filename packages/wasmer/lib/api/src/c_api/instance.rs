@@ -10,8 +10,8 @@ use wasmer_types::CompileError;
 use crate::bindings::{
     wasm_extern_t, wasm_extern_vec_new, wasm_extern_vec_new_empty,
     wasm_extern_vec_new_uninitialized, wasm_extern_vec_t, wasm_instance_delete,
-    wasm_instance_exports, wasm_instance_new, wasm_instance_t, wasm_module_imports, wasm_module_t,
-    wasm_store_t, wasm_trap_t,
+    wasm_instance_exports, wasm_instance_new, wasm_instance_t,
+    wasm_module_imports, wasm_module_t, wasm_store_t, wasm_trap_t,
 };
 use crate::c_api::vm::VMInstance;
 use crate::errors::InstantiationError;
@@ -55,7 +55,11 @@ impl InstanceHandle {
             {
                 let mut imports = unsafe {
                     let mut vec = Default::default();
-                    wasm_extern_vec_new(&mut vec, externs.len(), externs.as_ptr());
+                    wasm_extern_vec_new(
+                        &mut vec,
+                        externs.len(),
+                        externs.as_ptr(),
+                    );
                     vec
                 };
 
@@ -99,7 +103,11 @@ impl InstanceHandle {
         Ok(InstanceHandle(instance))
     }
 
-    fn get_exports(&self, mut store: &mut impl AsStoreMut, module: &Module) -> Exports {
+    fn get_exports(
+        &self,
+        mut store: &mut impl AsStoreMut,
+        module: &Module,
+    ) -> Exports {
         let mut exports = unsafe {
             let mut vec = Default::default();
             wasm_instance_exports(self.0, &mut vec);
@@ -163,7 +171,11 @@ impl Instance {
         }
         #[cfg(any(feature = "wasmi", feature = "v8"))]
         {
-            return Self::new_by_index(&mut store.as_store_mut(), module, &externs);
+            return Self::new_by_index(
+                &mut store.as_store_mut(),
+                module,
+                &externs,
+            );
         }
     }
 
@@ -180,8 +192,11 @@ impl Instance {
                 vm_extern
             })
             .collect::<Vec<_>>();
-        let instance =
-            InstanceHandle::new(store_ref.inner.store.inner, module.0.handle.inner, externs)?;
+        let instance = InstanceHandle::new(
+            store_ref.inner.store.inner,
+            module.0.handle.inner,
+            externs,
+        )?;
         let exports = instance.get_exports(store, module);
 
         Ok((

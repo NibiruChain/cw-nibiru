@@ -15,12 +15,19 @@ pub struct Table {
 // https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
 // unsafe impl Send for Table {}
 
-fn set_table_item(table: &VMTable, item_index: u32, item: &JSObject) -> Result<(), RuntimeError> {
+fn set_table_item(
+    table: &VMTable,
+    item_index: u32,
+    item: &JSObject,
+) -> Result<(), RuntimeError> {
     unimplemented!();
     // table.table.set(item_index, item).map_err(|e| e.into())
 }
 
-fn get_function(store: &mut impl AsStoreMut, val: Value) -> Result<JSObject, RuntimeError> {
+fn get_function(
+    store: &mut impl AsStoreMut,
+    val: Value,
+) -> Result<JSObject, RuntimeError> {
     unimplemented!();
     // if !val.is_from_store(store) {
     //     return Err(RuntimeError::new("cannot pass Value across contexts"));
@@ -148,7 +155,10 @@ impl Table {
         unimplemented!("Table.copy is not natively supported in Javascript");
     }
 
-    pub(crate) fn from_vm_extern(_store: &mut impl AsStoreMut, vm_extern: VMExternTable) -> Self {
+    pub(crate) fn from_vm_extern(
+        _store: &mut impl AsStoreMut,
+        vm_extern: VMExternTable,
+    ) -> Self {
         Self { handle: vm_extern }
     }
 

@@ -1,22 +1,12 @@
-benches                            @syrusakbary
-examples                           
-fuzz                               @syrusakbary
+# Trimmed for Nibiru vendored Wasmer runtime closure (see .github/README.nibi.md).
 lib/api                            @syrusakbary
-lib/c-api                          
-lib/cache                          @syrusakbary
-lib/cli                            @syrusakbary
 lib/compiler                       @syrusakbary
 lib/compiler-cranelift             @syrusakbary
-lib/compiler-llvm                  
 lib/compiler-singlepass            @syrusakbary
-lib/deprecated                     
-lib/engine                         @syrusakbary
-lib/engine-jit                     @syrusakbary
-lib/engine-native                  @syrusakbary
-lib/engine-object-file             @syrusakbary
-lib/object                         @syrusakbary
+lib/derive                         @syrusakbary
+lib/middlewares                    @syrusakbary
+lib/types                          @syrusakbary
 lib/vm                             @syrusakbary
-lib/wasi                           
-lib/wasmer-types                   @syrusakbary
 scripts                            @syrusakbary
-tests                              
+tests/compilers                    @syrusakbary
+tests/wast                         @syrusakbary

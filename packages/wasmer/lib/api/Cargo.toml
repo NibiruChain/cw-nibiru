@@ -58,7 +58,6 @@ target-lexicon = { version = "0.12.2", default-features = false }
 # - Optional dependencies for `sys`.
 wasmer-compiler-singlepass = { path = "../compiler-singlepass", version = "=5.0.6", optional = true }
 wasmer-compiler-cranelift = { path = "../compiler-cranelift", version = "=5.0.6", optional = true }
-wasmer-compiler-llvm = { path = "../compiler-llvm", version = "=5.0.6", optional = true }
 
 wasm-bindgen = { version = "0.2.74", optional = true }
 js-sys = { version = "0.3.51", optional = true }
@@ -126,7 +125,6 @@ sys-default = ["sys", "wat", "cranelift"]
 compiler = ["sys"]
 singlepass = ["compiler", "wasmer-compiler-singlepass"]
 cranelift = ["compiler", "wasmer-compiler-cranelift"]
-llvm = ["compiler", "wasmer-compiler-llvm"]
 
 # - Engines.
 engine = ["sys"]

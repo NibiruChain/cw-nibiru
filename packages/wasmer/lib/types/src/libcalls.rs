@@ -1,5 +1,7 @@
 use enum_iterator::IntoEnumIterator;
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -178,11 +180,17 @@ impl LibCall {
             #[cfg(not(target_vendor = "apple"))]
             Self::Probestack => "wasmer_vm_probestack",
             Self::Memory32AtomicWait32 => "wasmer_vm_memory32_atomic_wait32",
-            Self::ImportedMemory32AtomicWait32 => "wasmer_vm_imported_memory32_atomic_wait32",
+            Self::ImportedMemory32AtomicWait32 => {
+                "wasmer_vm_imported_memory32_atomic_wait32"
+            }
             Self::Memory32AtomicWait64 => "wasmer_vm_memory32_atomic_wait64",
-            Self::ImportedMemory32AtomicWait64 => "wasmer_vm_imported_memory32_atomic_wait64",
+            Self::ImportedMemory32AtomicWait64 => {
+                "wasmer_vm_imported_memory32_atomic_wait64"
+            }
             Self::Memory32AtomicNotify => "wasmer_vm_memory32_atomic_notify",
-            Self::ImportedMemory32AtomicNotify => "wasmer_vm_imported_memory32_atomic_notify",
+            Self::ImportedMemory32AtomicNotify => {
+                "wasmer_vm_imported_memory32_atomic_notify"
+            }
         }
     }
 }

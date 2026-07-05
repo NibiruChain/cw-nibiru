@@ -5,7 +5,9 @@ use smallvec::SmallVec;
 use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::ops::{Deref, Range};
-use wasmer_types::{LocalFunctionIndex, MiddlewareError, ModuleInfo, WasmResult};
+use wasmer_types::{
+    LocalFunctionIndex, MiddlewareError, ModuleInfo, WasmResult,
+};
 use wasmparser::{BinaryReader, Operator, ValType, WasmFeatures};
 
 use super::error::from_binaryreadererror_wasmerror;
@@ -24,7 +26,10 @@ pub trait ModuleMiddleware: Debug + Send + Sync {
     ) -> Box<dyn FunctionMiddleware>;
 
     /// Transforms a `ModuleInfo` struct in-place. This is called before application on functions begins.
-    fn transform_module_info(&self, _: &mut ModuleInfo) -> Result<(), MiddlewareError> {
+    fn transform_module_info(
+        &self,
+        _: &mut ModuleInfo,
+    ) -> Result<(), MiddlewareError> {
         Ok(())
     }
 }
@@ -71,7 +76,10 @@ pub trait ModuleMiddlewareChain {
     ) -> Vec<Box<dyn FunctionMiddleware>>;
 
     /// Applies the chain on a `ModuleInfo` struct.
-    fn apply_on_module_info(&self, module_info: &mut ModuleInfo) -> Result<(), MiddlewareError>;
+    fn apply_on_module_info(
+        &self,
+        module_info: &mut ModuleInfo,
+    ) -> Result<(), MiddlewareError>;
 }
 
 impl<T: Deref<Target = dyn ModuleMiddleware>> ModuleMiddlewareChain for [T] {
@@ -86,7 +94,10 @@ impl<T: Deref<Target = dyn ModuleMiddleware>> ModuleMiddlewareChain for [T] {
     }
 
     /// Applies the chain on a `ModuleInfo` struct.
-    fn apply_on_module_info(&self, module_info: &mut ModuleInfo) -> Result<(), MiddlewareError> {
+    fn apply_on_module_info(
+        &self,
+        module_info: &mut ModuleInfo,
+    ) -> Result<(), MiddlewareError> {
         for item in self {
             item.transform_module_info(module_info)?;
         }
@@ -116,7 +127,8 @@ impl<'a: 'b, 'b> Extend<&'b Operator<'a>> for MiddlewareReaderState<'a> {
 impl<'a> MiddlewareBinaryReader<'a> {
     /// Constructs a `MiddlewareBinaryReader` with an explicit starting offset.
     pub fn new_with_offset(data: &'a [u8], original_offset: usize) -> Self {
-        let inner = BinaryReader::new(data, original_offset, WasmFeatures::default());
+        let inner =
+            BinaryReader::new(data, original_offset, WasmFeatures::default());
         Self {
             state: MiddlewareReaderState {
                 inner,
@@ -127,7 +139,10 @@ impl<'a> MiddlewareBinaryReader<'a> {
     }
 
     /// Replaces the middleware chain with a new one.
-    pub fn set_middleware_chain(&mut self, stages: Vec<Box<dyn FunctionMiddleware>>) {
+    pub fn set_middleware_chain(
+        &mut self,
+        stages: Vec<Box<dyn FunctionMiddleware>>,
+    ) {
         self.chain = stages;
     }
 }

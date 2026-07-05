@@ -1,4 +1,6 @@
-use std::{convert::TryInto, marker::PhantomData, mem::MaybeUninit, ops::Range, slice};
+use std::{
+    convert::TryInto, marker::PhantomData, mem::MaybeUninit, ops::Range, slice,
+};
 use wasm_bindgen::JsCast;
 use wasmer_types::{Bytes, Pages};
 
@@ -22,7 +24,10 @@ pub struct MemoryView<'a> {
 }
 
 impl<'a> MemoryView<'a> {
-    pub(crate) fn new(memory: &Memory, _store: &'a (impl AsStoreRef + ?Sized)) -> Self {
+    pub(crate) fn new(
+        memory: &Memory,
+        _store: &'a (impl AsStoreRef + ?Sized),
+    ) -> Self {
         Self::new_raw(&memory.handle.memory)
     }
 
@@ -47,7 +52,9 @@ impl<'a> MemoryView<'a> {
     /// Returns the pointer to the raw bytes of the `Memory`.
     #[doc(hidden)]
     pub fn data_ptr(&self) -> *mut u8 {
-        unimplemented!("direct data pointer access is not possible in JavaScript");
+        unimplemented!(
+            "direct data pointer access is not possible in JavaScript"
+        );
     }
 
     /// Returns the size (in bytes) of the `Memory`.
@@ -65,7 +72,9 @@ impl<'a> MemoryView<'a> {
     /// function that writes to the memory or by resizing the memory.
     #[doc(hidden)]
     pub unsafe fn data_unchecked(&self) -> &[u8] {
-        unimplemented!("direct data pointer access is not possible in JavaScript");
+        unimplemented!(
+            "direct data pointer access is not possible in JavaScript"
+        );
     }
 
     // TODO: do we want a proper implementation here instead?
@@ -81,7 +90,9 @@ impl<'a> MemoryView<'a> {
     #[allow(clippy::mut_from_ref)]
     #[doc(hidden)]
     pub unsafe fn data_unchecked_mut(&self) -> &mut [u8] {
-        unimplemented!("direct data pointer access is not possible in JavaScript");
+        unimplemented!(
+            "direct data pointer access is not possible in JavaScript"
+        );
     }
 
     /// Returns the size (in [`Pages`]) of the `Memory`.
@@ -115,9 +126,14 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent writes.
-    pub fn read(&self, offset: u64, data: &mut [u8]) -> Result<(), MemoryAccessError> {
+    pub fn read(
+        &self,
+        offset: u64,
+        data: &mut [u8],
+    ) -> Result<(), MemoryAccessError> {
         let view = &self.view;
-        let offset: u32 = offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
+        let offset: u32 =
+            offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
         let len: u32 = data
             .len()
             .try_into()
@@ -142,7 +158,8 @@ impl<'a> MemoryView<'a> {
     /// concurrent writes.
     pub fn read_u8(&self, offset: u64) -> Result<u8, MemoryAccessError> {
         let view = &self.view;
-        let offset: u32 = offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
+        let offset: u32 =
+            offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
         if offset >= view.length() {
             tracing::warn!(
                 "attempted to read beyond the bounds of the memory view ({} >= {})",
@@ -170,7 +187,8 @@ impl<'a> MemoryView<'a> {
         buf: &'b mut [MaybeUninit<u8>],
     ) -> Result<&'b mut [u8], MemoryAccessError> {
         let view = &self.view;
-        let offset: u32 = offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
+        let offset: u32 =
+            offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
         let len: u32 = buf
             .len()
             .try_into()
@@ -191,7 +209,9 @@ impl<'a> MemoryView<'a> {
         for elem in buf.iter_mut() {
             *elem = MaybeUninit::new(0);
         }
-        let buf = unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr() as *mut u8, buf.len()) };
+        let buf = unsafe {
+            slice::from_raw_parts_mut(buf.as_mut_ptr() as *mut u8, buf.len())
+        };
 
         view.subarray(offset, end).copy_to(buf);
         Ok(buf)
@@ -204,8 +224,13 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent reads/writes.
-    pub fn write(&self, offset: u64, data: &[u8]) -> Result<(), MemoryAccessError> {
-        let offset: u32 = offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
+    pub fn write(
+        &self,
+        offset: u64,
+        data: &[u8],
+    ) -> Result<(), MemoryAccessError> {
+        let offset: u32 =
+            offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
         let len: u32 = data
             .len()
             .try_into()
@@ -229,9 +254,14 @@ impl<'a> MemoryView<'a> {
     ///
     /// This method is guaranteed to be safe (from the host side) in the face of
     /// concurrent writes.
-    pub fn write_u8(&self, offset: u64, val: u8) -> Result<(), MemoryAccessError> {
+    pub fn write_u8(
+        &self,
+        offset: u64,
+        val: u8,
+    ) -> Result<(), MemoryAccessError> {
         let view = &self.view;
-        let offset: u32 = offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
+        let offset: u32 =
+            offset.try_into().map_err(|_| MemoryAccessError::Overflow)?;
         if offset >= view.length() {
             tracing::warn!(
                 "attempted to write beyond the bounds of the memory view ({} >= {})",
@@ -252,7 +282,10 @@ impl<'a> MemoryView<'a> {
 
     /// Copies a range of the memory and returns it as a vector of bytes
     #[allow(unused)]
-    pub fn copy_range_to_vec(&self, range: Range<u64>) -> Result<Vec<u8>, MemoryAccessError> {
+    pub fn copy_range_to_vec(
+        &self,
+        range: Range<u64>,
+    ) -> Result<Vec<u8>, MemoryAccessError> {
         let mut new_memory = Vec::new();
         let mut offset = range.start;
         let end = range.end.min(self.data_size());
@@ -268,7 +301,11 @@ impl<'a> MemoryView<'a> {
     }
 
     /// Copies the memory to another new memory object
-    pub fn copy_to_memory(&self, amount: u64, new_memory: &Self) -> Result<(), MemoryAccessError> {
+    pub fn copy_to_memory(
+        &self,
+        amount: u64,
+        new_memory: &Self,
+    ) -> Result<(), MemoryAccessError> {
         let mut offset = 0;
         let mut chunk = [0u8; 40960];
         while offset < amount {

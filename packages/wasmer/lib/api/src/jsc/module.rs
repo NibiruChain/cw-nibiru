@@ -14,8 +14,9 @@ use rusty_jsc::{JSObject, JSString, JSValue};
 use std::path::Path;
 use tracing::{debug, warn};
 use wasmer_types::{
-    CompileError, DeserializeError, ExportsIterator, ExternType, FunctionType, GlobalType,
-    ImportsIterator, MemoryType, ModuleInfo, Mutability, Pages, SerializeError, TableType, Type,
+    CompileError, DeserializeError, ExportsIterator, ExternType, FunctionType,
+    GlobalType, ImportsIterator, MemoryType, ModuleInfo, Mutability, Pages,
+    SerializeError, TableType, Type,
 };
 
 #[derive(Clone, PartialEq, Eq)]
@@ -53,19 +54,29 @@ impl Module {
         let engine = engine.as_engine_ref();
         let jsc = engine.jsc();
         let context = jsc.context();
-        let bytes = JSObject::create_typed_array_with_bytes(&context, &mut binary).unwrap();
+        let bytes =
+            JSObject::create_typed_array_with_bytes(&context, &mut binary)
+                .unwrap();
         let module_type = jsc.wasm_module_type();
         let global_wasm = jsc.global_wasm();
         let module = module_type
             .construct(&context, &[bytes.to_jsvalue()])
-            .map_err(|e| CompileError::Validate(format!("{}", e.to_string(&context).unwrap())))?;
+            .map_err(|e| {
+                CompileError::Validate(format!(
+                    "{}",
+                    e.to_string(&context).unwrap()
+                ))
+            })?;
 
         Ok(Self::from_js_module(module, binary))
     }
 
     /// Creates a new WebAssembly module skipping any kind of validation from a javascript module
     ///
-    pub(crate) unsafe fn from_js_module(module: JSObject, binary: impl IntoBytes) -> Self {
+    pub(crate) unsafe fn from_js_module(
+        module: JSObject,
+        binary: impl IntoBytes,
+    ) -> Self {
         let binary = binary.into_bytes();
 
         // The module is now validated, so we can safely parse it's types
@@ -81,22 +92,33 @@ impl Module {
         }
     }
 
-    pub fn validate(engine: &impl AsEngineRef, binary: &[u8]) -> Result<(), CompileError> {
+    pub fn validate(
+        engine: &impl AsEngineRef,
+        binary: &[u8],
+    ) -> Result<(), CompileError> {
         let engine = engine.as_engine_ref();
         let jsc = engine.jsc();
         let context = jsc.context();
         let mut binary = binary.to_vec();
-        let bytes = JSObject::create_typed_array_with_bytes(&context, &mut binary).unwrap();
+        let bytes =
+            JSObject::create_typed_array_with_bytes(&context, &mut binary)
+                .unwrap();
 
         let global_wasm = jsc.global_wasm();
         let validate_type = jsc.wasm_validate_type();
 
-        match validate_type.call(&context, Some(&global_wasm), &[bytes.to_jsvalue()]) {
+        match validate_type.call(
+            &context,
+            Some(&global_wasm),
+            &[bytes.to_jsvalue()],
+        ) {
             Ok(val) => {
                 if val.to_bool(&context) {
                     Ok(())
                 } else {
-                    Err(CompileError::Validate(format!("Not a valid wasm binary")))
+                    Err(CompileError::Validate(format!(
+                        "Not a valid wasm binary"
+                    )))
                 }
             }
             Err(e) => Err(CompileError::Validate(format!(
@@ -126,9 +148,11 @@ impl Module {
 
         let mut imports_object = JSObject::new(&context);
         for import_type in self.imports() {
-            let resolved_import = imports.get_export(import_type.module(), import_type.name());
+            let resolved_import =
+                imports.get_export(import_type.module(), import_type.name());
             if let Some(import) = resolved_import {
-                let val = imports_object.get_property(&context, import_type.module().to_string());
+                let val = imports_object
+                    .get_property(&context, import_type.module().to_string());
                 if !val.is_undefined(&context) {
                     // If the namespace is already set
                     let mut obj_val = val.to_object(&context).unwrap();
@@ -218,15 +242,22 @@ impl Module {
         true
     }
 
-    pub fn imports<'a>(&'a self) -> ImportsIterator<impl Iterator<Item = ImportType> + 'a> {
+    pub fn imports<'a>(
+        &'a self,
+    ) -> ImportsIterator<impl Iterator<Item = ImportType> + 'a> {
         self.info().imports()
     }
 
-    pub fn exports<'a>(&'a self) -> ExportsIterator<impl Iterator<Item = ExportType> + 'a> {
+    pub fn exports<'a>(
+        &'a self,
+    ) -> ExportsIterator<impl Iterator<Item = ExportType> + 'a> {
         self.info().exports()
     }
 
-    pub fn custom_sections<'a>(&'a self, name: &'a str) -> impl Iterator<Item = Box<[u8]>> + 'a {
+    pub fn custom_sections<'a>(
+        &'a self,
+        name: &'a str,
+    ) -> impl Iterator<Item = Box<[u8]>> + 'a {
         self.info().custom_sections(name)
     }
 

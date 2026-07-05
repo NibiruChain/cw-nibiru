@@ -35,7 +35,9 @@ where
             + self
                 .elems
                 .iter()
-                .map(|value| value.size_of_val(tracker) - std::mem::size_of_val(value))
+                .map(|value| {
+                    value.size_of_val(tracker) - std::mem::size_of_val(value)
+                })
                 .sum::<usize>()
     }
 }

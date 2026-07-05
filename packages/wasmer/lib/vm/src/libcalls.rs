@@ -44,8 +44,8 @@ use crate::vmcontext::VMContext;
 use crate::{on_host_stack, VMFuncRef};
 pub use wasmer_types::LibCall;
 use wasmer_types::{
-    DataIndex, ElemIndex, FunctionIndex, LocalMemoryIndex, LocalTableIndex, MemoryIndex,
-    TableIndex, Type,
+    DataIndex, ElemIndex, FunctionIndex, LocalMemoryIndex, LocalTableIndex,
+    MemoryIndex, TableIndex, Type,
 };
 
 /// Implementation of f32.ceil
@@ -188,7 +188,10 @@ pub unsafe extern "C" fn wasmer_vm_imported_memory32_grow(
 ///
 /// `vmctx` must be dereferenceable.
 #[no_mangle]
-pub unsafe extern "C" fn wasmer_vm_memory32_size(vmctx: *mut VMContext, memory_index: u32) -> u32 {
+pub unsafe extern "C" fn wasmer_vm_memory32_size(
+    vmctx: *mut VMContext,
+    memory_index: u32,
+) -> u32 {
     let instance = (*vmctx).instance();
     let memory_index = LocalMemoryIndex::from_u32(memory_index);
 
@@ -302,7 +305,10 @@ pub unsafe extern "C" fn wasmer_vm_table_fill(
 ///
 /// `vmctx` must be dereferenceable.
 #[no_mangle]
-pub unsafe extern "C" fn wasmer_vm_table_size(vmctx: *mut VMContext, table_index: u32) -> u32 {
+pub unsafe extern "C" fn wasmer_vm_table_size(
+    vmctx: *mut VMContext,
+    table_index: u32,
+) -> u32 {
     let instance = (*vmctx).instance();
     let table_index = LocalTableIndex::from_u32(table_index);
 
@@ -507,7 +513,10 @@ pub unsafe extern "C" fn wasmer_vm_func_ref(
 ///
 /// `vmctx` must be dereferenceable.
 #[no_mangle]
-pub unsafe extern "C" fn wasmer_vm_elem_drop(vmctx: *mut VMContext, elem_index: u32) {
+pub unsafe extern "C" fn wasmer_vm_elem_drop(
+    vmctx: *mut VMContext,
+    elem_index: u32,
+) {
     on_host_stack(|| {
         let elem_index = ElemIndex::from_u32(elem_index);
         let instance = (*vmctx).instance();
@@ -638,7 +647,10 @@ pub unsafe extern "C" fn wasmer_vm_memory32_init(
 ///
 /// `vmctx` must be dereferenceable.
 #[no_mangle]
-pub unsafe extern "C" fn wasmer_vm_data_drop(vmctx: *mut VMContext, data_index: u32) {
+pub unsafe extern "C" fn wasmer_vm_data_drop(
+    vmctx: *mut VMContext,
+    data_index: u32,
+) {
     on_host_stack(|| {
         let data_index = DataIndex::from_u32(data_index);
         let instance = (*vmctx).instance();
@@ -827,7 +839,9 @@ pub fn function_pointer(libcall: LibCall) -> usize {
         LibCall::TruncF32 => wasmer_vm_f32_trunc as usize,
         LibCall::TruncF64 => wasmer_vm_f64_trunc as usize,
         LibCall::Memory32Size => wasmer_vm_memory32_size as usize,
-        LibCall::ImportedMemory32Size => wasmer_vm_imported_memory32_size as usize,
+        LibCall::ImportedMemory32Size => {
+            wasmer_vm_imported_memory32_size as usize
+        }
         LibCall::TableCopy => wasmer_vm_table_copy as usize,
         LibCall::TableInit => wasmer_vm_table_init as usize,
         LibCall::TableFill => wasmer_vm_table_fill as usize,
@@ -842,18 +856,34 @@ pub fn function_pointer(libcall: LibCall) -> usize {
         LibCall::FuncRef => wasmer_vm_func_ref as usize,
         LibCall::ElemDrop => wasmer_vm_elem_drop as usize,
         LibCall::Memory32Copy => wasmer_vm_memory32_copy as usize,
-        LibCall::ImportedMemory32Copy => wasmer_vm_imported_memory32_copy as usize,
+        LibCall::ImportedMemory32Copy => {
+            wasmer_vm_imported_memory32_copy as usize
+        }
         LibCall::Memory32Fill => wasmer_vm_memory32_fill as usize,
-        LibCall::ImportedMemory32Fill => wasmer_vm_imported_memory32_fill as usize,
+        LibCall::ImportedMemory32Fill => {
+            wasmer_vm_imported_memory32_fill as usize
+        }
         LibCall::Memory32Init => wasmer_vm_memory32_init as usize,
         LibCall::DataDrop => wasmer_vm_data_drop as usize,
         LibCall::Probestack => wasmer_vm_probestack as usize,
         LibCall::RaiseTrap => wasmer_vm_raise_trap as usize,
-        LibCall::Memory32AtomicWait32 => wasmer_vm_memory32_atomic_wait32 as usize,
-        LibCall::ImportedMemory32AtomicWait32 => wasmer_vm_imported_memory32_atomic_wait32 as usize,
-        LibCall::Memory32AtomicWait64 => wasmer_vm_memory32_atomic_wait64 as usize,
-        LibCall::ImportedMemory32AtomicWait64 => wasmer_vm_imported_memory32_atomic_wait64 as usize,
-        LibCall::Memory32AtomicNotify => wasmer_vm_memory32_atomic_notify as usize,
-        LibCall::ImportedMemory32AtomicNotify => wasmer_vm_imported_memory32_atomic_notify as usize,
+        LibCall::Memory32AtomicWait32 => {
+            wasmer_vm_memory32_atomic_wait32 as usize
+        }
+        LibCall::ImportedMemory32AtomicWait32 => {
+            wasmer_vm_imported_memory32_atomic_wait32 as usize
+        }
+        LibCall::Memory32AtomicWait64 => {
+            wasmer_vm_memory32_atomic_wait64 as usize
+        }
+        LibCall::ImportedMemory32AtomicWait64 => {
+            wasmer_vm_imported_memory32_atomic_wait64 as usize
+        }
+        LibCall::Memory32AtomicNotify => {
+            wasmer_vm_memory32_atomic_notify as usize
+        }
+        LibCall::ImportedMemory32AtomicNotify => {
+            wasmer_vm_imported_memory32_atomic_notify as usize
+        }
     }
 }

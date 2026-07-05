@@ -24,11 +24,17 @@ use wasmer_types::ImportError;
 #[cfg_attr(feature = "std", error("Link error: {0}"))]
 pub enum LinkError {
     /// An error occurred when checking the import types.
-    #[cfg_attr(feature = "std", error("Error while importing {0:?}.{1:?}: {2}"))]
+    #[cfg_attr(
+        feature = "std",
+        error("Error while importing {0:?}.{1:?}: {2}")
+    )]
     Import(String, String, ImportError),
 
     /// A trap ocurred during linking.
-    #[cfg_attr(feature = "std", error("RuntimeError occurred during linking: {0}"))]
+    #[cfg_attr(
+        feature = "std",
+        error("RuntimeError occurred during linking: {0}")
+    )]
     Trap(#[source] RuntimeError),
     /// Insufficient resources available for linking.
     #[cfg_attr(feature = "std", error("Insufficient resources: {0}"))]
@@ -61,7 +67,10 @@ pub enum InstantiationError {
 
     /// Import from a different [`Store`][super::Store].
     /// This error occurs when an import from a different store is used.
-    #[cfg_attr(feature = "std", error("cannot mix imports from different stores"))]
+    #[cfg_attr(
+        feature = "std",
+        error("cannot mix imports from different stores")
+    )]
     DifferentStores,
 
     /// Import from a different Store.
@@ -190,7 +199,9 @@ impl RuntimeError {
     /// Attempts to downcast the `RuntimeError` to a concrete type.
     pub fn downcast<T: std::error::Error + 'static>(self) -> Result<T, Self> {
         match Arc::try_unwrap(self.inner) {
-            Ok(inner) if inner.source.is::<T>() => Ok(inner.source.downcast::<T>().unwrap()),
+            Ok(inner) if inner.source.is::<T>() => {
+                Ok(inner.source.downcast::<T>().unwrap())
+            }
             Ok(inner) => Err(Self {
                 inner: Arc::new(inner),
             }),
@@ -281,7 +292,9 @@ pub enum AtomicsError {
 impl std::fmt::Display for AtomicsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Unimplemented => write!(f, "Atomic operations are not supported"),
+            Self::Unimplemented => {
+                write!(f, "Atomic operations are not supported")
+            }
             Self::TooManyWaiters => write!(f, "Too many waiters for address"),
             Self::AtomicsDisabled => write!(f, "Atomic operations are disabled"),
         }

@@ -8,7 +8,9 @@
 // addresses of a WebAssembly module into the native code.
 
 use crate::lib::std::vec::Vec;
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use wasmer_types::SourceLoc;
@@ -16,7 +18,9 @@ use wasmer_types::SourceLoc;
 /// Single source location to generated address mapping.
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, Copy, PartialEq, Eq,
+)]
 #[rkyv(derive(Debug))]
 pub struct InstructionAddressMap {
     /// Original source location.
@@ -32,7 +36,9 @@ pub struct InstructionAddressMap {
 /// Function and its instructions addresses mappings.
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq, Default)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq, Default,
+)]
 #[rkyv(derive(Debug))]
 pub struct FunctionAddressMap {
     /// Instructions maps.

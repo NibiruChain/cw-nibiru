@@ -1,6 +1,8 @@
 use crate::{Pages, ValueType};
 use core::ops::SubAssign;
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use std::convert::{TryFrom, TryInto};
@@ -8,7 +10,17 @@ use std::iter::Sum;
 use std::ops::{Add, AddAssign};
 
 /// Implementation styles for WebAssembly linear memory.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, RkyvSerialize, RkyvDeserialize, Archive)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Archive,
+)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[rkyv(derive(Debug), compare(PartialEq))]

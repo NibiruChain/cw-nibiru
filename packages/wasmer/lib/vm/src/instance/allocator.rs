@@ -52,7 +52,10 @@ impl Drop for InstanceAllocator {
             let instance_ptr = self.instance_ptr.as_ptr();
 
             unsafe {
-                std::alloc::dealloc(instance_ptr as *mut u8, self.instance_layout);
+                std::alloc::dealloc(
+                    instance_ptr as *mut u8,
+                    self.instance_layout,
+                );
             }
         }
     }
@@ -79,7 +82,8 @@ impl InstanceAllocator {
         let instance_layout = Self::instance_layout(&offsets);
 
         #[allow(clippy::cast_ptr_alignment)]
-        let instance_ptr = unsafe { alloc::alloc(instance_layout) as *mut Instance };
+        let instance_ptr =
+            unsafe { alloc::alloc(instance_layout) as *mut Instance };
 
         let instance_ptr = if let Some(ptr) = NonNull::new(instance_ptr) {
             ptr
@@ -109,12 +113,14 @@ impl InstanceAllocator {
         let vmctx_size = usize::try_from(offsets.size_of_vmctx())
             .expect("Failed to convert the size of `vmctx` to a `usize`");
 
-        let instance_vmctx_layout =
-            Layout::array::<u8>(vmctx_size).expect("Failed to create a layout for `VMContext`");
+        let instance_vmctx_layout = Layout::array::<u8>(vmctx_size)
+            .expect("Failed to create a layout for `VMContext`");
 
         let (instance_layout, _offset) = Layout::new::<Instance>()
             .extend(instance_vmctx_layout)
-            .expect("Failed to extend to `Instance` layout to include `VMContext`");
+            .expect(
+                "Failed to extend to `Instance` layout to include `VMContext`",
+            );
 
         instance_layout.pad_to_align()
     }
@@ -130,7 +136,9 @@ impl InstanceAllocator {
     ///   the offsets in `Self.offsets` point to valid locations in
     ///   memory, i.e. `Self.instance_ptr` must have been allocated by
     ///   `Self::new`.
-    unsafe fn memory_definition_locations(&self) -> Vec<NonNull<VMMemoryDefinition>> {
+    unsafe fn memory_definition_locations(
+        &self,
+    ) -> Vec<NonNull<VMMemoryDefinition>> {
         let num_memories = self.offsets.num_local_memories();
         let num_memories = usize::try_from(num_memories).unwrap();
         let mut out = Vec::with_capacity(num_memories);
@@ -164,7 +172,9 @@ impl InstanceAllocator {
     ///   the offsets in `Self.offsets` point to valid locations in
     ///   memory, i.e. `Self.instance_ptr` must have been allocated by
     ///   `Self::new`.
-    unsafe fn table_definition_locations(&self) -> Vec<NonNull<VMTableDefinition>> {
+    unsafe fn table_definition_locations(
+        &self,
+    ) -> Vec<NonNull<VMTableDefinition>> {
         let num_tables = self.offsets.num_local_tables();
         let num_tables = usize::try_from(num_tables).unwrap();
         let mut out = Vec::with_capacity(num_tables);

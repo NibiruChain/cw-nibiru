@@ -1,6 +1,6 @@
 use super::bindings::{
-    wasm_extern_t, wasm_func_t, wasm_global_t, wasm_instance_t, wasm_memory_t, wasm_ref_t,
-    wasm_table_t,
+    wasm_extern_t, wasm_func_t, wasm_global_t, wasm_instance_t, wasm_memory_t,
+    wasm_ref_t, wasm_table_t,
 };
 use std::any::Any;
 /// This module is mainly used to create the `VM` types that will hold both
@@ -45,11 +45,15 @@ pub type VMFunctionCallback = *mut ::std::os::raw::c_void;
 // pub type VMTrampoline = *mut ::std::os::raw::c_void;
 
 use crate::bindings::{
-    wasm_extern_as_func, wasm_extern_as_global, wasm_extern_as_memory, wasm_extern_as_table,
-    wasm_extern_kind, wasm_extern_type, wasm_externkind_enum_WASM_EXTERN_FUNC,
-    wasm_externkind_enum_WASM_EXTERN_GLOBAL, wasm_externkind_enum_WASM_EXTERN_MEMORY,
+    wasm_extern_as_func, wasm_extern_as_global, wasm_extern_as_memory,
+    wasm_extern_as_table, wasm_extern_kind, wasm_extern_type,
+    wasm_externkind_enum_WASM_EXTERN_FUNC,
+    wasm_externkind_enum_WASM_EXTERN_GLOBAL,
+    wasm_externkind_enum_WASM_EXTERN_MEMORY,
 };
-use crate::externals::{Extern, Function, Global, Memory, Table, VMExternToExtern};
+use crate::externals::{
+    Extern, Function, Global, Memory, Table, VMExternToExtern,
+};
 use crate::store::AsStoreMut;
 
 impl VMExternToExtern for VMExtern {
@@ -60,28 +64,36 @@ impl VMExternToExtern for VMExtern {
             0 => {
                 let func = unsafe { wasm_extern_as_func(&mut *self) };
                 if func.is_null() {
-                    panic!("The wasm-c-api reported extern as function, but is not");
+                    panic!(
+                        "The wasm-c-api reported extern as function, but is not"
+                    );
                 }
                 Extern::Function(Function::from_vm_extern(store, func))
             }
             1 => {
                 let global = unsafe { wasm_extern_as_global(&mut *self) };
                 if global.is_null() {
-                    panic!("The wasm-c-api reported extern as a global, but is not");
+                    panic!(
+                        "The wasm-c-api reported extern as a global, but is not"
+                    );
                 }
                 Extern::Global(Global::from_vm_extern(store, global))
             }
             2 => {
                 let table = unsafe { wasm_extern_as_table(&mut *self) };
                 if table.is_null() {
-                    panic!("The wasm-c-api reported extern as a table, but is not");
+                    panic!(
+                        "The wasm-c-api reported extern as a table, but is not"
+                    );
                 }
                 Extern::Table(Table::from_vm_extern(store, table))
             }
             3 => {
                 let memory = unsafe { wasm_extern_as_memory(&mut *self) };
                 if memory.is_null() {
-                    panic!("The wasm-c-api reported extern as a table, but is not");
+                    panic!(
+                        "The wasm-c-api reported extern as a table, but is not"
+                    );
                 }
                 Extern::Memory(Memory::from_vm_extern(store, memory))
             }

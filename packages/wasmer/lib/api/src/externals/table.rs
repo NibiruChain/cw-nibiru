@@ -100,10 +100,20 @@ impl Table {
         src_index: u32,
         len: u32,
     ) -> Result<(), RuntimeError> {
-        table_impl::Table::copy(store, &dst_table.0, dst_index, &src_table.0, src_index, len)
+        table_impl::Table::copy(
+            store,
+            &dst_table.0,
+            dst_index,
+            &src_table.0,
+            src_index,
+            len,
+        )
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, extern_: VMExternTable) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        extern_: VMExternTable,
+    ) -> Self {
         Self(table_impl::Table::from_vm_extern(store, extern_))
     }
 
@@ -120,7 +130,9 @@ impl Table {
 impl std::cmp::Eq for Table {}
 
 impl<'a> Exportable<'a> for Table {
-    fn get_self_from_extern(_extern: &'a Extern) -> Result<&'a Self, ExportError> {
+    fn get_self_from_extern(
+        _extern: &'a Extern,
+    ) -> Result<&'a Self, ExportError> {
         match _extern {
             Extern::Table(table) => Ok(table),
             _ => Err(ExportError::IncompatibleType),
@@ -140,7 +152,9 @@ impl<'a> Exportable<'a> for Table {
     ignore = "growing tables in v8 is not currently supported"
 )]
 fn test_table_grow_issue_3197() {
-    use crate::{imports, Instance, Module, Store, Table, TableType, Type, Value};
+    use crate::{
+        imports, Instance, Module, Store, Table, TableType, Type, Value,
+    };
 
     const WAT: &str = r#"(module (table (import "env" "table") 100 funcref))"#;
 

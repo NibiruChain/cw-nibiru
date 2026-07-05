@@ -8,7 +8,8 @@ use crate::config::Singlepass;
 use crate::dwarf::WriterRelocate;
 use crate::machine::Machine;
 use crate::machine::{
-    gen_import_call_trampoline, gen_std_dynamic_import_trampoline, gen_std_trampoline,
+    gen_import_call_trampoline, gen_std_dynamic_import_trampoline,
+    gen_std_trampoline,
 };
 use crate::machine_arm64::MachineARM64;
 use crate::machine_x64::MachineX86_64;
@@ -25,15 +26,18 @@ use wasmer_compiler::{
         function::{Compilation, CompiledFunction, Dwarf, FunctionBody},
         module::CompileModuleInfo,
         section::SectionIndex,
-        target::{Architecture, CallingConvention, CpuFeature, OperatingSystem, Target},
+        target::{
+            Architecture, CallingConvention, CpuFeature, OperatingSystem, Target,
+        },
     },
-    Compiler, CompilerConfig, FunctionBinaryReader, FunctionBodyData, MiddlewareBinaryReader,
-    ModuleMiddleware, ModuleMiddlewareChain, ModuleTranslationState,
+    Compiler, CompilerConfig, FunctionBinaryReader, FunctionBodyData,
+    MiddlewareBinaryReader, ModuleMiddleware, ModuleMiddlewareChain,
+    ModuleTranslationState,
 };
 use wasmer_types::entity::{EntityRef, PrimaryMap};
 use wasmer_types::{
-    CompileError, FunctionIndex, FunctionType, LocalFunctionIndex, MemoryIndex, ModuleInfo,
-    TableIndex, TrapCode, TrapInformation, VMOffsets,
+    CompileError, FunctionIndex, FunctionType, LocalFunctionIndex, MemoryIndex,
+    ModuleInfo, TableIndex, TrapCode, TrapInformation, VMOffsets,
 };
 
 /// A compiler that compiles a WebAssembly module with Singlepass.
@@ -71,7 +75,10 @@ impl Compiler for SinglepassCompiler {
         target: &Target,
         compile_info: &CompileModuleInfo,
         _module_translation: &ModuleTranslationState,
-        function_body_inputs: PrimaryMap<LocalFunctionIndex, FunctionBodyData<'_>>,
+        function_body_inputs: PrimaryMap<
+            LocalFunctionIndex,
+            FunctionBodyData<'_>,
+        >,
     ) -> Result<Compilation, CompileError> {
         match target.triple().architecture {
             Architecture::X86_64 => {}
@@ -83,16 +90,22 @@ impl Compiler for SinglepassCompiler {
             }
         }
 
-        let calling_convention = match target.triple().default_calling_convention() {
-            Ok(CallingConvention::WindowsFastcall) => CallingConvention::WindowsFastcall,
-            Ok(CallingConvention::SystemV) => CallingConvention::SystemV,
-            Ok(CallingConvention::AppleAarch64) => CallingConvention::AppleAarch64,
-            _ => {
-                return Err(CompileError::UnsupportedTarget(
-                    "Unsupported Calling convention for Singlepass compiler".to_string(),
-                ))
-            }
-        };
+        let calling_convention =
+            match target.triple().default_calling_convention() {
+                Ok(CallingConvention::WindowsFastcall) => {
+                    CallingConvention::WindowsFastcall
+                }
+                Ok(CallingConvention::SystemV) => CallingConvention::SystemV,
+                Ok(CallingConvention::AppleAarch64) => {
+                    CallingConvention::AppleAarch64
+                }
+                _ => {
+                    return Err(CompileError::UnsupportedTarget(
+                        "Unsupported Calling convention for Singlepass compiler"
+                            .to_string(),
+                    ))
+                }
+            };
 
         // Generate the frametable
         #[cfg(feature = "unwind")]
@@ -121,7 +134,8 @@ impl Compiler for SinglepassCompiler {
         let table_styles = &compile_info.table_styles;
         let vmoffsets = VMOffsets::new(8, &compile_info.module);
         let module = &compile_info.module;
-        let mut custom_sections: PrimaryMap<SectionIndex, _> = (0..module.num_imported_functions)
+        let mut custom_sections: PrimaryMap<SectionIndex, _> = (0..module
+            .num_imported_functions)
             .map(FunctionIndex::new)
             .collect::<Vec<_>>()
             .into_par_iter_if_rayon()
@@ -137,85 +151,96 @@ impl Compiler for SinglepassCompiler {
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .collect();
-        let (functions, fdes): (Vec<CompiledFunction>, Vec<_>) = function_body_inputs
-            .iter()
-            .collect::<Vec<(LocalFunctionIndex, &FunctionBodyData<'_>)>>()
-            .into_par_iter_if_rayon()
-            .map(|(i, input)| {
-                let middleware_chain = self
-                    .config
-                    .middlewares
-                    .generate_function_middleware_chain(i);
-                let mut reader =
-                    MiddlewareBinaryReader::new_with_offset(input.data, input.module_offset);
-                reader.set_middleware_chain(middleware_chain);
+        let (functions, fdes): (Vec<CompiledFunction>, Vec<_>) =
+            function_body_inputs
+                .iter()
+                .collect::<Vec<(LocalFunctionIndex, &FunctionBodyData<'_>)>>()
+                .into_par_iter_if_rayon()
+                .map(|(i, input)| {
+                    let middleware_chain = self
+                        .config
+                        .middlewares
+                        .generate_function_middleware_chain(i);
+                    let mut reader = MiddlewareBinaryReader::new_with_offset(
+                        input.data,
+                        input.module_offset,
+                    );
+                    reader.set_middleware_chain(middleware_chain);
 
-                // This local list excludes arguments.
-                let mut locals = vec![];
-                let num_locals = reader.read_local_count()?;
-                for _ in 0..num_locals {
-                    let (count, ty) = reader.read_local_decl()?;
-                    for _ in 0..count {
-                        locals.push(ty);
-                    }
-                }
-
-                match target.triple().architecture {
-                    Architecture::X86_64 => {
-                        let machine = MachineX86_64::new(Some(target.clone()))?;
-                        let mut generator = FuncGen::new(
-                            module,
-                            &self.config,
-                            &vmoffsets,
-                            memory_styles,
-                            table_styles,
-                            i,
-                            &locals,
-                            machine,
-                            calling_convention,
-                        )?;
-                        while generator.has_control_frames() {
-                            generator.set_srcloc(reader.original_position() as u32);
-                            let op = reader.read_operator()?;
-                            generator.feed_operator(op)?;
+                    // This local list excludes arguments.
+                    let mut locals = vec![];
+                    let num_locals = reader.read_local_count()?;
+                    for _ in 0..num_locals {
+                        let (count, ty) = reader.read_local_decl()?;
+                        for _ in 0..count {
+                            locals.push(ty);
                         }
-
-                        generator.finalize(input)
                     }
-                    Architecture::Aarch64(_) => {
-                        let machine = MachineARM64::new(Some(target.clone()));
-                        let mut generator = FuncGen::new(
-                            module,
-                            &self.config,
-                            &vmoffsets,
-                            memory_styles,
-                            table_styles,
-                            i,
-                            &locals,
-                            machine,
-                            calling_convention,
-                        )?;
-                        while generator.has_control_frames() {
-                            generator.set_srcloc(reader.original_position() as u32);
-                            let op = reader.read_operator()?;
-                            generator.feed_operator(op)?;
+
+                    match target.triple().architecture {
+                        Architecture::X86_64 => {
+                            let machine =
+                                MachineX86_64::new(Some(target.clone()))?;
+                            let mut generator = FuncGen::new(
+                                module,
+                                &self.config,
+                                &vmoffsets,
+                                memory_styles,
+                                table_styles,
+                                i,
+                                &locals,
+                                machine,
+                                calling_convention,
+                            )?;
+                            while generator.has_control_frames() {
+                                generator.set_srcloc(
+                                    reader.original_position() as u32
+                                );
+                                let op = reader.read_operator()?;
+                                generator.feed_operator(op)?;
+                            }
+
+                            generator.finalize(input)
                         }
+                        Architecture::Aarch64(_) => {
+                            let machine =
+                                MachineARM64::new(Some(target.clone()));
+                            let mut generator = FuncGen::new(
+                                module,
+                                &self.config,
+                                &vmoffsets,
+                                memory_styles,
+                                table_styles,
+                                i,
+                                &locals,
+                                machine,
+                                calling_convention,
+                            )?;
+                            while generator.has_control_frames() {
+                                generator.set_srcloc(
+                                    reader.original_position() as u32
+                                );
+                                let op = reader.read_operator()?;
+                                generator.feed_operator(op)?;
+                            }
 
-                        generator.finalize(input)
+                            generator.finalize(input)
+                        }
+                        _ => unimplemented!(),
                     }
-                    _ => unimplemented!(),
-                }
-            })
-            .collect::<Result<Vec<_>, CompileError>>()?
-            .into_iter()
-            .unzip();
+                })
+                .collect::<Result<Vec<_>, CompileError>>()?
+                .into_iter()
+                .unzip();
 
         let function_call_trampolines = module
             .signatures
             .values()
             .collect::<Vec<_>>()
             .into_par_iter_if_rayon()
-            .map(|func_type| gen_std_trampoline(func_type, target, calling_convention))
+            .map(|func_type| {
+                gen_std_trampoline(func_type, target, calling_convention)
+            })
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .collect::<PrimaryMap<_, _>>();
@@ -237,13 +262,18 @@ impl Compiler for SinglepassCompiler {
             .collect::<PrimaryMap<FunctionIndex, FunctionBody>>();
 
         #[cfg(feature = "unwind")]
-        let dwarf = if let Some((mut dwarf_frametable, cie_id)) = dwarf_frametable {
+        let dwarf = if let Some((mut dwarf_frametable, cie_id)) =
+            dwarf_frametable
+        {
             for fde in fdes.into_iter().flatten() {
                 match fde {
-                    UnwindFrame::SystemV(fde) => dwarf_frametable.add_fde(cie_id, fde),
+                    UnwindFrame::SystemV(fde) => {
+                        dwarf_frametable.add_fde(cie_id, fde)
+                    }
                 }
             }
-            let mut eh_frame = EhFrame(WriterRelocate::new(target.triple().endianness().ok()));
+            let mut eh_frame =
+                EhFrame(WriterRelocate::new(target.triple().endianness().ok()));
             dwarf_frametable.write_eh_frame(&mut eh_frame).unwrap();
 
             let eh_frame_section = eh_frame.0.into_section();
@@ -264,8 +294,14 @@ impl Compiler for SinglepassCompiler {
         })
     }
 
-    fn get_cpu_features_used(&self, cpu_features: &EnumSet<CpuFeature>) -> EnumSet<CpuFeature> {
-        let used = CpuFeature::AVX | CpuFeature::SSE42 | CpuFeature::LZCNT | CpuFeature::BMI1;
+    fn get_cpu_features_used(
+        &self,
+        cpu_features: &EnumSet<CpuFeature>,
+    ) -> EnumSet<CpuFeature> {
+        let used = CpuFeature::AVX
+            | CpuFeature::SSE42
+            | CpuFeature::LZCNT
+            | CpuFeature::BMI1;
         cpu_features.intersection(used)
     }
 }
@@ -312,7 +348,8 @@ mod tests {
             table_styles: PrimaryMap::<TableIndex, TableStyle>::new(),
         };
         let module_translation = ModuleTranslationState::new();
-        let function_body_inputs = PrimaryMap::<LocalFunctionIndex, FunctionBodyData<'_>>::new();
+        let function_body_inputs =
+            PrimaryMap::<LocalFunctionIndex, FunctionBodyData<'_>>::new();
         (compile_info, module_translation, function_body_inputs)
     }
 
@@ -321,18 +358,24 @@ mod tests {
         let compiler = SinglepassCompiler::new(Singlepass::default());
 
         // Compile for 32bit Linux
-        let linux32 = Target::new(triple!("i686-unknown-linux-gnu"), CpuFeature::for_host());
+        let linux32 = Target::new(
+            triple!("i686-unknown-linux-gnu"),
+            CpuFeature::for_host(),
+        );
         let (info, translation, inputs) = dummy_compilation_ingredients();
-        let result = compiler.compile_module(&linux32, &info, &translation, inputs);
+        let result =
+            compiler.compile_module(&linux32, &info, &translation, inputs);
         match result.unwrap_err() {
             CompileError::UnsupportedTarget(name) => assert_eq!(name, "i686"),
             error => panic!("Unexpected error: {:?}", error),
         };
 
         // Compile for win32
-        let win32 = Target::new(triple!("i686-pc-windows-gnu"), CpuFeature::for_host());
+        let win32 =
+            Target::new(triple!("i686-pc-windows-gnu"), CpuFeature::for_host());
         let (info, translation, inputs) = dummy_compilation_ingredients();
-        let result = compiler.compile_module(&win32, &info, &translation, inputs);
+        let result =
+            compiler.compile_module(&win32, &info, &translation, inputs);
         match result.unwrap_err() {
             CompileError::UnsupportedTarget(name) => assert_eq!(name, "i686"), // Windows should be checked before architecture
             error => panic!("Unexpected error: {:?}", error),
@@ -342,20 +385,28 @@ mod tests {
     #[test]
     fn errors_for_unsuported_cpufeatures() {
         let compiler = SinglepassCompiler::new(Singlepass::default());
-        let mut features =
-            CpuFeature::AVX | CpuFeature::SSE42 | CpuFeature::LZCNT | CpuFeature::BMI1;
+        let mut features = CpuFeature::AVX
+            | CpuFeature::SSE42
+            | CpuFeature::LZCNT
+            | CpuFeature::BMI1;
         // simple test
-        assert!(compiler
-            .get_cpu_features_used(&features)
-            .is_subset(CpuFeature::AVX | CpuFeature::SSE42 | CpuFeature::LZCNT | CpuFeature::BMI1));
+        assert!(compiler.get_cpu_features_used(&features).is_subset(
+            CpuFeature::AVX
+                | CpuFeature::SSE42
+                | CpuFeature::LZCNT
+                | CpuFeature::BMI1
+        ));
         // check that an AVX build don't work on SSE4.2 only host
-        assert!(!compiler
-            .get_cpu_features_used(&features)
-            .is_subset(CpuFeature::SSE42 | CpuFeature::LZCNT | CpuFeature::BMI1));
+        assert!(!compiler.get_cpu_features_used(&features).is_subset(
+            CpuFeature::SSE42 | CpuFeature::LZCNT | CpuFeature::BMI1
+        ));
         // check that having a host with AVX512 doesn't change anything
         features.insert_all(CpuFeature::AVX512DQ | CpuFeature::AVX512F);
-        assert!(compiler
-            .get_cpu_features_used(&features)
-            .is_subset(CpuFeature::AVX | CpuFeature::SSE42 | CpuFeature::LZCNT | CpuFeature::BMI1));
+        assert!(compiler.get_cpu_features_used(&features).is_subset(
+            CpuFeature::AVX
+                | CpuFeature::SSE42
+                | CpuFeature::LZCNT
+                | CpuFeature::BMI1
+        ));
     }
 }

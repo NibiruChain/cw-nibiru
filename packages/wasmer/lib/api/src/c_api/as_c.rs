@@ -1,7 +1,8 @@
 use crate::bindings::{
     wasm_extern_as_ref, wasm_func_as_ref, wasm_val_t, wasm_val_t__bindgen_ty_1,
-    wasm_valkind_enum_WASM_F32, wasm_valkind_enum_WASM_F64, wasm_valkind_enum_WASM_FUNCREF,
-    wasm_valkind_enum_WASM_I32, wasm_valkind_enum_WASM_I64, wasm_valkind_t, wasm_valtype_kind,
+    wasm_valkind_enum_WASM_F32, wasm_valkind_enum_WASM_F64,
+    wasm_valkind_enum_WASM_FUNCREF, wasm_valkind_enum_WASM_I32,
+    wasm_valkind_enum_WASM_I64, wasm_valkind_t, wasm_valtype_kind,
     wasm_valtype_t,
 };
 
@@ -43,15 +44,23 @@ pub trait AsC: Sized {
 #[inline]
 pub fn param_from_c(value: &wasm_val_t) -> Value {
     match value.kind as _ {
-        crate::bindings::wasm_valkind_enum_WASM_I32 => Value::I32(unsafe { value.of.i32_ }),
-        crate::bindings::wasm_valkind_enum_WASM_I64 => Value::I64(unsafe { value.of.i64_ }),
-        crate::bindings::wasm_valkind_enum_WASM_F32 => Value::F32(unsafe { value.of.f32_ }),
-        crate::bindings::wasm_valkind_enum_WASM_F64 => Value::F64(unsafe { value.of.f64_ }),
-        crate::bindings::wasm_valkind_enum_WASM_FUNCREF => {
-            Value::FuncRef(Some(Function(super::externals::function::Function {
-                handle: unsafe { value.of.ref_ as _ },
-            })))
+        crate::bindings::wasm_valkind_enum_WASM_I32 => {
+            Value::I32(unsafe { value.of.i32_ })
         }
+        crate::bindings::wasm_valkind_enum_WASM_I64 => {
+            Value::I64(unsafe { value.of.i64_ })
+        }
+        crate::bindings::wasm_valkind_enum_WASM_F32 => {
+            Value::F32(unsafe { value.of.f32_ })
+        }
+        crate::bindings::wasm_valkind_enum_WASM_F64 => {
+            Value::F64(unsafe { value.of.f64_ })
+        }
+        crate::bindings::wasm_valkind_enum_WASM_FUNCREF => Value::FuncRef(Some(
+            Function(super::externals::function::Function {
+                handle: unsafe { value.of.ref_ as _ },
+            }),
+        )),
         crate::bindings::wasm_valkind_enum_WASM_ANYREF => {
             panic!("ExternRefs are not currently supported through wasm_c_api")
         }
@@ -63,15 +72,23 @@ pub fn param_from_c(value: &wasm_val_t) -> Value {
 #[inline]
 pub fn param_from_c(value: &wasm_val_t) -> Value {
     match value.kind as _ {
-        crate::bindings::wasm_valkind_enum_WASM_I32 => Value::I32(unsafe { value.of.i32_ }),
-        crate::bindings::wasm_valkind_enum_WASM_I64 => Value::I64(unsafe { value.of.i64_ }),
-        crate::bindings::wasm_valkind_enum_WASM_F32 => Value::F32(unsafe { value.of.f32_ }),
-        crate::bindings::wasm_valkind_enum_WASM_F64 => Value::F64(unsafe { value.of.f64_ }),
-        crate::bindings::wasm_valkind_enum_WASM_FUNCREF => {
-            Value::FuncRef(Some(Function(super::externals::function::Function {
-                handle: unsafe { value.of.ref_ as _ },
-            })))
+        crate::bindings::wasm_valkind_enum_WASM_I32 => {
+            Value::I32(unsafe { value.of.i32_ })
         }
+        crate::bindings::wasm_valkind_enum_WASM_I64 => {
+            Value::I64(unsafe { value.of.i64_ })
+        }
+        crate::bindings::wasm_valkind_enum_WASM_F32 => {
+            Value::F32(unsafe { value.of.f32_ })
+        }
+        crate::bindings::wasm_valkind_enum_WASM_F64 => {
+            Value::F64(unsafe { value.of.f64_ })
+        }
+        crate::bindings::wasm_valkind_enum_WASM_FUNCREF => Value::FuncRef(Some(
+            Function(super::externals::function::Function {
+                handle: unsafe { value.of.ref_ as _ },
+            }),
+        )),
         crate::bindings::wasm_valkind_enum_WASM_EXTERNREF => {
             panic!("ExternRefs are not currently supported through wasm_c_api")
         }

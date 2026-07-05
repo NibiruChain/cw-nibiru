@@ -1,6 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
@@ -40,7 +42,10 @@ pub enum ModuleHash {
 
 #[cfg(feature = "artifact-size")]
 impl loupe::MemoryUsage for ModuleHash {
-    fn size_of_val(&self, _tracker: &mut dyn loupe::MemoryUsageTracker) -> usize {
+    fn size_of_val(
+        &self,
+        _tracker: &mut dyn loupe::MemoryUsageTracker,
+    ) -> usize {
         match self {
             ModuleHash::XXHash(_) => 8 * 8,
             ModuleHash::Sha256(_) => 8 * 32,
@@ -102,7 +107,10 @@ impl ModuleHash {
 
 impl Display for ModuleHash {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        fn format<const N: usize>(f: &mut Formatter<'_>, bytes: &[u8; N]) -> fmt::Result {
+        fn format<const N: usize>(
+            f: &mut Formatter<'_>,
+            bytes: &[u8; N],
+        ) -> fmt::Result {
             for byte in bytes {
                 write!(f, "{byte:02X}")?;
             }

@@ -14,7 +14,10 @@ pub struct StoreId(NonZeroUsize);
 
 #[cfg(feature = "artifact-size")]
 impl loupe::MemoryUsage for StoreId {
-    fn size_of_val(&self, _visited: &mut dyn loupe::MemoryUsageTracker) -> usize {
+    fn size_of_val(
+        &self,
+        _visited: &mut dyn loupe::MemoryUsageTracker,
+    ) -> usize {
         std::mem::size_of_val(self)
     }
 }

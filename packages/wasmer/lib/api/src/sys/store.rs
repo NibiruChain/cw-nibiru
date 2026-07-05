@@ -46,7 +46,10 @@ pub trait NativeStoreExt {
 }
 
 impl NativeStoreExt for Store {
-    fn set_trap_handler(&mut self, handler: Option<Box<TrapHandlerFn<'static>>>) {
+    fn set_trap_handler(
+        &mut self,
+        handler: Option<Box<TrapHandlerFn<'static>>>,
+    ) {
         self.trap_handler = handler;
     }
 
@@ -60,7 +63,10 @@ impl NativeStoreExt for Store {
 }
 
 impl NativeStoreExt for crate::Store {
-    fn set_trap_handler(&mut self, handler: Option<Box<TrapHandlerFn<'static>>>) {
+    fn set_trap_handler(
+        &mut self,
+        handler: Option<Box<TrapHandlerFn<'static>>>,
+    ) {
         self.inner.store.set_trap_handler(handler)
     }
 

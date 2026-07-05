@@ -38,7 +38,12 @@ use crate::c_api::store as store_imp;
 /// Call handler for a store.
 // TODO: better documentation!
 pub type OnCalledHandler = Box<
-    dyn FnOnce(StoreMut<'_>) -> Result<OnCalledAction, Box<dyn std::error::Error + Send + Sync>>,
+    dyn FnOnce(
+        StoreMut<'_>,
+    ) -> Result<
+        OnCalledAction,
+        Box<dyn std::error::Error + Send + Sync>,
+    >,
 >;
 
 /// We require the context to have a fixed memory address for its lifetime since
@@ -87,7 +92,10 @@ impl Store {
 
     #[cfg(feature = "sys")]
     /// Set the trap handler in this store.
-    pub fn set_trap_handler(&mut self, handler: Option<Box<TrapHandlerFn<'static>>>) {
+    pub fn set_trap_handler(
+        &mut self,
+        handler: Option<Box<TrapHandlerFn<'static>>>,
+    ) {
         self.inner.store.set_trap_handler(handler)
     }
 
@@ -222,7 +230,9 @@ impl<'a> StoreMut<'a> {
     }
 
     #[allow(unused)]
-    pub(crate) fn engine_and_objects_mut(&mut self) -> (&Engine, &mut StoreObjects) {
+    pub(crate) fn engine_and_objects_mut(
+        &mut self,
+    ) -> (&Engine, &mut StoreObjects) {
         (&self.inner.store.engine, &mut self.inner.objects)
     }
 
@@ -240,8 +250,12 @@ impl<'a> StoreMut<'a> {
     /// Sets the unwind callback which will be invoked when the call finishes
     pub fn on_called<F>(&mut self, callback: F)
     where
-        F: FnOnce(StoreMut<'_>) -> Result<OnCalledAction, Box<dyn std::error::Error + Send + Sync>>
-            + Send
+        F: FnOnce(
+                StoreMut<'_>,
+            ) -> Result<
+                OnCalledAction,
+                Box<dyn std::error::Error + Send + Sync>,
+            > + Send
             + Sync
             + 'static,
     {

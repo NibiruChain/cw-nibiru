@@ -216,7 +216,10 @@ mod objects {
         ///
         /// # Safety
         /// Handling `InternalStoreHandle` values is unsafe because they do not track context ID.
-        pub unsafe fn from_internal(id: StoreId, internal: InternalStoreHandle<T>) -> Self {
+        pub unsafe fn from_internal(
+            id: StoreId,
+            internal: InternalStoreHandle<T>,
+        ) -> Self {
             Self { id, internal }
         }
     }

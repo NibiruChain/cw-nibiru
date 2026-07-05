@@ -167,11 +167,10 @@ endif
 
 # If findstring is not empty, then it have found the value
 
-exclude_tests := --exclude wasmer-c-api --exclude wasmer-cli --exclude wasmer-compiler-cli
+exclude_tests := --exclude wasmer-c-api --exclude wasmer-cli
 # We run integration tests separately (it requires building the c-api)
 exclude_tests += --exclude wasmer-integration-tests-cli
 exclude_tests += --exclude wasmer-integration-tests-ios
-exclude_tests += --exclude wasmer-swift
 
 ifneq (, $(findstring llvm,$(compilers)))
 	ENABLE_LLVM := 1
@@ -377,13 +376,10 @@ endif
 # install will go through.
 all: build-wasmer build-capi build-capi-headless
 
-check: check-wasmer check-wasmer-wasm check-capi
+check: check-wasmer check-capi
 
 check-wasmer:
 	$(CARGO_BINARY) check $(CARGO_TARGET_FLAG) --manifest-path lib/cli/Cargo.toml $(compiler_features) --bin wasmer --locked
-
-check-wasmer-wasm:
-	$(CARGO_BINARY) check --manifest-path lib/cli-compiler/Cargo.toml --target wasm32-wasi --features singlepass,cranelift --bin wasmer-compiler --locked
 
 check-capi:
 	RUSTFLAGS="${RUSTFLAGS}" $(CARGO_BINARY) check $(CARGO_TARGET_FLAG) --manifest-path lib/c-api/Cargo.toml  \
@@ -394,9 +390,6 @@ build-wasmer:
 	
 build-wasmer-v8:
 	$(CARGO_BINARY) build $(CARGO_TARGET_FLAG) --release --manifest-path lib/cli/Cargo.toml --no-default-features --features="v8" --bin wasmer --locked
-
-build-wasmer-wamr:
-	$(CARGO_BINARY) build $(CARGO_TARGET_FLAG) --release --manifest-path lib/cli/Cargo.toml --no-default-features --features="wamr" --bin wasmer --locked
 
 build-wasmer-wasmi:
 	$(CARGO_BINARY) build $(CARGO_TARGET_FLAG) --release --manifest-path lib/cli/Cargo.toml --no-default-features --features="wasmi" --bin wasmer --locked
@@ -412,9 +405,6 @@ build-wasmer-debug:
 
 bench:
 	$(CARGO_BINARY) bench $(CARGO_TARGET_FLAG) $(compiler_features)
-
-build-wasmer-wasm:
-	$(CARGO_BINARY) build --release --manifest-path lib/cli-compiler/Cargo.toml --target wasm32-wasi --features singlepass,cranelift --bin wasmer-compiler --locked
 
 # For best results ensure the release profile looks like the following
 # in Cargo.toml:
@@ -440,7 +430,7 @@ else
 endif
 
 build-docs:
-	$(CARGO_BINARY) doc $(CARGO_TARGET_FLAG) --release $(compiler_features) --document-private-items --no-deps --workspace --exclude wasmer-c-api --exclude wasmer-swift --locked
+	$(CARGO_BINARY) doc $(CARGO_TARGET_FLAG) --release $(compiler_features) --document-private-items --no-deps --workspace --exclude wasmer-c-api --locked
 
 # The tokio crate was excluded from the docs build because the code (which is not under our control)
 # does not currently compile its docs successfully
@@ -562,27 +552,16 @@ test-stage-2-test-compiler-cranelift-nostd:
 	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --manifest-path lib/compiler-cranelift/Cargo.toml --release --no-default-features --features=std --locked
 test-stage-3-test-compiler-singlepass-nostd:
 	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --manifest-path lib/compiler-singlepass/Cargo.toml --release --no-default-features --features=std --locked
-test-stage-4-wasmer-cli:
-	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --manifest-path lib/virtual-fs/Cargo.toml --release --locked
-	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --manifest-path lib/cli/Cargo.toml $(compiler_features) --release --locked
-
-# test examples
-test-stage-5-test-examples:
-	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) $(compiler_features) --features wasi --examples --locked
-test-stage-6-test-examples-release:
-	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --release $(compiler_features) --features wasi --examples --locked
 
 test-stage-7-capi-integration-tests:
 	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --release --package wasmer-c-api-test-runner --locked
 	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --release --package wasmer-capi-examples-runner --locked
 
-test: test-compilers test-packages test-examples
+test: test-compilers test-packages
 
 test-compilers: test-stage-0-wast
 
-test-packages: test-stage-1-test-all test-stage-2-test-compiler-cranelift-nostd test-stage-3-test-compiler-singlepass-nostd test-stage-4-wasmer-cli
-
-test-examples: test-stage-5-test-examples test-stage-6-test-examples-release
+test-packages: test-stage-1-test-all test-stage-2-test-compiler-cranelift-nostd test-stage-3-test-compiler-singlepass-nostd
 
 
 test-v8: test-v8-api
@@ -590,28 +569,10 @@ test-v8: test-v8-api
 test-v8-api:
 	CARGO_TERM_VERBOSE=true cargo nextest run --package=wasmer --release --features=v8 --no-default-features
 
-test-wamr: test-wamr-api
-
-test-wamr-api:
-	cargo nextest run --package=wasmer --release --features=wamr --no-default-features
-
 test-wasmi: test-wasmi-api
 
 test-wasmi-api:
 	cargo nextest run --package=wasmer --release --features=wasmi --no-default-features
-
-test-js: test-js-api test-js-wasi
-
-# TODO: disabled because the no-std / core feature doesn't actually work at the moment.
-# See https://github.com/wasmerio/wasmer/issues/3429
-# test-js-core:
-# 	cd lib/api && wasm-pack test --node -- --no-default-features --features js,core,wasm-types-polyfill,wat
-
-test-js-api:
-	cd lib/api && wasm-pack test --node -- --no-default-features --features js-default,wat
-
-test-js-wasi:
-	cd lib/wasix && wasm-pack test --node -- --no-default-features --features test-js,wasmer/js,wasmer/std
 
 #####
 #
@@ -656,20 +617,6 @@ test-capi-integration-%:
 	# Test the Wasmer C API examples
 	cd lib/c-api/examples; WASMER_CAPI_CONFIG=$(shell echo $@ | sed -e s/test-capi-integration-//) WASMER_DIR=`pwd`/../../../package make run
 
-test-wasi-unit:
-	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --manifest-path lib/wasi/Cargo.toml --release --locked
-
-test-wasi:
-	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --release --tests $(compiler_features) --locked -- wasi::wasitests
-
-test-wasi-fyi: build-wasmer
-	cd tests/wasi-fyi; \
-	./test.sh
-
-test-wasix: build-wasmer
-	cd tests/wasix; \
-	./test.sh
-
 test-integration-cli: build-wasmer build-capi package-capi-headless package distribution
 	cp ./dist/wasmer.tar.gz ./link.tar.gz
 	rustup target add wasm32-wasi
@@ -680,22 +627,11 @@ test-integration-cli-ci: require-nextest
 	rustup target add wasm32-wasi
 	$(CARGO_BINARY) nextest run $(CARGO_TARGET_FLAG) --features webc_runner -p wasmer-integration-tests-cli --locked
 
-test-integration-cli-wamr-ci: require-nextest build-wasmer-wamr
-	rustup target add wasm32-wasi
-	$(CARGO_BINARY) nextest run $(CARGO_TARGET_FLAG) --features webc_runner,wamr -p wasmer-integration-tests-cli --locked --no-fail-fast -E "not (test(deploy) | test(snapshot) | test(login) | test(init) | test(gen_c_header) | test(up_to_date) | test(publish) | test(create) | test(whoami) | test(config) | test(c_flags))"
-
 test-integration-cli-wasmi-ci: require-nextest build-wasmer-wasmi
 	rustup target add wasm32-wasi
-	$(CARGO_BINARY) nextest run $(CARGO_TARGET_FLAG) --features webc_runner,wamr -p wasmer-integration-tests-cli --locked --no-fail-fast -E "not (test(deploy) | test(snapshot) | test(login) | test(init) | test(gen_c_header) | test(up_to_date) | test(publish) | test(create) | test(whoami) | test(config) | test(c_flags))"
+	$(CARGO_BINARY) nextest run $(CARGO_TARGET_FLAG) --features webc_runner,wasmi -p wasmer-integration-tests-cli --locked --no-fail-fast -E "not (test(deploy) | test(snapshot) | test(login) | test(init) | test(gen_c_header) | test(up_to_date) | test(publish) | test(create) | test(whoami) | test(config) | test(c_flags))"
 
 
-test-integration-ios:
-	$(CARGO_BINARY) test $(CARGO_TARGET_FLAG) --features webc_runner -p wasmer-integration-tests-ios --locked
-
-generate-wasi-tests:
-# Uncomment the following for installing the toolchain
-#   cargo run -p wasi-test-generator -- -s
-	$(CARGO_BINARY) run $(CARGO_TARGET_FLAG) -p wasi-test-generator -- -g
 #####
 #
 # Packaging.
@@ -969,7 +905,7 @@ update-testsuite:
 
 lint-packages: RUSTFLAGS += -D dead-code -D nonstandard-style -D unused-imports -D unused-mut -D unused-variables -D unused-unsafe -D unreachable-patterns -D bad-style -D improper-ctypes -D unused-allocation -D unused-comparisons -D while-true -D unconditional-recursion -D bare-trait-objects -D function_item_references # TODO: add `-D missing-docs`
 lint-packages:
-	RUSTFLAGS="${RUSTFLAGS}" cargo clippy --all --exclude wasmer-cli --exclude wasmer-swift --locked -- -D clippy::all
+	RUSTFLAGS="${RUSTFLAGS}" cargo clippy --all --exclude wasmer-cli --locked -- -D clippy::all
 	RUSTFLAGS="${RUSTFLAGS}" cargo clippy --manifest-path lib/cli/Cargo.toml --locked $(compiler_features) -- -D clippy::all
 	RUSTFLAGS="${RUSTFLAGS}" cargo clippy --manifest-path fuzz/Cargo.toml --locked $(compiler_features) -- -D clippy::all
 

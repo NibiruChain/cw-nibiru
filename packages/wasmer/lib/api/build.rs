@@ -23,16 +23,17 @@ fn main() {
 
         // Read target arch from cargo env
         // Transform from cargo value to valid wasm-micro-runtime WAMR_BUILD_TARGET
-        let target_arch = match env::var("CARGO_CFG_TARGET_ARCH").unwrap().as_str() {
-            "x86" => "X86_32",
-            "x86_64" => "X86_64",
-            "arm" => "ARM",
-            "aarch64" => "AARCH64",
-            "mips" => "MIPS",
-            "powerpc" => "POWERPC",
-            "powerpc64" => "POWERPC64",
-            other => panic!("Unsupported CARGO_CFG_TARGET_ARCH: {}", other),
-        };
+        let target_arch =
+            match env::var("CARGO_CFG_TARGET_ARCH").unwrap().as_str() {
+                "x86" => "X86_32",
+                "x86_64" => "X86_64",
+                "arm" => "ARM",
+                "aarch64" => "AARCH64",
+                "mips" => "MIPS",
+                "powerpc" => "POWERPC",
+                "powerpc64" => "POWERPC64",
+                other => panic!("Unsupported CARGO_CFG_TARGET_ARCH: {}", other),
+            };
 
         // Cleanup tmp data from prior builds
         let wamr_dir = PathBuf::from(&crate_root).join("third_party/wamr");
@@ -53,7 +54,8 @@ fn main() {
         let _ = std::fs::remove_dir_all(&wamr_dir);
         std::fs::rename(zip_dir, &wamr_dir).expect("failed to rename wamr dir");
 
-        let wamr_platform_dir = wamr_dir.join("product-mini/platforms").join(target_os);
+        let wamr_platform_dir =
+            wamr_dir.join("product-mini/platforms").join(target_os);
         let mut dst = Config::new(wamr_platform_dir.as_path());
 
         dst.always_configure(true)
@@ -106,7 +108,9 @@ fn main() {
             // See: https://github.com/bytecodealliance/wasm-micro-runtime/pull/3889
             let mut lines = vec![];
             let cmake_file_path = wamr_platform_dir.join("CMakeLists.txt");
-            for line in std::fs::read_to_string(&cmake_file_path).unwrap().lines() {
+            for line in
+                std::fs::read_to_string(&cmake_file_path).unwrap().lines()
+            {
                 if !line.contains("-mfloat-abi=hard") {
                     lines.push(line.to_string())
                 }

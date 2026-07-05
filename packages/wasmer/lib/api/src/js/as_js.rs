@@ -44,7 +44,8 @@ pub fn param_from_js(ty: &Type, js_val: &JsValue) -> Value {
         Type::F32 => Value::F32(js_val.as_f64().unwrap() as _),
         Type::F64 => Value::F64(js_val.as_f64().unwrap()),
         Type::V128 => {
-            let big_num: u128 = js_sys::BigInt::from(js_val.clone()).try_into().unwrap();
+            let big_num: u128 =
+                js_sys::BigInt::from(js_val.clone()).try_into().unwrap();
             Value::V128(big_num)
         }
         Type::ExternRef | Type::FuncRef => unimplemented!(
@@ -87,7 +88,9 @@ impl AsJs for Imports {
     fn as_jsvalue(&self, store: &impl AsStoreRef) -> wasm_bindgen::JsValue {
         let imports_object = js_sys::Object::new();
         for (namespace, name, extern_) in self.iter() {
-            let val = unsafe { js_sys::Reflect::get(&imports_object, &namespace.into()).unwrap() };
+            let val = unsafe {
+                js_sys::Reflect::get(&imports_object, &namespace.into()).unwrap()
+            };
             if !val.is_undefined() {
                 // If the namespace is already set
 
@@ -143,15 +146,21 @@ impl AsJs for Imports {
         let object: js_sys::Object = value.clone().into();
         for module_entry in js_sys::Object::entries(&object).iter() {
             let module_entry: js_sys::Array = module_entry.into();
-            let module_name = module_entry.get(0).as_string().unwrap().to_string();
-            let module_import_object: js_sys::Object = module_entry.get(1).into();
-            for import_entry in js_sys::Object::entries(&module_import_object).iter() {
+            let module_name =
+                module_entry.get(0).as_string().unwrap().to_string();
+            let module_import_object: js_sys::Object =
+                module_entry.get(1).into();
+            for import_entry in
+                js_sys::Object::entries(&module_import_object).iter()
+            {
                 let import_entry: js_sys::Array = import_entry.into();
-                let import_name = import_entry.get(0).as_string().unwrap().to_string();
+                let import_name =
+                    import_entry.get(0).as_string().unwrap().to_string();
                 let import_js: wasm_bindgen::JsValue = import_entry.get(1);
                 let key = (module_name.clone(), import_name);
                 let extern_type = module_imports.get(&key).unwrap();
-                let extern_ = Extern::from_jsvalue(store, extern_type, &import_js)?;
+                let extern_ =
+                    Extern::from_jsvalue(store, extern_type, &import_js)?;
                 map.insert(key, extern_);
             }
         }
@@ -166,7 +175,9 @@ impl AsJs for Extern {
     fn as_jsvalue(&self, _store: &impl AsStoreRef) -> wasm_bindgen::JsValue {
         match self {
             Self::Memory(memory) => memory.0.handle.memory.clone().into(),
-            Self::Function(function) => function.0.handle.function.clone().into(),
+            Self::Function(function) => {
+                function.0.handle.function.clone().into()
+            }
             Self::Table(table) => table.0.handle.table.clone().into(),
             Self::Global(global) => global.0.handle.global.clone().into(),
         }
@@ -186,11 +197,9 @@ impl AsJs for Extern {
             ExternType::Global(global_type) => {
                 Ok(Self::Global(Global::from_jsvalue(store, global_type, val)?))
             }
-            ExternType::Function(function_type) => Ok(Self::Function(Function::from_jsvalue(
-                store,
-                function_type,
-                val,
-            )?)),
+            ExternType::Function(function_type) => Ok(Self::Function(
+                Function::from_jsvalue(store, function_type, val)?,
+            )),
             ExternType::Table(table_type) => {
                 Ok(Self::Table(Table::from_jsvalue(store, table_type, val)?))
             }
@@ -210,8 +219,11 @@ impl AsJs for Instance {
         value: &JsValue,
     ) -> Result<Self, JsError> {
         let js_instance: js_sys::WebAssembly::Instance = value.clone().into();
-        let (instance, exports) = JsInstance::from_module_and_instance(store, module, js_instance)
-            .map_err(|e| JsError::new(&format!("Can't get the instance: {:?}", e)))?;
+        let (instance, exports) =
+            JsInstance::from_module_and_instance(store, module, js_instance)
+                .map_err(|e| {
+                    JsError::new(&format!("Can't get the instance: {:?}", e))
+                })?;
         Ok(Instance {
             _inner: instance,
             module: module.clone(),

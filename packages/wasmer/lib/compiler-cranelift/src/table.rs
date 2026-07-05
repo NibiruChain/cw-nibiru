@@ -1,5 +1,7 @@
 use cranelift_codegen::cursor::FuncCursor;
-use cranelift_codegen::ir::{self, condcodes::IntCC, immediates::Imm64, InstBuilder};
+use cranelift_codegen::ir::{
+    self, condcodes::IntCC, immediates::Imm64, InstBuilder,
+};
 use cranelift_frontend::FunctionBuilder;
 
 /// Size of a WebAssembly table, in elements.
@@ -22,8 +24,12 @@ impl TableSize {
     /// Get a CLIF value representing the current bounds of this table.
     pub fn bound(&self, mut pos: FuncCursor, index_ty: ir::Type) -> ir::Value {
         match *self {
-            Self::Static { bound } => pos.ins().iconst(index_ty, Imm64::new(i64::from(bound))),
-            Self::Dynamic { bound_gv } => pos.ins().global_value(index_ty, bound_gv),
+            Self::Static { bound } => {
+                pos.ins().iconst(index_ty, Imm64::new(i64::from(bound)))
+            }
+            Self::Dynamic { bound_gv } => {
+                pos.ins().global_value(index_ty, bound_gv)
+            }
         }
     }
 }
@@ -57,9 +63,9 @@ impl TableData {
         let bound = self.bound.bound(pos.cursor(), index_ty);
 
         // `index > bound - 1` is the same as `index >= bound`.
-        let oob = pos
-            .ins()
-            .icmp(IntCC::UnsignedGreaterThanOrEqual, index, bound);
+        let oob =
+            pos.ins()
+                .icmp(IntCC::UnsignedGreaterThanOrEqual, index, bound);
 
         if !enable_table_access_spectre_mitigation {
             pos.ins().trapnz(oob, ir::TrapCode::TableOutOfBounds);

@@ -1,10 +1,13 @@
 use std::ptr;
 
-use crate::as_c::{self, param_from_c, result_to_value, type_to_c, valtype_to_type};
+use crate::as_c::{
+    self, param_from_c, result_to_value, type_to_c, valtype_to_type,
+};
 use crate::bindings::{
-    wasm_frame_copy, wasm_global_get, wasm_global_new, wasm_global_set, wasm_global_type,
-    wasm_globaltype_content, wasm_globaltype_mutability, wasm_globaltype_new,
-    wasm_mutability_enum_WASM_CONST, wasm_mutability_enum_WASM_VAR, wasm_mutability_t, wasm_val_t,
+    wasm_frame_copy, wasm_global_get, wasm_global_new, wasm_global_set,
+    wasm_global_type, wasm_globaltype_content, wasm_globaltype_mutability,
+    wasm_globaltype_new, wasm_mutability_enum_WASM_CONST,
+    wasm_mutability_enum_WASM_VAR, wasm_mutability_t, wasm_val_t,
     wasm_val_t__bindgen_ty_1, wasm_valtype_new,
 };
 use crate::c_api::bindings::wasm_global_as_extern;
@@ -54,12 +57,17 @@ impl Global {
             wasm_mutability_enum_WASM_CONST
         } as wasm_mutability_t;
 
-        let wamr_global_type =
-            unsafe { wasm_globaltype_new(wasm_valtype_new(wamr_type), wamr_mutability) };
+        let wamr_global_type = unsafe {
+            wasm_globaltype_new(wasm_valtype_new(wamr_type), wamr_mutability)
+        };
 
         Ok(Self {
             handle: unsafe {
-                wasm_global_new(store.inner.store.inner, wamr_global_type, &wamr_value)
+                wasm_global_new(
+                    store.inner.store.inner,
+                    wamr_global_type,
+                    &wamr_value,
+                )
             },
         })
     }
@@ -86,7 +94,11 @@ impl Global {
         param_from_c(&out)
     }
 
-    pub fn set(&self, store: &mut impl AsStoreMut, val: Value) -> Result<(), RuntimeError> {
+    pub fn set(
+        &self,
+        store: &mut impl AsStoreMut,
+        val: Value,
+    ) -> Result<(), RuntimeError> {
         if val.ty() != self.ty(store).ty {
             return Err(RuntimeError::new(format!(
                 "Incompatible types: {} != {}",
@@ -106,7 +118,10 @@ impl Global {
         Ok(())
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, vm_global: VMGlobal) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_global: VMGlobal,
+    ) -> Self {
         Self { handle: vm_global }
     }
 

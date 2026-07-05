@@ -2,7 +2,9 @@ use std::{any::Any, fmt::Debug, marker::PhantomData};
 
 use crate::vm::VMFunctionEnvironment;
 
-use crate::store::{AsStoreMut, AsStoreRef, StoreHandle, StoreMut, StoreObjects, StoreRef};
+use crate::store::{
+    AsStoreMut, AsStoreRef, StoreHandle, StoreMut, StoreObjects, StoreRef,
+};
 
 #[derive(Debug)]
 #[repr(transparent)]
@@ -41,7 +43,9 @@ impl<T> FunctionEnv<T> {
     }
 
     #[allow(dead_code)] // This function is only used in js
-    pub(crate) fn from_handle(handle: StoreHandle<VMFunctionEnvironment>) -> Self {
+    pub(crate) fn from_handle(
+        handle: StoreHandle<VMFunctionEnvironment>,
+    ) -> Self {
         Self {
             handle,
             marker: PhantomData,

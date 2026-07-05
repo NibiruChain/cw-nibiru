@@ -1,5 +1,7 @@
 use crate::store::AsStoreRef;
-use crate::{Extern, Function, Global, Memory, Table, TypedFunction, WasmTypeList};
+use crate::{
+    Extern, Function, Global, Memory, Table, TypedFunction, WasmTypeList,
+};
 use indexmap::IndexMap;
 use std::fmt;
 use std::iter::{ExactSizeIterator, FromIterator};
@@ -106,7 +108,10 @@ impl Exports {
     ///
     /// If you want to get an export dynamically handling manually
     /// type checking manually, please use `get_extern`.
-    pub fn get<'a, T: Exportable<'a>>(&'a self, name: &str) -> Result<&'a T, ExportError> {
+    pub fn get<'a, T: Exportable<'a>>(
+        &'a self,
+        name: &str,
+    ) -> Result<&'a T, ExportError> {
         match self.map.get(name) {
             None => Err(ExportError::Missing(name.to_string())),
             Some(extern_) => T::get_self_from_extern(extern_),
@@ -149,7 +154,10 @@ impl Exports {
     }
 
     /// Hack to get this working with nativefunc too
-    pub fn get_with_generics<'a, T, Args, Rets>(&'a self, name: &str) -> Result<T, ExportError>
+    pub fn get_with_generics<'a, T, Args, Rets>(
+        &'a self,
+        name: &str,
+    ) -> Result<T, ExportError>
     where
         Args: WasmTypeList,
         Rets: WasmTypeList,
@@ -175,7 +183,9 @@ impl Exports {
     }
 
     /// Get an iterator over the exports.
-    pub fn iter(&self) -> ExportsIterator<impl Iterator<Item = (&String, &Extern)>> {
+    pub fn iter(
+        &self,
+    ) -> ExportsIterator<impl Iterator<Item = (&String, &Extern)>> {
         ExportsIterator {
             iter: self.map.iter(),
         }
@@ -221,7 +231,9 @@ where
     I: Iterator<Item = (&'a String, &'a Extern)> + Sized,
 {
     /// Get only the functions.
-    pub fn functions(self) -> impl Iterator<Item = (&'a String, &'a Function)> + Sized {
+    pub fn functions(
+        self,
+    ) -> impl Iterator<Item = (&'a String, &'a Function)> + Sized {
         self.iter.filter_map(|(name, export)| match export {
             Extern::Function(function) => Some((name, function)),
             _ => None,
@@ -229,7 +241,9 @@ where
     }
 
     /// Get only the memories.
-    pub fn memories(self) -> impl Iterator<Item = (&'a String, &'a Memory)> + Sized {
+    pub fn memories(
+        self,
+    ) -> impl Iterator<Item = (&'a String, &'a Memory)> + Sized {
         self.iter.filter_map(|(name, export)| match export {
             Extern::Memory(memory) => Some((name, memory)),
             _ => None,
@@ -237,7 +251,9 @@ where
     }
 
     /// Get only the globals.
-    pub fn globals(self) -> impl Iterator<Item = (&'a String, &'a Global)> + Sized {
+    pub fn globals(
+        self,
+    ) -> impl Iterator<Item = (&'a String, &'a Global)> + Sized {
         self.iter.filter_map(|(name, export)| match export {
             Extern::Global(global) => Some((name, global)),
             _ => None,
@@ -245,7 +261,9 @@ where
     }
 
     /// Get only the tables.
-    pub fn tables(self) -> impl Iterator<Item = (&'a String, &'a Table)> + Sized {
+    pub fn tables(
+        self,
+    ) -> impl Iterator<Item = (&'a String, &'a Table)> + Sized {
         self.iter.filter_map(|(name, export)| match export {
             Extern::Table(table) => Some((name, table)),
             _ => None,
@@ -287,21 +305,31 @@ pub trait Exportable<'a>: Sized {
     /// from an [`Instance`] by name.
     ///
     /// [`Instance`]: crate::Instance
-    fn get_self_from_extern(_extern: &'a Extern) -> Result<&'a Self, ExportError>;
+    fn get_self_from_extern(
+        _extern: &'a Extern,
+    ) -> Result<&'a Self, ExportError>;
 }
 
 /// A trait for accessing exports (like [`Exportable`]) but it takes generic
 /// `Args` and `Rets` parameters so that `TypedFunction` can be accessed directly
 /// as well.
-pub trait ExportableWithGenerics<'a, Args: WasmTypeList, Rets: WasmTypeList>: Sized {
+pub trait ExportableWithGenerics<'a, Args: WasmTypeList, Rets: WasmTypeList>:
+    Sized
+{
     /// Get an export with the given generics.
-    fn get_self_from_extern_with_generics(_extern: &'a Extern) -> Result<Self, ExportError>;
+    fn get_self_from_extern_with_generics(
+        _extern: &'a Extern,
+    ) -> Result<Self, ExportError>;
 }
 
 /// We implement it for all concrete [`Exportable`] types (that are `Clone`)
 /// with empty `Args` and `Rets`.
-impl<'a, T: Exportable<'a> + Clone + 'static> ExportableWithGenerics<'a, (), ()> for T {
-    fn get_self_from_extern_with_generics(_extern: &'a Extern) -> Result<Self, ExportError> {
+impl<'a, T: Exportable<'a> + Clone + 'static> ExportableWithGenerics<'a, (), ()>
+    for T
+{
+    fn get_self_from_extern_with_generics(
+        _extern: &'a Extern,
+    ) -> Result<Self, ExportError> {
         T::get_self_from_extern(_extern).cloned()
     }
 }

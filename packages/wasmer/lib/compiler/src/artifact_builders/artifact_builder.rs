@@ -6,13 +6,13 @@ use super::trampoline::{libcall_trampoline_len, make_libcall_trampolines};
 
 #[cfg(feature = "compiler")]
 use crate::{
-    serialize::SerializableCompilation, types::target::Target, EngineInner, ModuleEnvironment,
-    ModuleMiddlewareChain,
+    serialize::SerializableCompilation, types::target::Target, EngineInner,
+    ModuleEnvironment, ModuleMiddlewareChain,
 };
 use crate::{
     serialize::{
-        ArchivedSerializableCompilation, ArchivedSerializableModule, MetadataHeader,
-        SerializableModule,
+        ArchivedSerializableCompilation, ArchivedSerializableModule,
+        MetadataHeader, SerializableModule,
     },
     types::{
         function::{CompiledFunctionFrameInfo, Dwarf, FunctionBody},
@@ -112,9 +112,12 @@ impl ArtifactBuild {
             .into_boxed_slice();
 
         // Synthesize a custom section to hold the libcall trampolines.
-        let mut function_frame_info = PrimaryMap::with_capacity(compilation.functions.len());
-        let mut function_bodies = PrimaryMap::with_capacity(compilation.functions.len());
-        let mut function_relocations = PrimaryMap::with_capacity(compilation.functions.len());
+        let mut function_frame_info =
+            PrimaryMap::with_capacity(compilation.functions.len());
+        let mut function_bodies =
+            PrimaryMap::with_capacity(compilation.functions.len());
+        let mut function_relocations =
+            PrimaryMap::with_capacity(compilation.functions.len());
         for (_, func) in compilation.functions.into_iter() {
             function_bodies.push(func.body);
             function_relocations.push(func.relocations);
@@ -127,8 +130,10 @@ impl ArtifactBuild {
             .map(|(_, section)| section.relocations.clone())
             .collect::<PrimaryMap<SectionIndex, _>>();
         let libcall_trampolines_section = make_libcall_trampolines(target);
-        custom_section_relocations.push(libcall_trampolines_section.relocations.clone());
-        let libcall_trampolines = custom_sections.push(libcall_trampolines_section);
+        custom_section_relocations
+            .push(libcall_trampolines_section.relocations.clone());
+        let libcall_trampolines =
+            custom_sections.push(libcall_trampolines_section);
         let libcall_trampoline_len = libcall_trampoline_len(target) as u32;
         let cpu_features = compiler.get_cpu_features_used(target.cpu_features());
 
@@ -137,7 +142,8 @@ impl ArtifactBuild {
             function_relocations,
             function_frame_info,
             function_call_trampolines: compilation.function_call_trampolines,
-            dynamic_function_trampolines: compilation.dynamic_function_trampolines,
+            dynamic_function_trampolines: compilation
+                .dynamic_function_trampolines,
             custom_sections,
             custom_section_relocations,
             debug: compilation.debug,
@@ -159,32 +165,44 @@ impl ArtifactBuild {
     }
 
     /// Get Functions Bodies ref
-    pub fn get_function_bodies_ref(&self) -> &PrimaryMap<LocalFunctionIndex, FunctionBody> {
+    pub fn get_function_bodies_ref(
+        &self,
+    ) -> &PrimaryMap<LocalFunctionIndex, FunctionBody> {
         &self.serializable.compilation.function_bodies
     }
 
     /// Get Functions Call Trampolines ref
-    pub fn get_function_call_trampolines_ref(&self) -> &PrimaryMap<SignatureIndex, FunctionBody> {
+    pub fn get_function_call_trampolines_ref(
+        &self,
+    ) -> &PrimaryMap<SignatureIndex, FunctionBody> {
         &self.serializable.compilation.function_call_trampolines
     }
 
     /// Get Dynamic Functions Call Trampolines ref
-    pub fn get_dynamic_function_trampolines_ref(&self) -> &PrimaryMap<FunctionIndex, FunctionBody> {
+    pub fn get_dynamic_function_trampolines_ref(
+        &self,
+    ) -> &PrimaryMap<FunctionIndex, FunctionBody> {
         &self.serializable.compilation.dynamic_function_trampolines
     }
 
     /// Get Custom Sections ref
-    pub fn get_custom_sections_ref(&self) -> &PrimaryMap<SectionIndex, CustomSection> {
+    pub fn get_custom_sections_ref(
+        &self,
+    ) -> &PrimaryMap<SectionIndex, CustomSection> {
         &self.serializable.compilation.custom_sections
     }
 
     /// Get Function Relocations
-    pub fn get_function_relocations(&self) -> &PrimaryMap<LocalFunctionIndex, Vec<Relocation>> {
+    pub fn get_function_relocations(
+        &self,
+    ) -> &PrimaryMap<LocalFunctionIndex, Vec<Relocation>> {
         &self.serializable.compilation.function_relocations
     }
 
     /// Get Function Relocations ref
-    pub fn get_custom_section_relocations_ref(&self) -> &PrimaryMap<SectionIndex, Vec<Relocation>> {
+    pub fn get_custom_section_relocations_ref(
+        &self,
+    ) -> &PrimaryMap<SectionIndex, Vec<Relocation>> {
         &self.serializable.compilation.custom_section_relocations
     }
 
@@ -204,24 +222,30 @@ impl ArtifactBuild {
     }
 
     /// Get Function Relocations ref
-    pub fn get_frame_info_ref(&self) -> &PrimaryMap<LocalFunctionIndex, CompiledFunctionFrameInfo> {
+    pub fn get_frame_info_ref(
+        &self,
+    ) -> &PrimaryMap<LocalFunctionIndex, CompiledFunctionFrameInfo> {
         &self.serializable.compilation.function_frame_info
     }
 }
 
 impl<'a> ArtifactCreate<'a> for ArtifactBuild {
     type OwnedDataInitializer = &'a OwnedDataInitializer;
-    type OwnedDataInitializerIterator = core::slice::Iter<'a, OwnedDataInitializer>;
+    type OwnedDataInitializerIterator =
+        core::slice::Iter<'a, OwnedDataInitializer>;
 
     fn create_module_info(&self) -> Arc<ModuleInfo> {
         self.serializable.compile_info.module.clone()
     }
 
     fn set_module_info_name(&mut self, name: String) -> bool {
-        Arc::get_mut(&mut self.serializable.compile_info.module).map_or(false, |module_info| {
-            module_info.name = Some(name.to_string());
-            true
-        })
+        Arc::get_mut(&mut self.serializable.compile_info.module).map_or(
+            false,
+            |module_info| {
+                module_info.name = Some(name.to_string());
+                true
+            },
+        )
     }
 
     fn module_info(&self) -> &ModuleInfo {
@@ -295,8 +319,12 @@ self_cell!(
 
 #[cfg(feature = "artifact-size")]
 impl loupe::MemoryUsage for ArtifactBuildFromArchiveCell {
-    fn size_of_val(&self, _tracker: &mut dyn loupe::MemoryUsageTracker) -> usize {
-        std::mem::size_of_val(self.borrow_owner()) + std::mem::size_of_val(self.borrow_dependent())
+    fn size_of_val(
+        &self,
+        _tracker: &mut dyn loupe::MemoryUsageTracker,
+    ) -> usize {
+        std::mem::size_of_val(self.borrow_owner())
+            + std::mem::size_of_val(self.borrow_dependent())
     }
 }
 
@@ -316,7 +344,10 @@ impl ArtifactBuildFromArchive {
         buffer: OwnedBuffer,
         module_builder: impl FnOnce(
             &OwnedBuffer,
-        ) -> Result<&ArchivedSerializableModule, DeserializeError>,
+        ) -> Result<
+            &ArchivedSerializableModule,
+            DeserializeError,
+        >,
     ) -> Result<Self, DeserializeError> {
         let mut compile_info = MaybeUninit::uninit();
 
@@ -324,7 +355,9 @@ impl ArtifactBuildFromArchive {
             let module = module_builder(buffer)?;
             compile_info = MaybeUninit::new(
                 rkyv::deserialize::<_, RkyvError>(&module.compile_info)
-                    .map_err(|e| DeserializeError::CorruptedBinary(format!("{:?}", e)))?,
+                    .map_err(|e| {
+                        DeserializeError::CorruptedBinary(format!("{:?}", e))
+                    })?,
             );
             ModuleFromArchive::from_serializable_module(module)
         })?;
@@ -343,7 +376,9 @@ impl ArtifactBuildFromArchive {
     }
 
     /// Get Functions Bodies ref
-    pub fn get_function_bodies_ref(&self) -> &ArchivedPrimaryMap<LocalFunctionIndex, FunctionBody> {
+    pub fn get_function_bodies_ref(
+        &self,
+    ) -> &ArchivedPrimaryMap<LocalFunctionIndex, FunctionBody> {
         &self.cell.borrow_dependent().compilation.function_bodies
     }
 
@@ -370,7 +405,9 @@ impl ArtifactBuildFromArchive {
     }
 
     /// Get Custom Sections ref
-    pub fn get_custom_sections_ref(&self) -> &ArchivedPrimaryMap<SectionIndex, CustomSection> {
+    pub fn get_custom_sections_ref(
+        &self,
+    ) -> &ArchivedPrimaryMap<SectionIndex, CustomSection> {
         &self.cell.borrow_dependent().compilation.custom_sections
     }
 
@@ -433,7 +470,10 @@ impl ArtifactBuildFromArchive {
     /// Get Function Relocations ref
     pub fn deserialize_frame_info_ref(
         &self,
-    ) -> Result<PrimaryMap<LocalFunctionIndex, CompiledFunctionFrameInfo>, DeserializeError> {
+    ) -> Result<
+        PrimaryMap<LocalFunctionIndex, CompiledFunctionFrameInfo>,
+        DeserializeError,
+    > {
         rkyv::deserialize::<_, RkyvError>(
             &self.cell.borrow_dependent().compilation.function_frame_info,
         )
@@ -443,17 +483,21 @@ impl ArtifactBuildFromArchive {
 
 impl<'a> ArtifactCreate<'a> for ArtifactBuildFromArchive {
     type OwnedDataInitializer = &'a ArchivedOwnedDataInitializer;
-    type OwnedDataInitializerIterator = core::slice::Iter<'a, ArchivedOwnedDataInitializer>;
+    type OwnedDataInitializerIterator =
+        core::slice::Iter<'a, ArchivedOwnedDataInitializer>;
 
     fn create_module_info(&self) -> Arc<ModuleInfo> {
         self.compile_info.module.clone()
     }
 
     fn set_module_info_name(&mut self, name: String) -> bool {
-        Arc::get_mut(&mut self.compile_info.module).map_or(false, |module_info| {
-            module_info.name = Some(name.to_string());
-            true
-        })
+        Arc::get_mut(&mut self.compile_info.module).map_or(
+            false,
+            |module_info| {
+                module_info.name = Some(name.to_string());
+                true
+            },
+        )
     }
 
     fn module_info(&self) -> &ModuleInfo {
@@ -488,21 +532,25 @@ impl<'a> ArtifactCreate<'a> for ArtifactBuildFromArchive {
         // deserialized from a file makes little sense, so hopefully, this is not a
         // common use-case.
 
-        let mut module: SerializableModule =
-            rkyv::deserialize::<_, RkyvError>(self.cell.borrow_dependent().original_module)
-                .map_err(|e| SerializeError::Generic(e.to_string()))?;
+        let mut module: SerializableModule = rkyv::deserialize::<_, RkyvError>(
+            self.cell.borrow_dependent().original_module,
+        )
+        .map_err(|e| SerializeError::Generic(e.to_string()))?;
         module.compile_info = self.compile_info.clone();
         serialize_module(&module)
     }
 }
 
-fn serialize_module(module: &SerializableModule) -> Result<Vec<u8>, SerializeError> {
+fn serialize_module(
+    module: &SerializableModule,
+) -> Result<Vec<u8>, SerializeError> {
     let serialized_data = module.serialize()?;
     assert!(std::mem::align_of::<SerializableModule>() <= MetadataHeader::ALIGN);
 
     let mut metadata_binary = vec![];
     metadata_binary.extend(ArtifactBuild::MAGIC_HEADER);
-    metadata_binary.extend(MetadataHeader::new(serialized_data.len()).into_bytes());
+    metadata_binary
+        .extend(MetadataHeader::new(serialized_data.len()).into_bytes());
     metadata_binary.extend(serialized_data);
     Ok(metadata_binary)
 }

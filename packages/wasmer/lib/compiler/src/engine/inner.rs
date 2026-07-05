@@ -7,7 +7,8 @@ use crate::{
         function::FunctionBodyLike,
         section::{CustomSectionLike, CustomSectionProtection, SectionIndex},
     },
-    Artifact, BaseTunables, CodeMemory, FunctionExtent, GlobalFrameInfoRegistration, Tunables,
+    Artifact, BaseTunables, CodeMemory, FunctionExtent,
+    GlobalFrameInfoRegistration, Tunables,
 };
 #[cfg(feature = "compiler")]
 use crate::{Compiler, CompilerConfig};
@@ -22,15 +23,15 @@ use std::sync::{Arc, Mutex};
 
 #[cfg(not(target_arch = "wasm32"))]
 use wasmer_types::{
-    entity::PrimaryMap, DeserializeError, FunctionIndex, FunctionType, LocalFunctionIndex,
-    SignatureIndex,
+    entity::PrimaryMap, DeserializeError, FunctionIndex, FunctionType,
+    LocalFunctionIndex, SignatureIndex,
 };
 use wasmer_types::{CompileError, Features, HashAlgorithm, ModuleInfo};
 
 #[cfg(not(target_arch = "wasm32"))]
 use wasmer_vm::{
-    FunctionBodyPtr, SectionBodyPtr, SignatureRegistry, VMFunctionBody, VMSharedSignatureIndex,
-    VMTrampoline,
+    FunctionBodyPtr, SectionBodyPtr, SignatureRegistry, VMFunctionBody,
+    VMSharedSignatureIndex, VMTrampoline,
 };
 
 /// A WebAssembly `Universal` Engine.
@@ -163,14 +164,20 @@ impl Engine {
 
     /// Register a signature
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn register_signature(&self, func_type: &FunctionType) -> VMSharedSignatureIndex {
+    pub fn register_signature(
+        &self,
+        func_type: &FunctionType,
+    ) -> VMSharedSignatureIndex {
         let compiler = self.inner();
         compiler.signatures().register(func_type)
     }
 
     /// Lookup a signature
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn lookup_signature(&self, sig: VMSharedSignatureIndex) -> Option<FunctionType> {
+    pub fn lookup_signature(
+        &self,
+        sig: VMSharedSignatureIndex,
+    ) -> Option<FunctionType> {
         let compiler = self.inner();
         compiler.signatures().lookup(sig)
     }
@@ -245,7 +252,8 @@ impl Engine {
     ) -> Result<Arc<Artifact>, DeserializeError> {
         let file = std::fs::File::open(file_ref)?;
         self.deserialize(
-            OwnedBuffer::from_file(&file).map_err(|e| DeserializeError::Generic(e.to_string()))?,
+            OwnedBuffer::from_file(&file)
+                .map_err(|e| DeserializeError::Generic(e.to_string()))?,
         )
     }
 
@@ -261,7 +269,8 @@ impl Engine {
     ) -> Result<Arc<Artifact>, DeserializeError> {
         let file = std::fs::File::open(file_ref)?;
         self.deserialize_unchecked(
-            OwnedBuffer::from_file(&file).map_err(|e| DeserializeError::Generic(e.to_string()))?,
+            OwnedBuffer::from_file(&file)
+                .map_err(|e| DeserializeError::Generic(e.to_string()))?,
         )
     }
 
@@ -281,7 +290,10 @@ impl Engine {
 
     /// Attach a Tunable to this engine
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn set_tunables(&mut self, tunables: impl Tunables + Send + Sync + 'static) {
+    pub fn set_tunables(
+        &mut self,
+        tunables: impl Tunables + Send + Sync + 'static,
+    ) {
         self.tunables = Arc::new(tunables);
     }
 
@@ -352,9 +364,13 @@ impl EngineInner {
         &'a mut self,
         _module: &ModuleInfo,
         functions: impl ExactSizeIterator<Item = &'a FunctionBody> + 'a,
-        function_call_trampolines: impl ExactSizeIterator<Item = &'a FunctionBody> + 'a,
-        dynamic_function_trampolines: impl ExactSizeIterator<Item = &'a FunctionBody> + 'a,
-        custom_sections: impl ExactSizeIterator<Item = &'a CustomSection> + Clone + 'a,
+        function_call_trampolines: impl ExactSizeIterator<Item = &'a FunctionBody>
+            + 'a,
+        dynamic_function_trampolines: impl ExactSizeIterator<Item = &'a FunctionBody>
+            + 'a,
+        custom_sections: impl ExactSizeIterator<Item = &'a CustomSection>
+            + Clone
+            + 'a,
     ) -> Result<
         (
             PrimaryMap<LocalFunctionIndex, FunctionExtent>,
@@ -375,26 +391,31 @@ impl EngineInner {
             .chain(function_call_trampolines)
             .chain(dynamic_function_trampolines)
             .collect::<Vec<_>>();
-        let (executable_sections, data_sections): (Vec<_>, _) = custom_sections
-            .clone()
-            .partition(|section| section.protection() == CustomSectionProtection::ReadExecute);
+        let (executable_sections, data_sections): (Vec<_>, _) =
+            custom_sections.clone().partition(|section| {
+                section.protection() == CustomSectionProtection::ReadExecute
+            });
         self.code_memory.push(CodeMemory::new());
 
-        let (mut allocated_functions, allocated_executable_sections, allocated_data_sections) =
-            self.code_memory
-                .last_mut()
-                .unwrap()
-                .allocate(
-                    function_bodies.as_slice(),
-                    executable_sections.as_slice(),
-                    data_sections.as_slice(),
-                )
-                .map_err(|message| {
-                    CompileError::Resource(format!(
-                        "failed to allocate memory for functions: {}",
-                        message
-                    ))
-                })?;
+        let (
+            mut allocated_functions,
+            allocated_executable_sections,
+            allocated_data_sections,
+        ) = self
+            .code_memory
+            .last_mut()
+            .unwrap()
+            .allocate(
+                function_bodies.as_slice(),
+                executable_sections.as_slice(),
+                data_sections.as_slice(),
+            )
+            .map_err(|message| {
+                CompileError::Resource(format!(
+                    "failed to allocate memory for functions: {}",
+                    message
+                ))
+            })?;
 
         let allocated_functions_result = allocated_functions
             .drain(0..functions_len)
@@ -404,14 +425,17 @@ impl EngineInner {
             })
             .collect::<PrimaryMap<LocalFunctionIndex, _>>();
 
-        let mut allocated_function_call_trampolines: PrimaryMap<SignatureIndex, VMTrampoline> =
-            PrimaryMap::new();
+        let mut allocated_function_call_trampolines: PrimaryMap<
+            SignatureIndex,
+            VMTrampoline,
+        > = PrimaryMap::new();
         for ptr in allocated_functions
             .drain(0..function_call_trampolines_len)
             .map(|slice| slice.as_ptr())
         {
-            let trampoline =
-                unsafe { std::mem::transmute::<*const VMFunctionBody, VMTrampoline>(ptr) };
+            let trampoline = unsafe {
+                std::mem::transmute::<*const VMFunctionBody, VMTrampoline>(ptr)
+            };
             allocated_function_call_trampolines.push(trampoline);
         }
 
@@ -425,7 +449,9 @@ impl EngineInner {
         let allocated_custom_sections = custom_sections
             .map(|section| {
                 SectionBodyPtr(
-                    if section.protection() == CustomSectionProtection::ReadExecute {
+                    if section.protection()
+                        == CustomSectionProtection::ReadExecute
+                    {
                         exec_iter.next()
                     } else {
                         data_iter.next()
@@ -452,14 +478,20 @@ impl EngineInner {
 
     #[cfg(not(target_arch = "wasm32"))]
     /// Register DWARF-type exception handling information associated with the code.
-    pub(crate) fn publish_eh_frame(&mut self, eh_frame: Option<&[u8]>) -> Result<(), CompileError> {
+    pub(crate) fn publish_eh_frame(
+        &mut self,
+        eh_frame: Option<&[u8]>,
+    ) -> Result<(), CompileError> {
         self.code_memory
             .last_mut()
             .unwrap()
             .unwind_registry_mut()
             .publish(eh_frame)
             .map_err(|e| {
-                CompileError::Resource(format!("Error while publishing the unwind code: {}", e))
+                CompileError::Resource(format!(
+                    "Error while publishing the unwind code: {}",
+                    e
+                ))
             })?;
         Ok(())
     }
@@ -472,7 +504,10 @@ impl EngineInner {
 
     #[cfg(not(target_arch = "wasm32"))]
     /// Register the frame info for the code memory
-    pub(crate) fn register_frame_info(&mut self, frame_info: GlobalFrameInfoRegistration) {
+    pub(crate) fn register_frame_info(
+        &mut self,
+        frame_info: GlobalFrameInfoRegistration,
+    ) {
         self.code_memory
             .last_mut()
             .unwrap()

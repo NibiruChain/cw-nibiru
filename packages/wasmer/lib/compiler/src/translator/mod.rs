@@ -13,10 +13,12 @@ mod state;
 mod error;
 mod sections;
 
-pub use self::environ::{FunctionBinaryReader, FunctionBodyData, ModuleEnvironment};
+pub use self::environ::{
+    FunctionBinaryReader, FunctionBodyData, ModuleEnvironment,
+};
 pub use self::middleware::{
-    FunctionMiddleware, MiddlewareBinaryReader, MiddlewareReaderState, ModuleMiddleware,
-    ModuleMiddlewareChain,
+    FunctionMiddleware, MiddlewareBinaryReader, MiddlewareReaderState,
+    ModuleMiddleware, ModuleMiddlewareChain,
 };
 pub use self::module::translate_module;
 pub use self::sections::{wpheaptype_to_type, wptype_to_type};

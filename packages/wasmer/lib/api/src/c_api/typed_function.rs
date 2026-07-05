@@ -9,8 +9,9 @@
 //! ```
 use crate::as_c::result_to_value;
 use crate::bindings::{
-    wasm_byte_vec_t, wasm_extern_as_func, wasm_func_call, wasm_func_t, wasm_global_set,
-    wasm_global_t, wasm_trap_message, wasm_val_vec_new, wasm_val_vec_new_uninitialized,
+    wasm_byte_vec_t, wasm_extern_as_func, wasm_func_call, wasm_func_t,
+    wasm_global_set, wasm_global_t, wasm_trap_message, wasm_val_vec_new,
+    wasm_val_vec_new_uninitialized,
 };
 
 use crate::as_c::param_from_c;
@@ -147,15 +148,24 @@ impl_native_traits!(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11);
 impl_native_traits!(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12);
 impl_native_traits!(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13);
 impl_native_traits!(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14);
-impl_native_traits!(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15);
-impl_native_traits!(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16);
-impl_native_traits!(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17);
 impl_native_traits!(
-    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18
+    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15
 );
 impl_native_traits!(
-    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19
+    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16
 );
 impl_native_traits!(
-    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20
+    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17
+);
+impl_native_traits!(
+    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17,
+    A18
+);
+impl_native_traits!(
+    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17,
+    A18, A19
+);
+impl_native_traits!(
+    A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17,
+    A18, A19, A20
 );

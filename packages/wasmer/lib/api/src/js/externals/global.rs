@@ -43,7 +43,9 @@ impl Global {
             Value::I64(i) => ("i64", JsValue::from_f64(i as _)),
             Value::F32(f) => ("f32", JsValue::from_f64(f as _)),
             Value::F64(f) => ("f64", JsValue::from_f64(f)),
-            _ => unimplemented!("The type is not yet supported in the JS Global API"),
+            _ => unimplemented!(
+                "The type is not yet supported in the JS Global API"
+            ),
         };
         // This is the value type as string, even though is incorrectly called "value"
         // in the JS API.
@@ -99,7 +101,11 @@ impl Global {
         }
     }
 
-    pub fn set(&self, store: &mut impl AsStoreMut, val: Value) -> Result<(), RuntimeError> {
+    pub fn set(
+        &self,
+        store: &mut impl AsStoreMut,
+        val: Value,
+    ) -> Result<(), RuntimeError> {
         if !val.is_from_store(store) {
             return Err(RuntimeError::new(
                 "cross-`WasmerEnv` values are not supported",
@@ -119,7 +125,8 @@ impl Global {
             Value::F64(f) => JsValue::from_f64(f),
             _ => {
                 return Err(RuntimeError::new(
-                    "The type is not yet supported in the JS Global API".to_owned(),
+                    "The type is not yet supported in the JS Global API"
+                        .to_owned(),
                 ))
             }
         };
@@ -127,7 +134,10 @@ impl Global {
         Ok(())
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, vm_global: VMGlobal) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_global: VMGlobal,
+    ) -> Self {
         use crate::js::store::StoreObject;
         VMGlobal::list_mut(store.objects_mut()).push(vm_global.clone());
         Self { handle: vm_global }

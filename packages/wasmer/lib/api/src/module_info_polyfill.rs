@@ -9,14 +9,16 @@ use core::convert::TryFrom;
 use std::vec::Vec;
 use wasmer_types::entity::EntityRef;
 use wasmer_types::{
-    ExportIndex, FunctionIndex, FunctionType, GlobalIndex, GlobalType, ImportIndex, MemoryIndex,
-    MemoryType, ModuleInfo, Pages, SignatureIndex, TableIndex, TableType, Type,
+    ExportIndex, FunctionIndex, FunctionType, GlobalIndex, GlobalType,
+    ImportIndex, MemoryIndex, MemoryType, ModuleInfo, Pages, SignatureIndex,
+    TableIndex, TableType, Type,
 };
 
 use wasmparser::{
-    self, BinaryReaderError, Export, ExportSectionReader, ExternalKind, FunctionSectionReader,
-    GlobalSectionReader, GlobalType as WPGlobalType, ImportSectionReader, MemorySectionReader,
-    MemoryType as WPMemoryType, NameSectionReader, Parser, Payload, TableSectionReader, TypeRef,
+    self, BinaryReaderError, Export, ExportSectionReader, ExternalKind,
+    FunctionSectionReader, GlobalSectionReader, GlobalType as WPGlobalType,
+    ImportSectionReader, MemorySectionReader, MemoryType as WPMemoryType,
+    NameSectionReader, Parser, Payload, TableSectionReader, TypeRef,
     TypeSectionReader,
 };
 
@@ -28,7 +30,11 @@ pub struct ModuleInfoPolyfill {
 }
 
 impl ModuleInfoPolyfill {
-    pub(crate) fn declare_export(&mut self, export: ExportIndex, name: &str) -> WasmResult<()> {
+    pub(crate) fn declare_export(
+        &mut self,
+        export: ExportIndex,
+        name: &str,
+    ) -> WasmResult<()> {
         self.info.exports.insert(String::from(name), export);
         Ok(())
     }
@@ -57,7 +63,10 @@ impl ModuleInfoPolyfill {
         Ok(())
     }
 
-    pub(crate) fn declare_signature(&mut self, sig: FunctionType) -> WasmResult<()> {
+    pub(crate) fn declare_signature(
+        &mut self,
+        sig: FunctionType,
+    ) -> WasmResult<()> {
         self.info.signatures.push(sig);
         Ok(())
     }
@@ -97,7 +106,9 @@ impl ModuleInfoPolyfill {
             "Imported tables must be declared first"
         );
         self.declare_import(
-            ImportIndex::Table(TableIndex::from_u32(self.info.num_imported_tables as _)),
+            ImportIndex::Table(TableIndex::from_u32(
+                self.info.num_imported_tables as _,
+            )),
             module,
             field,
         )?;
@@ -118,7 +129,9 @@ impl ModuleInfoPolyfill {
             "Imported memories must be declared first"
         );
         self.declare_import(
-            ImportIndex::Memory(MemoryIndex::from_u32(self.info.num_imported_memories as _)),
+            ImportIndex::Memory(MemoryIndex::from_u32(
+                self.info.num_imported_memories as _,
+            )),
             module,
             field,
         )?;
@@ -139,7 +152,9 @@ impl ModuleInfoPolyfill {
             "Imported globals must be declared first"
         );
         self.declare_import(
-            ImportIndex::Global(GlobalIndex::from_u32(self.info.num_imported_globals as _)),
+            ImportIndex::Global(GlobalIndex::from_u32(
+                self.info.num_imported_globals as _,
+            )),
             module,
             field,
         )?;
@@ -155,7 +170,10 @@ impl ModuleInfoPolyfill {
         Ok(())
     }
 
-    pub(crate) fn declare_func_type(&mut self, sig_index: SignatureIndex) -> WasmResult<()> {
+    pub(crate) fn declare_func_type(
+        &mut self,
+        sig_index: SignatureIndex,
+    ) -> WasmResult<()> {
         self.info.functions.push(sig_index);
         Ok(())
     }
@@ -179,7 +197,10 @@ impl ModuleInfoPolyfill {
         Ok(())
     }
 
-    pub(crate) fn declare_memory(&mut self, memory: MemoryType) -> WasmResult<()> {
+    pub(crate) fn declare_memory(
+        &mut self,
+        memory: MemoryType,
+    ) -> WasmResult<()> {
         self.info.memories.push(memory);
         Ok(())
     }
@@ -191,7 +212,10 @@ impl ModuleInfoPolyfill {
         Ok(())
     }
 
-    pub(crate) fn declare_global(&mut self, global: GlobalType) -> WasmResult<()> {
+    pub(crate) fn declare_global(
+        &mut self,
+        global: GlobalType,
+    ) -> WasmResult<()> {
         self.info.globals.push(global);
         Ok(())
     }
@@ -250,7 +274,9 @@ fn transform_err(err: BinaryReaderError) -> String {
 
 /// Translate a sequence of bytes forming a valid Wasm binary into a
 /// parsed ModuleInfo `ModuleInfoPolyfill`.
-pub fn translate_module<'data>(data: &'data [u8]) -> WasmResult<ModuleInfoPolyfill> {
+pub fn translate_module<'data>(
+    data: &'data [u8],
+) -> WasmResult<ModuleInfoPolyfill> {
     let mut module_info: ModuleInfoPolyfill = Default::default();
 
     for payload in Parser::new(0).parse_all(data) {
@@ -544,18 +570,15 @@ pub fn parse_export_section<'data>(
         // becomes a concern here.
         let index = index as usize;
         match *kind {
-            ExternalKind::Func => {
-                module_info.declare_func_export(FunctionIndex::new(index), name)?
-            }
+            ExternalKind::Func => module_info
+                .declare_func_export(FunctionIndex::new(index), name)?,
             ExternalKind::Table => {
                 module_info.declare_table_export(TableIndex::new(index), name)?
             }
-            ExternalKind::Memory => {
-                module_info.declare_memory_export(MemoryIndex::new(index), name)?
-            }
-            ExternalKind::Global => {
-                module_info.declare_global_export(GlobalIndex::new(index), name)?
-            }
+            ExternalKind::Memory => module_info
+                .declare_memory_export(MemoryIndex::new(index), name)?,
+            ExternalKind::Global => module_info
+                .declare_global_export(GlobalIndex::new(index), name)?,
             ExternalKind::Tag => {
                 unimplemented!("exception handling not implemented yet")
             }

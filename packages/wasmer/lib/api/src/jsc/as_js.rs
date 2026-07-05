@@ -81,7 +81,9 @@ impl AsJs for Value {
             Self::F32(f) => JSValue::number(&context, *f as _),
             Self::F64(f) => JSValue::number(&context, *f),
             Self::V128(v) => JSValue::number(&context, *v as _),
-            Self::FuncRef(Some(func)) => func.0.handle.function.clone().to_jsvalue(),
+            Self::FuncRef(Some(func)) => {
+                func.0.handle.function.clone().to_jsvalue()
+            }
             Self::FuncRef(None) => JSValue::null(&context),
             Self::ExternRef(_) => unimplemented!(),
         }
@@ -104,7 +106,9 @@ impl AsJs for Extern {
     fn as_jsvalue(&self, _store: &impl AsStoreRef) -> JSValue {
         match self {
             Self::Memory(memory) => memory.0.handle.memory.clone().to_jsvalue(),
-            Self::Function(function) => function.0.handle.function.clone().to_jsvalue(),
+            Self::Function(function) => {
+                function.0.handle.function.clone().to_jsvalue()
+            }
             Self::Table(table) => table.0.handle.table.clone().to_jsvalue(),
             Self::Global(global) => global.0.handle.global.clone().to_jsvalue(),
         }

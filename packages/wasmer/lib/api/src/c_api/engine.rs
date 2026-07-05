@@ -24,7 +24,8 @@ unsafe impl Sync for EngineCapsule {}
 unsafe impl Send for EngineCapsule {}
 
 #[cfg(feature = "v8")]
-static ENGINE: std::sync::OnceLock<std::sync::Mutex<EngineCapsule>> = std::sync::OnceLock::new();
+static ENGINE: std::sync::OnceLock<std::sync::Mutex<EngineCapsule>> =
+    std::sync::OnceLock::new();
 
 impl Default for CApiEngine {
     #[cfg(not(feature = "v8"))]
@@ -35,8 +36,9 @@ impl Default for CApiEngine {
 
     #[cfg(feature = "v8")]
     fn default() -> Self {
-        let engine = ENGINE
-            .get_or_init(|| unsafe { std::sync::Mutex::new(EngineCapsule(wasm_engine_new())) });
+        let engine = ENGINE.get_or_init(|| unsafe {
+            std::sync::Mutex::new(EngineCapsule(wasm_engine_new()))
+        });
         let engine = unsafe { engine.lock().unwrap().0 };
         Self { engine }
     }

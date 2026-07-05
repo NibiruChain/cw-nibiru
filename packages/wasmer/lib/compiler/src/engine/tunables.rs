@@ -3,8 +3,8 @@ use crate::types::target::{PointerWidth, Target};
 use std::ptr::NonNull;
 use wasmer_types::entity::{EntityRef, PrimaryMap};
 use wasmer_types::{
-    GlobalType, LocalGlobalIndex, LocalMemoryIndex, LocalTableIndex, MemoryIndex, MemoryType,
-    ModuleInfo, Pages, TableIndex, TableType,
+    GlobalType, LocalGlobalIndex, LocalMemoryIndex, LocalTableIndex,
+    MemoryIndex, MemoryType, ModuleInfo, Pages, TableIndex, TableType,
 };
 use wasmer_vm::{InternalStoreHandle, MemoryError, StoreObjects};
 use wasmer_vm::{MemoryStyle, TableStyle};
@@ -39,7 +39,11 @@ pub trait Tunables {
     ) -> Result<VMMemory, MemoryError>;
 
     /// Create a table owned by the host given a [`TableType`] and a [`TableStyle`].
-    fn create_host_table(&self, ty: &TableType, style: &TableStyle) -> Result<VMTable, String>;
+    fn create_host_table(
+        &self,
+        ty: &TableType,
+        style: &TableStyle,
+    ) -> Result<VMTable, String>;
 
     /// Create a table owned by the VM given a [`TableType`] and a [`TableStyle`].
     ///
@@ -68,7 +72,10 @@ pub trait Tunables {
         module: &ModuleInfo,
         memory_styles: &PrimaryMap<MemoryIndex, MemoryStyle>,
         memory_definition_locations: &[NonNull<VMMemoryDefinition>],
-    ) -> Result<PrimaryMap<LocalMemoryIndex, InternalStoreHandle<VMMemory>>, LinkError> {
+    ) -> Result<
+        PrimaryMap<LocalMemoryIndex, InternalStoreHandle<VMMemory>>,
+        LinkError,
+    > {
         let num_imports = module.num_imported_memories;
         let mut memories: PrimaryMap<LocalMemoryIndex, _> =
             PrimaryMap::with_capacity(module.memories.len() - num_imports);
@@ -83,8 +90,12 @@ pub trait Tunables {
             let style = &memory_styles[mi];
             memories.push(InternalStoreHandle::new(
                 context,
-                self.create_vm_memory(ty, style, *mdl)
-                    .map_err(|e| LinkError::Resource(format!("Failed to create memory: {}", e)))?,
+                self.create_vm_memory(ty, style, *mdl).map_err(|e| {
+                    LinkError::Resource(format!(
+                        "Failed to create memory: {}",
+                        e
+                    ))
+                })?,
             ));
         }
         Ok(memories)
@@ -102,7 +113,10 @@ pub trait Tunables {
         module: &ModuleInfo,
         table_styles: &PrimaryMap<TableIndex, TableStyle>,
         table_definition_locations: &[NonNull<VMTableDefinition>],
-    ) -> Result<PrimaryMap<LocalTableIndex, InternalStoreHandle<VMTable>>, LinkError> {
+    ) -> Result<
+        PrimaryMap<LocalTableIndex, InternalStoreHandle<VMTable>>,
+        LinkError,
+    > {
         let num_imports = module.num_imported_tables;
         let mut tables: PrimaryMap<LocalTableIndex, _> =
             PrimaryMap::with_capacity(module.tables.len() - num_imports);
@@ -131,9 +145,13 @@ pub trait Tunables {
         &self,
         context: &mut StoreObjects,
         module: &ModuleInfo,
-    ) -> Result<PrimaryMap<LocalGlobalIndex, InternalStoreHandle<VMGlobal>>, LinkError> {
+    ) -> Result<
+        PrimaryMap<LocalGlobalIndex, InternalStoreHandle<VMGlobal>>,
+        LinkError,
+    > {
         let num_imports = module.num_imported_globals;
-        let mut vmctx_globals = PrimaryMap::with_capacity(module.globals.len() - num_imports);
+        let mut vmctx_globals =
+            PrimaryMap::with_capacity(module.globals.len() - num_imports);
 
         for &global_type in module.globals.values().skip(num_imports) {
             vmctx_globals.push(InternalStoreHandle::new(
@@ -184,18 +202,20 @@ impl BaseTunables {
     pub fn for_target(target: &Target) -> Self {
         let triple = target.triple();
         let pointer_width: PointerWidth = triple.pointer_width().unwrap();
-        let (static_memory_bound, static_memory_offset_guard_size): (Pages, u64) =
-            match pointer_width {
-                PointerWidth::U16 => (0x400.into(), 0x1000),
-                PointerWidth::U32 => (0x4000.into(), 0x1_0000),
-                // Static Memory Bound:
-                //   Allocating 4 GiB of address space let us avoid the
-                //   need for explicit bounds checks.
-                // Static Memory Guard size:
-                //   Allocating 2 GiB of address space lets us translate wasm
-                //   offsets into x86 offsets as aggressively as we can.
-                PointerWidth::U64 => (0x1_0000.into(), 0x8000_0000),
-            };
+        let (static_memory_bound, static_memory_offset_guard_size): (
+            Pages,
+            u64,
+        ) = match pointer_width {
+            PointerWidth::U16 => (0x400.into(), 0x1000),
+            PointerWidth::U32 => (0x4000.into(), 0x1_0000),
+            // Static Memory Bound:
+            //   Allocating 4 GiB of address space let us avoid the
+            //   need for explicit bounds checks.
+            // Static Memory Guard size:
+            //   Allocating 2 GiB of address space lets us translate wasm
+            //   offsets into x86 offsets as aggressively as we can.
+            PointerWidth::U64 => (0x1_0000.into(), 0x8000_0000),
+        };
 
         // Allocate a small guard to optimize common cases but without
         // wasting too much memory.
@@ -265,7 +285,11 @@ impl Tunables for BaseTunables {
     }
 
     /// Create a table owned by the host given a [`TableType`] and a [`TableStyle`].
-    fn create_host_table(&self, ty: &TableType, style: &TableStyle) -> Result<VMTable, String> {
+    fn create_host_table(
+        &self,
+        ty: &TableType,
+        style: &TableStyle,
+    ) -> Result<VMTable, String> {
         VMTable::new(ty, style)
     }
 
@@ -311,7 +335,11 @@ impl Tunables for Box<dyn Tunables + Send + Sync> {
             .create_vm_memory(ty, style, vm_definition_location)
     }
 
-    fn create_host_table(&self, ty: &TableType, style: &TableStyle) -> Result<VMTable, String> {
+    fn create_host_table(
+        &self,
+        ty: &TableType,
+        style: &TableStyle,
+    ) -> Result<VMTable, String> {
         self.as_ref().create_host_table(ty, style)
     }
 
@@ -353,7 +381,11 @@ impl Tunables for std::sync::Arc<dyn Tunables + Send + Sync> {
             .create_vm_memory(ty, style, vm_definition_location)
     }
 
-    fn create_host_table(&self, ty: &TableType, style: &TableStyle) -> Result<VMTable, String> {
+    fn create_host_table(
+        &self,
+        ty: &TableType,
+        style: &TableStyle,
+    ) -> Result<VMTable, String> {
         self.as_ref().create_host_table(ty, style)
     }
 

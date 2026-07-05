@@ -15,16 +15,25 @@ pub struct Table {
 // https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
 // unsafe impl Send for Table {}
 
-fn set_table_item(table: &VMTable, item_index: u32, item: &Function) -> Result<(), RuntimeError> {
+fn set_table_item(
+    table: &VMTable,
+    item_index: u32,
+    item: &Function,
+) -> Result<(), RuntimeError> {
     table.table.set(item_index, item).map_err(|e| e.into())
 }
 
-fn get_function(store: &mut impl AsStoreMut, val: Value) -> Result<Function, RuntimeError> {
+fn get_function(
+    store: &mut impl AsStoreMut,
+    val: Value,
+) -> Result<Function, RuntimeError> {
     if !val.is_from_store(store) {
         return Err(RuntimeError::new("cannot pass Value across contexts"));
     }
     match val {
-        Value::FuncRef(Some(ref func)) => Ok(func.0.handle.function.clone().into_inner()),
+        Value::FuncRef(Some(ref func)) => {
+            Ok(func.0.handle.function.clone().into_inner())
+        }
         // Only funcrefs is supported by the spec atm
         _ => unimplemented!("The {val:?} is not yet supported"),
     }
@@ -38,7 +47,11 @@ impl Table {
     ) -> Result<Self, RuntimeError> {
         let mut store = store;
         let descriptor = js_sys::Object::new();
-        js_sys::Reflect::set(&descriptor, &"initial".into(), &ty.minimum.into())?;
+        js_sys::Reflect::set(
+            &descriptor,
+            &"initial".into(),
+            &ty.minimum.into(),
+        )?;
         if let Some(max) = ty.maximum {
             js_sys::Reflect::set(&descriptor, &"maximum".into(), &max.into())?;
         }
@@ -109,7 +122,10 @@ impl Table {
         unimplemented!("Table.copy is not natively supported in Javascript");
     }
 
-    pub(crate) fn from_vm_extern(_store: &mut impl AsStoreMut, vm_extern: VMExternTable) -> Self {
+    pub(crate) fn from_vm_extern(
+        _store: &mut impl AsStoreMut,
+        vm_extern: VMExternTable,
+    ) -> Self {
         Self { handle: vm_extern }
     }
 

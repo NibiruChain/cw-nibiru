@@ -7,14 +7,18 @@
 use crate::indexes::{FunctionIndex, GlobalIndex, MemoryIndex, TableIndex};
 use crate::lib::std::boxed::Box;
 
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 
 /// A WebAssembly table initializer.
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(Clone, Debug, Hash, PartialEq, Eq, RkyvSerialize, RkyvDeserialize, Archive)]
+#[derive(
+    Clone, Debug, Hash, PartialEq, Eq, RkyvSerialize, RkyvDeserialize, Archive,
+)]
 #[rkyv(derive(Debug))]
 pub struct TableInitializer {
     /// The index of a table to initialize.
@@ -29,7 +33,9 @@ pub struct TableInitializer {
 
 /// A memory index and offset within that memory where a data initialization
 /// should be performed.
-#[derive(Clone, Debug, PartialEq, Eq, RkyvSerialize, RkyvDeserialize, Archive)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, RkyvSerialize, RkyvDeserialize, Archive,
+)]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[rkyv(derive(Debug))]
@@ -68,13 +74,17 @@ impl DataInitializerLocationLike for &DataInitializerLocation {
 
 impl DataInitializerLocationLike for &ArchivedDataInitializerLocation {
     fn memory_index(&self) -> MemoryIndex {
-        MemoryIndex::from_u32(rkyv::deserialize::<_, ()>(&self.memory_index).unwrap().0)
+        MemoryIndex::from_u32(
+            rkyv::deserialize::<_, ()>(&self.memory_index).unwrap().0,
+        )
     }
 
     fn base(&self) -> Option<GlobalIndex> {
         match &self.base {
             rkyv::option::ArchivedOption::None => None,
-            rkyv::option::ArchivedOption::Some(base) => rkyv::deserialize::<_, String>(base).ok(),
+            rkyv::option::ArchivedOption::Some(base) => {
+                rkyv::deserialize::<_, String>(base).ok()
+            }
         }
     }
 
@@ -98,7 +108,9 @@ pub struct DataInitializer<'data> {
 /// holding a reference to it
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(Debug, Clone, PartialEq, Eq, RkyvSerialize, RkyvDeserialize, Archive)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, RkyvSerialize, RkyvDeserialize, Archive,
+)]
 #[rkyv(derive(Debug))]
 pub struct OwnedDataInitializer {
     /// The location where the initialization is to be performed.

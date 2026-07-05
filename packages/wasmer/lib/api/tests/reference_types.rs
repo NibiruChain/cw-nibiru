@@ -46,14 +46,18 @@ pub mod reference_types {
             panic!("funcref not found!");
         }
 
-        let func_to_call =
-            Function::new_typed_with_env(&mut store, &env, |env: FunctionEnvMut<Env>| -> i32 {
+        let func_to_call = Function::new_typed_with_env(
+            &mut store,
+            &env,
+            |env: FunctionEnvMut<Env>| -> i32 {
                 env.data().0.store(true, Ordering::SeqCst);
                 343
-            });
-        let call_set_value: &Function = instance.exports.get_function("call_set_value")?;
-        let results: Box<[Value]> =
-            call_set_value.call(&mut store, &[Value::FuncRef(Some(func_to_call))])?;
+            },
+        );
+        let call_set_value: &Function =
+            instance.exports.get_function("call_set_value")?;
+        let results: Box<[Value]> = call_set_value
+            .call(&mut store, &[Value::FuncRef(Some(func_to_call))])?;
         assert!(env.as_ref(&store.as_store_ref()).0.load(Ordering::SeqCst));
         assert_eq!(&*results, &[Value::I32(343)]);
 
@@ -114,8 +118,10 @@ pub mod reference_types {
             }
             let sum_func = Function::new_typed(&mut store, sum);
 
-            let call_func: &Function = instance.exports.get_function("call_func")?;
-            let result = call_func.call(&mut store, &[Value::FuncRef(Some(sum_func))])?;
+            let call_func: &Function =
+                instance.exports.get_function("call_func")?;
+            let result =
+                call_func.call(&mut store, &[Value::FuncRef(Some(sum_func))])?;
             assert_eq!(result[0].unwrap_i32(), 16);
         }
 
@@ -213,7 +219,8 @@ pub mod reference_types {
                 instance.exports.get_typed_function(&store, get_hashmap)?;
 
             let result: Option<ExternRef> = f.call(&mut store)?;
-            let inner: &HashMap<String, String> = result.unwrap().downcast(&store).unwrap();
+            let inner: &HashMap<String, String> =
+                result.unwrap().downcast(&store).unwrap();
             assert_eq!(inner["hello"], "world");
             assert_eq!(inner["color"], "orange");
         }
@@ -274,7 +281,8 @@ pub mod reference_types {
         }
 
         {
-            let fr_global: &Global = instance.exports.get_global("fr_immutable_global")?;
+            let fr_global: &Global =
+                instance.exports.get_global("fr_immutable_global")?;
 
             if let Value::FuncRef(Some(f)) = fr_global.get(&mut store) {
                 let native_func: TypedFunction<(), u32> = f.typed(&store)?;
@@ -292,7 +300,10 @@ pub mod reference_types {
                 panic!("Did not find a null func ref in the global");
             }
 
-            let f = Function::new_typed(&mut store, |arg1: i32, arg2: i32| -> i32 { arg1 + arg2 });
+            let f =
+                Function::new_typed(&mut store, |arg1: i32, arg2: i32| -> i32 {
+                    arg1 + arg2
+                });
 
             fr_global.set(&mut store, Value::FuncRef(Some(f)))?;
 
@@ -324,9 +335,10 @@ pub mod reference_types {
         let module = Module::new(&store, wat)?;
         let instance = Instance::new(&mut store, &module, &imports! {})?;
 
-        let f: TypedFunction<(Option<ExternRef>, i32), Option<ExternRef>> = instance
-            .exports
-            .get_typed_function(&store, "insert_into_table")?;
+        let f: TypedFunction<(Option<ExternRef>, i32), Option<ExternRef>> =
+            instance
+                .exports
+                .get_typed_function(&store, "insert_into_table")?;
 
         let er = ExternRef::new(&mut store, 3usize);
 
@@ -417,10 +429,14 @@ pub mod reference_types {
         let module = Module::new(&store, wat)?;
         let instance = Instance::new(&mut store, &module, &imports! {})?;
 
-        let grow_table_with_ref: TypedFunction<(Option<ExternRef>, i32), i32> = instance
-            .exports
-            .get_typed_function(&store, "grow_table_with_ref")?;
-        let fill_table_with_ref: TypedFunction<(Option<ExternRef>, i32, i32), ()> = instance
+        let grow_table_with_ref: TypedFunction<(Option<ExternRef>, i32), i32> =
+            instance
+                .exports
+                .get_typed_function(&store, "grow_table_with_ref")?;
+        let fill_table_with_ref: TypedFunction<
+            (Option<ExternRef>, i32, i32),
+            (),
+        > = instance
             .exports
             .get_typed_function(&store, "fill_table_with_ref")?;
         let copy_into_table2: TypedFunction<(), ()> = instance
@@ -433,10 +449,15 @@ pub mod reference_types {
         let er2 = ExternRef::new(&mut store, 5usize);
         let er3 = ExternRef::new(&mut store, 7usize);
         {
-            let result = grow_table_with_ref.call(&mut store, Some(er1.clone()), 0)?;
+            let result =
+                grow_table_with_ref.call(&mut store, Some(er1.clone()), 0)?;
             assert_eq!(result, 2);
 
-            let result = grow_table_with_ref.call(&mut store, Some(er1.clone()), 10_000)?;
+            let result = grow_table_with_ref.call(
+                &mut store,
+                Some(er1.clone()),
+                10_000,
+            )?;
             assert_eq!(result, -1);
 
             let result = grow_table_with_ref.call(&mut store, Some(er1), 8)?;
@@ -467,7 +488,8 @@ pub mod reference_types {
             for i in 1..5 {
                 let v = table2.get(&mut store, i);
                 let e = v.as_ref().unwrap().unwrap_externref();
-                let value: &usize = e.as_ref().unwrap().downcast(&store).unwrap();
+                let value: &usize =
+                    e.as_ref().unwrap().downcast(&store).unwrap();
                 match i {
                     0 | 1 => assert_eq!(*value, 5),
                     4 => assert_eq!(*value, 7),
@@ -506,18 +528,23 @@ pub mod reference_types {
         let module = Module::new(&store, wat)?;
         let instance = Instance::new(&mut store, &module, &imports! {})?;
 
-        let grow_table_with_ref: TypedFunction<(Option<ExternRef>, i32), i32> = instance
-            .exports
-            .get_typed_function(&store, "grow_table_with_ref")?;
-        let fill_table_with_ref: TypedFunction<(Option<ExternRef>, i32, i32), ()> = instance
+        let grow_table_with_ref: TypedFunction<(Option<ExternRef>, i32), i32> =
+            instance
+                .exports
+                .get_typed_function(&store, "grow_table_with_ref")?;
+        let fill_table_with_ref: TypedFunction<
+            (Option<ExternRef>, i32, i32),
+            (),
+        > = instance
             .exports
             .get_typed_function(&store, "fill_table_with_ref")?;
         let copy_into_table2: TypedFunction<(), ()> = instance
             .exports
             .get_typed_function(&store, "copy_into_table2")?;
-        let call_set_value: TypedFunction<(Option<ExternRef>, i32), ()> = instance
-            .exports
-            .get_typed_function(&store, "call_set_value")?;
+        let call_set_value: TypedFunction<(Option<ExternRef>, i32), ()> =
+            instance
+                .exports
+                .get_typed_function(&store, "call_set_value")?;
         let table1: &Table = instance.exports.get_table("table1")?;
         let table2: &Table = instance.exports.get_table("table2")?;
 
@@ -525,10 +552,15 @@ pub mod reference_types {
         let er2 = ExternRef::new(&mut store, 5usize);
         let er3 = ExternRef::new(&mut store, 7usize);
         {
-            let result = grow_table_with_ref.call(&mut store, Some(er1.clone()), 0)?;
+            let result =
+                grow_table_with_ref.call(&mut store, Some(er1.clone()), 0)?;
             assert_eq!(result, 2);
 
-            let result = grow_table_with_ref.call(&mut store, Some(er1.clone()), 10_000)?;
+            let result = grow_table_with_ref.call(
+                &mut store,
+                Some(er1.clone()),
+                10_000,
+            )?;
             assert_eq!(result, -1);
 
             let result = grow_table_with_ref.call(&mut store, Some(er1), 8)?;
@@ -559,7 +591,8 @@ pub mod reference_types {
             for i in 1..5 {
                 let v = table2.get(&mut store, i);
                 let e = v.as_ref().unwrap().unwrap_externref();
-                let value: &usize = e.as_ref().unwrap().downcast(&store).unwrap();
+                let value: &usize =
+                    e.as_ref().unwrap().downcast(&store).unwrap();
                 match i {
                     0 | 1 => assert_eq!(*value, 5),
                     4 => assert_eq!(*value, 7),
@@ -595,9 +628,10 @@ pub mod reference_types {
 )"#;
         let module = Module::new(&store, wat)?;
         let instance = Instance::new(&mut store, &module, &imports! {})?;
-        let call_set_value: TypedFunction<(Option<ExternRef>, i32), ()> = instance
-            .exports
-            .get_typed_function(&store, "call_set_value")?;
+        let call_set_value: TypedFunction<(Option<ExternRef>, i32), ()> =
+            instance
+                .exports
+                .get_typed_function(&store, "call_set_value")?;
 
         let call_get_value: TypedFunction<i32, Option<ExternRef>> = instance
             .exports
@@ -610,9 +644,17 @@ pub mod reference_types {
 
         for i in 0..table.size(&store) {
             if i % 2 == 0 {
-                call_set_value.call(&mut store, Some(er_even.clone()), i as i32)?;
+                call_set_value.call(
+                    &mut store,
+                    Some(er_even.clone()),
+                    i as i32,
+                )?;
             } else {
-                call_set_value.call(&mut store, Some(er_odd.clone()), i as i32)?;
+                call_set_value.call(
+                    &mut store,
+                    Some(er_odd.clone()),
+                    i as i32,
+                )?;
             }
         }
 
@@ -633,9 +675,17 @@ pub mod reference_types {
 
         for i in 0..table.size(&store) {
             if i % 2 == 0 {
-                table.set(&mut store, i, Value::ExternRef(Some(er_even.clone())))?;
+                table.set(
+                    &mut store,
+                    i,
+                    Value::ExternRef(Some(er_even.clone())),
+                )?;
             } else {
-                table.set(&mut store, i, Value::ExternRef(Some(er_odd.clone())))?;
+                table.set(
+                    &mut store,
+                    i,
+                    Value::ExternRef(Some(er_odd.clone())),
+                )?;
             }
         }
 

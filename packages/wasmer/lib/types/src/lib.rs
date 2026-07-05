@@ -37,15 +37,17 @@ pub mod lib {
     #[cfg(feature = "core")]
     pub mod std {
         pub use alloc::{borrow, boxed, format, iter, rc, slice, string, vec};
-        pub use core::{any, cell, cmp, convert, fmt, hash, marker, mem, ops, ptr, sync};
+        pub use core::{
+            any, cell, cmp, convert, fmt, hash, marker, mem, ops, ptr, sync,
+        };
     }
 
     /// Custom `std` module.
     #[cfg(feature = "std")]
     pub mod std {
         pub use std::{
-            any, borrow, boxed, cell, cmp, convert, fmt, format, hash, iter, marker, mem, ops, ptr,
-            rc, slice, string, sync, vec,
+            any, borrow, boxed, cell, cmp, convert, fmt, format, hash, iter,
+            marker, mem, ops, ptr, rc, slice, string, sync, vec,
         };
     }
 }
@@ -71,31 +73,35 @@ mod vmoffsets;
 
 pub use error::{
     CompileError, DeserializeError, ImportError, MemoryError, MiddlewareError,
-    ParseCpuFeatureError, PreInstantiationError, SerializeError, WasmError, WasmResult,
+    ParseCpuFeatureError, PreInstantiationError, SerializeError, WasmError,
+    WasmResult,
 };
 
 /// The entity module, with common helpers for Rust structures
 pub mod entity;
 pub use crate::features::Features;
 pub use crate::indexes::{
-    CustomSectionIndex, DataIndex, ElemIndex, ExportIndex, FunctionIndex, GlobalIndex, ImportIndex,
-    LocalFunctionIndex, LocalGlobalIndex, LocalMemoryIndex, LocalTableIndex, MemoryIndex,
-    SignatureIndex, TableIndex,
+    CustomSectionIndex, DataIndex, ElemIndex, ExportIndex, FunctionIndex,
+    GlobalIndex, ImportIndex, LocalFunctionIndex, LocalGlobalIndex,
+    LocalMemoryIndex, LocalTableIndex, MemoryIndex, SignatureIndex, TableIndex,
 };
 pub use crate::initializers::{
-    ArchivedDataInitializerLocation, ArchivedOwnedDataInitializer, DataInitializer,
-    DataInitializerLike, DataInitializerLocation, DataInitializerLocationLike,
-    OwnedDataInitializer, TableInitializer,
+    ArchivedDataInitializerLocation, ArchivedOwnedDataInitializer,
+    DataInitializer, DataInitializerLike, DataInitializerLocation,
+    DataInitializerLocationLike, OwnedDataInitializer, TableInitializer,
 };
 pub use crate::memory::{Memory32, Memory64, MemorySize};
-pub use crate::module::{ExportsIterator, ImportKey, ImportsIterator, ModuleInfo};
+pub use crate::module::{
+    ExportsIterator, ImportKey, ImportsIterator, ModuleInfo,
+};
 pub use crate::module_hash::{HashAlgorithm, ModuleHash};
 pub use crate::units::{
-    Bytes, PageCountOutOfRange, Pages, WASM_MAX_PAGES, WASM_MIN_PAGES, WASM_PAGE_SIZE,
+    Bytes, PageCountOutOfRange, Pages, WASM_MAX_PAGES, WASM_MIN_PAGES,
+    WASM_PAGE_SIZE,
 };
 pub use types::{
-    ExportType, ExternType, FunctionType, GlobalInit, GlobalType, ImportType, MemoryType,
-    Mutability, TableType, Type, V128,
+    ExportType, ExternType, FunctionType, GlobalInit, GlobalType, ImportType,
+    MemoryType, Mutability, TableType, Type, V128,
 };
 pub use value::{RawValue, ValueType};
 
@@ -108,7 +114,9 @@ pub use crate::stack::{FrameInfo, SourceLoc, TrapInformation};
 pub use crate::store_id::StoreId;
 pub use crate::trapcode::{OnCalledAction, TrapCode};
 pub use crate::utils::is_wasm;
-pub use crate::vmoffsets::{TargetSharedSignatureIndex, VMBuiltinFunctionIndex, VMOffsets};
+pub use crate::vmoffsets::{
+    TargetSharedSignatureIndex, VMBuiltinFunctionIndex, VMOffsets,
+};
 
 /// Offset in bytes from the beginning of the function.
 pub type CodeOffset = u32;
@@ -183,12 +191,14 @@ mod native {
     }
 
     impl NativeWasmType for Memory32 {
-        const WASM_TYPE: Type = <<Self as MemorySize>::Native as NativeWasmType>::WASM_TYPE;
+        const WASM_TYPE: Type =
+            <<Self as MemorySize>::Native as NativeWasmType>::WASM_TYPE;
         type Abi = <<Self as MemorySize>::Native as NativeWasmType>::Abi;
     }
 
     impl NativeWasmType for Memory64 {
-        const WASM_TYPE: Type = <<Self as MemorySize>::Native as NativeWasmType>::WASM_TYPE;
+        const WASM_TYPE: Type =
+            <<Self as MemorySize>::Native as NativeWasmType>::WASM_TYPE;
         type Abi = <<Self as MemorySize>::Native as NativeWasmType>::Abi;
     }
 

@@ -8,7 +8,9 @@
 //! let my_func = instance.exports.get("func");
 //! my_func.call([1, 2])
 //! ```
-use crate::translator::{compiled_function_unwind_info, signature_to_cranelift_ir};
+use crate::translator::{
+    compiled_function_unwind_info, signature_to_cranelift_ir,
+};
 use cranelift_codegen::{
     ir::{self, InstBuilder},
     isa::TargetIsa,
@@ -43,11 +45,15 @@ pub fn make_trampoline_function_call(
     wrapper_sig.params.push(ir::AbiParam::new(pointer_type));
 
     let mut context = Context::new();
-    context.func = ir::Function::with_name_signature(ir::UserFuncName::user(0, 0), wrapper_sig);
+    context.func = ir::Function::with_name_signature(
+        ir::UserFuncName::user(0, 0),
+        wrapper_sig,
+    );
 
     let value_size = mem::size_of::<u128>();
     {
-        let mut builder = FunctionBuilder::new(&mut context.func, fn_builder_ctx);
+        let mut builder =
+            FunctionBuilder::new(&mut context.func, fn_builder_ctx);
         let block0 = builder.create_block();
 
         builder.append_block_params_for_function_params(block0);
@@ -84,18 +90,22 @@ pub fn make_trampoline_function_call(
 
         let new_sig = builder.import_signature(signature);
 
-        let call = builder
-            .ins()
-            .call_indirect(new_sig, callee_value, &callee_args);
+        let call =
+            builder
+                .ins()
+                .call_indirect(new_sig, callee_value, &callee_args);
 
         let results = builder.func.dfg.inst_results(call).to_vec();
 
         // Store the return values into `values_vec`.
         let mflags = ir::MemFlags::trusted();
         for (i, r) in results.iter().enumerate() {
-            builder
-                .ins()
-                .store(mflags, *r, values_vec_ptr_val, (i * value_size) as i32);
+            builder.ins().store(
+                mflags,
+                *r,
+                values_vec_ptr_val,
+                (i * value_size) as i32,
+            );
         }
 
         builder.ins().return_(&[]);
@@ -108,7 +118,8 @@ pub fn make_trampoline_function_call(
         .compile_and_emit(isa, &mut code_buf, &mut Default::default())
         .map_err(|error| CompileError::Codegen(error.inner.to_string()))?;
 
-    let unwind_info = compiled_function_unwind_info(isa, &context)?.maybe_into_to_windows_unwind();
+    let unwind_info = compiled_function_unwind_info(isa, &context)?
+        .maybe_into_to_windows_unwind();
 
     Ok(FunctionBody {
         body: code_buf,

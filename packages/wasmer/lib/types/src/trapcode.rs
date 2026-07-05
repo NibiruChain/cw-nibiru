@@ -5,7 +5,9 @@
 
 use core::fmt::{self, Display, Formatter};
 use core::str::FromStr;
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -14,7 +16,16 @@ use thiserror::Error;
 ///
 /// All trap instructions have an explicit trap code.
 #[derive(
-    Clone, Copy, PartialEq, Eq, Debug, Hash, Error, RkyvSerialize, RkyvDeserialize, Archive,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Debug,
+    Hash,
+    Error,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Archive,
 )]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
@@ -69,7 +80,9 @@ impl TrapCode {
             Self::StackOverflow => "call stack exhausted",
             Self::HeapAccessOutOfBounds => "out of bounds memory access",
             Self::HeapMisaligned => "misaligned heap",
-            Self::TableAccessOutOfBounds => "undefined element: out of bounds table access",
+            Self::TableAccessOutOfBounds => {
+                "undefined element: out of bounds table access"
+            }
             Self::IndirectCallToNull => "uninitialized element",
             Self::BadSignature => "indirect call type mismatch",
             Self::IntegerOverflow => "integer overflow",

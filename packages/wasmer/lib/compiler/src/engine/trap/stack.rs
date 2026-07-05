@@ -4,11 +4,15 @@ use wasmer_types::{FrameInfo, TrapCode};
 use wasmer_vm::Trap;
 
 /// Given a `Trap`, this function returns the Wasm trace and the trap code.
-pub fn get_trace_and_trapcode(trap: &Trap) -> (Vec<FrameInfo>, Option<TrapCode>) {
+pub fn get_trace_and_trapcode(
+    trap: &Trap,
+) -> (Vec<FrameInfo>, Option<TrapCode>) {
     let info = FRAME_INFO.read().unwrap();
     match &trap {
         // A user error
-        Trap::User(_err) => (wasm_trace(&info, None, &Backtrace::new_unresolved()), None),
+        Trap::User(_err) => {
+            (wasm_trace(&info, None, &Backtrace::new_unresolved()), None)
+        }
         // A trap caused by the VM being Out of Memory
         Trap::OOM { backtrace } => (wasm_trace(&info, None, backtrace), None),
         // A trap caused by an error on the generated machine code for a Wasm function
@@ -17,11 +21,10 @@ pub fn get_trace_and_trapcode(trap: &Trap) -> (Vec<FrameInfo>, Option<TrapCode>)
             signal_trap,
             backtrace,
         } => {
-            let trap_code = info
-                .lookup_trap_info(*pc)
-                .map_or(signal_trap.unwrap_or(TrapCode::StackOverflow), |info| {
-                    info.trap_code
-                });
+            let trap_code = info.lookup_trap_info(*pc).map_or(
+                signal_trap.unwrap_or(TrapCode::StackOverflow),
+                |info| info.trap_code,
+            );
 
             (wasm_trace(&info, Some(*pc), backtrace), Some(trap_code))
         }

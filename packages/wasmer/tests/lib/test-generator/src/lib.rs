@@ -33,7 +33,11 @@ pub fn test_directory_module(
     with_test_module(out, testsuite, |out| test_directory(out, path, processor))
 }
 
-fn write_test(out: &mut Testsuite, testname: &str, body: &str) -> anyhow::Result<()> {
+fn write_test(
+    out: &mut Testsuite,
+    testname: &str,
+    body: &str,
+) -> anyhow::Result<()> {
     writeln!(
         out.buffer,
         "#[compiler_test({})]",

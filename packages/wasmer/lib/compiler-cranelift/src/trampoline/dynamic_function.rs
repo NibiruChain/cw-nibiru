@@ -3,9 +3,14 @@
 
 //! A trampoline generator for calling dynamic host functions from Wasm.
 
-use crate::translator::{compiled_function_unwind_info, signature_to_cranelift_ir};
+use crate::translator::{
+    compiled_function_unwind_info, signature_to_cranelift_ir,
+};
 use cranelift_codegen::{
-    ir::{self, Function, InstBuilder, MemFlags, StackSlotData, StackSlotKind, UserFuncName},
+    ir::{
+        self, Function, InstBuilder, MemFlags, StackSlotData, StackSlotKind,
+        UserFuncName,
+    },
     isa::TargetIsa,
     Context,
 };
@@ -36,11 +41,15 @@ pub fn make_trampoline_dynamic_function(
 
     // Compute the size of the values vector. The vmctx and caller vmctx are passed separately.
     let value_size = mem::size_of::<u128>();
-    let values_vec_len =
-        (value_size * cmp::max(signature.params.len() - 1, signature.returns.len())) as u32;
+    let values_vec_len = (value_size
+        * cmp::max(signature.params.len() - 1, signature.returns.len()))
+        as u32;
 
     let mut context = Context::new();
-    context.func = Function::with_name_signature(UserFuncName::user(0, 0), signature.clone());
+    context.func = Function::with_name_signature(
+        UserFuncName::user(0, 0),
+        signature.clone(),
+    );
 
     let ss = context.func.create_sized_stack_slot(StackSlotData::new(
         StackSlotKind::ExplicitSlot,
@@ -49,7 +58,8 @@ pub fn make_trampoline_dynamic_function(
     ));
 
     {
-        let mut builder = FunctionBuilder::new(&mut context.func, fn_builder_ctx);
+        let mut builder =
+            FunctionBuilder::new(&mut context.func, fn_builder_ctx);
         let block0 = builder.create_block();
 
         builder.append_block_params_for_function_params(block0);
@@ -107,7 +117,8 @@ pub fn make_trampoline_dynamic_function(
         .compile_and_emit(isa, &mut code_buf, &mut Default::default())
         .map_err(|error| CompileError::Codegen(error.inner.to_string()))?;
 
-    let unwind_info = compiled_function_unwind_info(isa, &context)?.maybe_into_to_windows_unwind();
+    let unwind_info = compiled_function_unwind_info(isa, &context)?
+        .maybe_into_to_windows_unwind();
 
     Ok(FunctionBody {
         body: code_buf,

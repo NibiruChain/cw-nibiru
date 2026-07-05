@@ -12,7 +12,10 @@ use crate::lib::std::marker::PhantomData;
 use crate::lib::std::ops::{Index, IndexMut};
 use crate::lib::std::slice;
 use crate::lib::std::vec::Vec;
-use rkyv::{Archive, Archived, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Archived, Deserialize as RkyvDeserialize,
+    Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 
@@ -53,7 +56,9 @@ where
             + self
                 .elems
                 .iter()
-                .map(|value| value.size_of_val(tracker) - std::mem::size_of_val(value))
+                .map(|value| {
+                    value.size_of_val(tracker) - std::mem::size_of_val(value)
+                })
                 .sum::<usize>()
     }
 }
@@ -167,7 +172,11 @@ where
 
     /// Consumes this `PrimaryMap` and produces a `BoxedSlice`.
     pub fn into_boxed_slice(self) -> BoxedSlice<K, V> {
-        unsafe { BoxedSlice::<K, V>::from_raw(Box::<[V]>::into_raw(self.elems.into_boxed_slice())) }
+        unsafe {
+            BoxedSlice::<K, V>::from_raw(Box::<[V]>::into_raw(
+                self.elems.into_boxed_slice(),
+            ))
+        }
     }
 }
 

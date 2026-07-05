@@ -1,7 +1,9 @@
 use crate::lib::std::convert::TryFrom;
 use crate::lib::std::fmt;
 use crate::lib::std::ops::{Add, Sub};
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
@@ -21,7 +23,16 @@ pub const WASM_MIN_PAGES: u32 = 0x100;
 
 /// Units of WebAssembly pages (as specified to be 65,536 bytes).
 #[derive(
-    Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, RkyvSerialize, RkyvDeserialize, Archive,
+    Copy,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Archive,
 )]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
@@ -170,13 +181,17 @@ mod tests {
         assert_eq!(pages, Pages(1));
         let pages = Pages::try_from(Bytes(28 * WASM_PAGE_SIZE + 42)).unwrap();
         assert_eq!(pages, Pages(28));
-        let pages = Pages::try_from(Bytes((u32::MAX as usize) * WASM_PAGE_SIZE)).unwrap();
+        let pages = Pages::try_from(Bytes((u32::MAX as usize) * WASM_PAGE_SIZE))
+            .unwrap();
         assert_eq!(pages, Pages(u32::MAX));
-        let pages = Pages::try_from(Bytes((u32::MAX as usize) * WASM_PAGE_SIZE + 1)).unwrap();
+        let pages =
+            Pages::try_from(Bytes((u32::MAX as usize) * WASM_PAGE_SIZE + 1))
+                .unwrap();
         assert_eq!(pages, Pages(u32::MAX));
 
         // Errors when page count cannot be represented as u32
-        let result = Pages::try_from(Bytes((u32::MAX as usize + 1) * WASM_PAGE_SIZE));
+        let result =
+            Pages::try_from(Bytes((u32::MAX as usize + 1) * WASM_PAGE_SIZE));
         assert_eq!(result.unwrap_err(), PageCountOutOfRange);
         let result = Pages::try_from(Bytes(usize::MAX));
         assert_eq!(result.unwrap_err(), PageCountOutOfRange);

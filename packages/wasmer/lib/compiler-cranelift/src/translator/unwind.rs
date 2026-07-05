@@ -2,7 +2,9 @@
 //! module.
 
 #[cfg(feature = "unwind")]
-use cranelift_codegen::isa::unwind::{systemv::UnwindInfo as DwarfFDE, UnwindInfo};
+use cranelift_codegen::isa::unwind::{
+    systemv::UnwindInfo as DwarfFDE, UnwindInfo,
+};
 use cranelift_codegen::{isa, print_errors::pretty_error, Context};
 use wasmer_compiler::types::unwind::CompiledFunctionUnwindInfo;
 use wasmer_types::CompileError;
@@ -24,7 +26,9 @@ impl CraneliftUnwindInfo {
     ///
     /// We skip the DWARF as it is not needed for trampolines (which are the
     /// main users of this function)
-    pub fn maybe_into_to_windows_unwind(self) -> Option<CompiledFunctionUnwindInfo> {
+    pub fn maybe_into_to_windows_unwind(
+        self,
+    ) -> Option<CompiledFunctionUnwindInfo> {
         match self {
             #[cfg(feature = "unwind")]
             Self::WindowsX64(unwind_info) => {
@@ -45,7 +49,9 @@ pub(crate) fn compiled_function_unwind_info(
         .compiled_code()
         .unwrap()
         .create_unwind_info(isa)
-        .map_err(|error| CompileError::Codegen(pretty_error(&context.func, error)))?;
+        .map_err(|error| {
+        CompileError::Codegen(pretty_error(&context.func, error))
+    })?;
 
     match unwind_info {
         Some(UnwindInfo::WindowsX64(unwind)) => {
@@ -54,7 +60,9 @@ pub(crate) fn compiled_function_unwind_info(
             unwind.emit(&mut data[..]);
             Ok(CraneliftUnwindInfo::WindowsX64(data))
         }
-        Some(UnwindInfo::SystemV(unwind)) => Ok(CraneliftUnwindInfo::Fde(unwind)),
+        Some(UnwindInfo::SystemV(unwind)) => {
+            Ok(CraneliftUnwindInfo::Fde(unwind))
+        }
         Some(_) | None => Ok(CraneliftUnwindInfo::None),
     }
 }

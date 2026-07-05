@@ -17,15 +17,21 @@
 
 use super::section::SectionIndex;
 use crate::{Addend, CodeOffset};
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
-use wasmer_types::{entity::PrimaryMap, lib::std::fmt, LibCall, LocalFunctionIndex};
+use wasmer_types::{
+    entity::PrimaryMap, lib::std::fmt, LibCall, LocalFunctionIndex,
+};
 
 /// Relocation kinds for every ISA.
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Copy, Clone, Debug, PartialEq, Eq,
+)]
 #[rkyv(derive(Debug), compare(PartialEq))]
 #[repr(u8)]
 pub enum RelocationKind {
@@ -113,7 +119,9 @@ impl fmt::Display for RelocationKind {
             Self::X86CallPCRel4 => write!(f, "CallPCRel4"),
             Self::X86CallPLTRel4 => write!(f, "CallPLTRel4"),
             Self::X86GOTPCRel4 => write!(f, "GOTPCRel4"),
-            Self::Arm32Call | Self::Arm64Call | Self::RiscvCall => write!(f, "Call"),
+            Self::Arm32Call | Self::Arm64Call | Self::RiscvCall => {
+                write!(f, "Call")
+            }
             Self::Arm64Movw0 => write!(f, "Arm64MovwG0"),
             Self::Arm64Movw1 => write!(f, "Arm64MovwG1"),
             Self::Arm64Movw2 => write!(f, "Arm64MovwG2"),
@@ -133,7 +141,9 @@ impl fmt::Display for RelocationKind {
             Self::Aarch64AdrPrelLo21 => write!(f, "Aarch64AdrPrelLo21"),
             Self::Aarch64AdrPrelPgHi21 => write!(f, "Aarch64AdrPrelPgHi21"),
             Self::Aarch64AddAbsLo12Nc => write!(f, "Aarch64AddAbsLo12Nc"),
-            Self::Aarch64Ldst128AbsLo12Nc => write!(f, "Aarch64Ldst128AbsLo12Nc"),
+            Self::Aarch64Ldst128AbsLo12Nc => {
+                write!(f, "Aarch64Ldst128AbsLo12Nc")
+            }
             Self::Aarch64Ldst64AbsLo12Nc => write!(f, "Aarch64Ldst64AbsLo12Nc"),
             // Self::MachOX86_64Tlv => write!(f, "MachOX86_64Tlv"),
         }
@@ -143,7 +153,9 @@ impl fmt::Display for RelocationKind {
 /// A record of a relocation to perform.
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Clone, PartialEq, Eq,
+)]
 #[rkyv(derive(Debug), compare(PartialEq))]
 pub struct Relocation {
     /// The relocation kind.
@@ -178,7 +190,11 @@ pub trait RelocationLike {
     // * Page(expr) is the page address of the expression expr, defined as (expr & ~0xFFF). (This applies even if the machine page size supported by the platform has a different value.)
     //
     // [1]: https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
-    fn for_address(&self, start: usize, target_func_address: u64) -> (usize, u64) {
+    fn for_address(
+        &self,
+        start: usize,
+        target_func_address: u64,
+    ) -> (usize, u64) {
         match self.kind() {
             RelocationKind::Abs8
             | RelocationKind::Arm64Movw0
@@ -254,8 +270,9 @@ pub trait RelocationLike {
             RelocationKind::Aarch64AdrPrelPgHi21 => {
                 let reloc_address = start + self.offset() as usize;
                 let reloc_addend = self.addend() as isize;
-                let target_page =
-                    (target_func_address.wrapping_add(reloc_addend as u64) & !(0xFFF)) as usize;
+                let target_page = (target_func_address
+                    .wrapping_add(reloc_addend as u64)
+                    & !(0xFFF)) as usize;
                 let pc_page = reloc_address & !(0xFFF);
                 (reloc_address, target_page.wrapping_sub(pc_page) as u64)
             }
@@ -280,7 +297,8 @@ pub trait RelocationLike {
                 let pc_page = reloc_address & !(0xFFF);
                 (reloc_address, target_page.wrapping_sub(pc_page) as u64)
             }
-            RelocationKind::LArchPCAla64Hi12 | RelocationKind::LArchPCAla64Lo20 => {
+            RelocationKind::LArchPCAla64Hi12
+            | RelocationKind::LArchPCAla64Lo20 => {
                 let reloc_address = start + self.offset() as usize;
                 let reloc_addend = self.addend() as isize;
                 let reloc_offset = match self.kind() {
@@ -288,14 +306,16 @@ pub trait RelocationLike {
                     RelocationKind::LArchPCAla64Hi12 => 12,
                     _ => 0,
                 };
-                let target_func_address = target_func_address.wrapping_add(reloc_addend as u64);
+                let target_func_address =
+                    target_func_address.wrapping_add(reloc_addend as u64);
                 let target_page = (target_func_address & !(0xFFF)) as usize;
                 let pc_page = (reloc_address - reloc_offset) & !(0xFFF);
                 let mut reloc_delta = target_page.wrapping_sub(pc_page) as u64;
                 reloc_delta = reloc_delta
                     .wrapping_add((target_func_address & 0x800) << 1)
                     .wrapping_sub((target_func_address & 0x800) << 21);
-                reloc_delta = reloc_delta.wrapping_add((reloc_delta & 0x80000000) << 1);
+                reloc_delta =
+                    reloc_delta.wrapping_add((reloc_delta & 0x80000000) << 1);
                 (reloc_address, reloc_delta)
             }
             _ => panic!("Relocation kind unsupported"),
@@ -342,7 +362,9 @@ impl RelocationLike for ArchivedRelocation {
 /// Destination function. Can be either user function or some special one, like `memory.grow`.
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(RkyvSerialize, RkyvDeserialize, Archive, Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(
+    RkyvSerialize, RkyvDeserialize, Archive, Debug, Copy, Clone, PartialEq, Eq,
+)]
 #[rkyv(derive(Debug), compare(PartialEq))]
 #[repr(u8)]
 pub enum RelocationTarget {

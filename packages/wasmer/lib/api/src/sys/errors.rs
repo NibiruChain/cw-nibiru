@@ -18,7 +18,8 @@ impl From<Trap> for RuntimeError {
         if trap.is::<Self>() {
             return trap.downcast::<Self>().unwrap();
         }
-        let (wasm_trace, trap_code) = wasmer_compiler::get_trace_and_trapcode(&trap);
+        let (wasm_trace, trap_code) =
+            wasmer_compiler::get_trace_and_trapcode(&trap);
         Self::new_from_source(trap, wasm_trace, trap_code)
     }
 }

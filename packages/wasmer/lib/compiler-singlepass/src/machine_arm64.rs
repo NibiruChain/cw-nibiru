@@ -13,7 +13,8 @@ use wasmer_compiler::{
     wasmparser::{MemArg, ValType as WpType},
 };
 use wasmer_types::{
-    CompileError, FunctionIndex, FunctionType, SourceLoc, TrapCode, TrapInformation, VMOffsets,
+    CompileError, FunctionIndex, FunctionType, SourceLoc, TrapCode,
+    TrapInformation, VMOffsets,
 };
 
 use crate::{
@@ -177,8 +178,12 @@ impl MachineARM64 {
             ImmType::Shift32No0 => (1..32).contains(&imm),
             ImmType::Shift64 => (0..64).contains(&imm),
             ImmType::Shift64No0 => (1..64).contains(&imm),
-            ImmType::Logical32 => encode_logical_immediate_32bit(imm as u32).is_some(),
-            ImmType::Logical64 => encode_logical_immediate_64bit(imm as u64).is_some(),
+            ImmType::Logical32 => {
+                encode_logical_immediate_32bit(imm as u32).is_some()
+            }
+            ImmType::Logical64 => {
+                encode_logical_immediate_64bit(imm as u64).is_some()
+            }
             ImmType::UnscaledOffset => (imm > -256) && (imm < 256),
             ImmType::OffsetByte => (0..0x1000).contains(&imm),
             ImmType::OffsetHWord => (imm & 1 == 0) && (0..0x2000).contains(&imm),
@@ -208,7 +213,9 @@ impl MachineARM64 {
                         wanted
                     } else {
                         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                            CompileError::Codegen(
+                                "singlepass cannot acquire temp gpr".to_owned(),
+                            )
                         })?;
                         temps.push(tmp);
                         tmp
@@ -228,7 +235,9 @@ impl MachineARM64 {
                         wanted
                     } else {
                         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                            CompileError::Codegen(
+                                "singlepass cannot acquire temp gpr".to_owned(),
+                            )
                         })?;
                         temps.push(tmp);
                         tmp
@@ -248,7 +257,9 @@ impl MachineARM64 {
                         wanted
                     } else {
                         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                            CompileError::Codegen(
+                                "singlepass cannot acquire temp gpr".to_owned(),
+                            )
                         })?;
                         temps.push(tmp);
                         tmp
@@ -263,7 +274,9 @@ impl MachineARM64 {
                     wanted
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
                     temps.push(tmp);
                     tmp
@@ -284,10 +297,14 @@ impl MachineARM64 {
                             )?;
                         } else {
                             if reg == tmp {
-                                codegen_error!("singlepass reg==tmp unreachable");
+                                codegen_error!(
+                                    "singlepass reg==tmp unreachable"
+                                );
                             }
-                            self.assembler
-                                .emit_mov_imm(Location::GPR(tmp), (val as i64) as u64)?;
+                            self.assembler.emit_mov_imm(
+                                Location::GPR(tmp),
+                                (val as i64) as u64,
+                            )?;
                             self.assembler.emit_ldrb(
                                 sz,
                                 Location::GPR(tmp),
@@ -303,10 +320,14 @@ impl MachineARM64 {
                             )?;
                         } else {
                             if reg == tmp {
-                                codegen_error!("singlepass reg==tmp unreachable");
+                                codegen_error!(
+                                    "singlepass reg==tmp unreachable"
+                                );
                             }
-                            self.assembler
-                                .emit_mov_imm(Location::GPR(tmp), (val as i64) as u64)?;
+                            self.assembler.emit_mov_imm(
+                                Location::GPR(tmp),
+                                (val as i64) as u64,
+                            )?;
                             self.assembler.emit_ldrh(
                                 sz,
                                 Location::GPR(tmp),
@@ -319,14 +340,23 @@ impl MachineARM64 {
                             Location::GPR(tmp),
                             Location::Memory(reg, val as _),
                         )?;
-                    } else if self.compatible_imm(val as i64, ImmType::UnscaledOffset) {
-                        self.assembler.emit_ldur(sz, Location::GPR(tmp), reg, val)?;
+                    } else if self
+                        .compatible_imm(val as i64, ImmType::UnscaledOffset)
+                    {
+                        self.assembler.emit_ldur(
+                            sz,
+                            Location::GPR(tmp),
+                            reg,
+                            val,
+                        )?;
                     } else {
                         if reg == tmp {
                             codegen_error!("singlepass reg == tmp unreachable");
                         }
-                        self.assembler
-                            .emit_mov_imm(Location::GPR(tmp), (val as i64) as u64)?;
+                        self.assembler.emit_mov_imm(
+                            Location::GPR(tmp),
+                            (val as i64) as u64,
+                        )?;
                         self.assembler.emit_ldr(
                             sz,
                             Location::GPR(tmp),
@@ -336,7 +366,11 @@ impl MachineARM64 {
                 }
                 Ok(Location::GPR(tmp))
             }
-            _ => codegen_error!("singlepass can't emit location_to_reg {:?} {:?}", sz, src),
+            _ => codegen_error!(
+                "singlepass can't emit location_to_reg {:?} {:?}",
+                sz,
+                src
+            ),
         }
     }
     fn location_to_neon(
@@ -351,7 +385,9 @@ impl MachineARM64 {
             Location::SIMD(_) => Ok(src),
             Location::GPR(_) => {
                 let tmp = self.acquire_temp_simd().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp simd".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp simd".to_owned(),
+                    )
                 })?;
                 temps.push(tmp);
                 if read_val {
@@ -364,16 +400,23 @@ impl MachineARM64 {
                     Ok(src)
                 } else {
                     let gpr = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
                     let tmp = self.acquire_temp_simd().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp simd".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp simd".to_owned(),
+                        )
                     })?;
                     temps.push(tmp);
                     self.assembler
                         .emit_mov_imm(Location::GPR(gpr), val as u64)?;
-                    self.assembler
-                        .emit_mov(sz, Location::GPR(gpr), Location::SIMD(tmp))?;
+                    self.assembler.emit_mov(
+                        sz,
+                        Location::GPR(gpr),
+                        Location::SIMD(tmp),
+                    )?;
                     self.release_gpr(gpr);
                     Ok(Location::SIMD(tmp))
                 }
@@ -383,16 +426,23 @@ impl MachineARM64 {
                     Ok(src)
                 } else {
                     let gpr = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
                     let tmp = self.acquire_temp_simd().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp simd".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp simd".to_owned(),
+                        )
                     })?;
                     temps.push(tmp);
                     self.assembler
                         .emit_mov_imm(Location::GPR(gpr), (val as i64) as u64)?;
-                    self.assembler
-                        .emit_mov(sz, Location::GPR(gpr), Location::SIMD(tmp))?;
+                    self.assembler.emit_mov(
+                        sz,
+                        Location::GPR(gpr),
+                        Location::SIMD(tmp),
+                    )?;
                     self.release_gpr(gpr);
                     Ok(Location::SIMD(tmp))
                 }
@@ -402,23 +452,32 @@ impl MachineARM64 {
                     Ok(src)
                 } else {
                     let gpr = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
                     let tmp = self.acquire_temp_simd().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp simd".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp simd".to_owned(),
+                        )
                     })?;
                     temps.push(tmp);
                     self.assembler
                         .emit_mov_imm(Location::GPR(gpr), val as u64)?;
-                    self.assembler
-                        .emit_mov(sz, Location::GPR(gpr), Location::SIMD(tmp))?;
+                    self.assembler.emit_mov(
+                        sz,
+                        Location::GPR(gpr),
+                        Location::SIMD(tmp),
+                    )?;
                     self.release_gpr(gpr);
                     Ok(Location::SIMD(tmp))
                 }
             }
             Location::Memory(reg, val) => {
                 let tmp = self.acquire_temp_simd().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp simd".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp simd".to_owned(),
+                    )
                 })?;
                 temps.push(tmp);
                 if read_val {
@@ -433,15 +492,25 @@ impl MachineARM64 {
                             Location::SIMD(tmp),
                             Location::Memory(reg, val as _),
                         )?;
-                    } else if self.compatible_imm(val as i64, ImmType::UnscaledOffset) {
-                        self.assembler
-                            .emit_ldur(sz, Location::SIMD(tmp), reg, val)?;
+                    } else if self
+                        .compatible_imm(val as i64, ImmType::UnscaledOffset)
+                    {
+                        self.assembler.emit_ldur(
+                            sz,
+                            Location::SIMD(tmp),
+                            reg,
+                            val,
+                        )?;
                     } else {
                         let gpr = self.acquire_temp_gpr().ok_or_else(|| {
-                            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                            CompileError::Codegen(
+                                "singlepass cannot acquire temp gpr".to_owned(),
+                            )
                         })?;
-                        self.assembler
-                            .emit_mov_imm(Location::GPR(gpr), (val as i64) as u64)?;
+                        self.assembler.emit_mov_imm(
+                            Location::GPR(gpr),
+                            (val as i64) as u64,
+                        )?;
                         self.assembler.emit_ldr(
                             sz,
                             Location::SIMD(tmp),
@@ -452,13 +521,22 @@ impl MachineARM64 {
                 }
                 Ok(Location::SIMD(tmp))
             }
-            _ => codegen_error!("singlepass can't emit location_to_neon {:?} {:?}", sz, src),
+            _ => codegen_error!(
+                "singlepass can't emit location_to_neon {:?} {:?}",
+                sz,
+                src
+            ),
         }
     }
 
     fn emit_relaxed_binop(
         &mut self,
-        op: fn(&mut Assembler, Size, Location, Location) -> Result<(), CompileError>,
+        op: fn(
+            &mut Assembler,
+            Size,
+            Location,
+            Location,
+        ) -> Result<(), CompileError>,
         sz: Size,
         src: Location,
         dst: Location,
@@ -470,8 +548,16 @@ impl MachineARM64 {
         } else {
             ImmType::Bits12
         };
-        let src = self.location_to_reg(sz, src, &mut temps, src_imm, true, None)?;
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, !putback, None)?;
+        let src =
+            self.location_to_reg(sz, src, &mut temps, src_imm, true, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            !putback,
+            None,
+        )?;
         op(&mut self.assembler, sz, src, dest)?;
         if dst != dest && putback {
             self.move_location(sz, dest, dst)?;
@@ -483,15 +569,22 @@ impl MachineARM64 {
     }
     fn emit_relaxed_binop_neon(
         &mut self,
-        op: fn(&mut Assembler, Size, Location, Location) -> Result<(), CompileError>,
+        op: fn(
+            &mut Assembler,
+            Size,
+            Location,
+            Location,
+        ) -> Result<(), CompileError>,
         sz: Size,
         src: Location,
         dst: Location,
         putback: bool,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let src = self.location_to_neon(sz, src, &mut temps, ImmType::None, true)?;
-        let dest = self.location_to_neon(sz, dst, &mut temps, ImmType::None, !putback)?;
+        let src =
+            self.location_to_neon(sz, src, &mut temps, ImmType::None, true)?;
+        let dest =
+            self.location_to_neon(sz, dst, &mut temps, ImmType::None, !putback)?;
         op(&mut self.assembler, sz, src, dest)?;
         if dst != dest && putback {
             self.move_location(sz, dest, dst)?;
@@ -503,7 +596,13 @@ impl MachineARM64 {
     }
     fn emit_relaxed_binop3(
         &mut self,
-        op: fn(&mut Assembler, Size, Location, Location, Location) -> Result<(), CompileError>,
+        op: fn(
+            &mut Assembler,
+            Size,
+            Location,
+            Location,
+            Location,
+        ) -> Result<(), CompileError>,
         sz: Size,
         src1: Location,
         src2: Location,
@@ -511,9 +610,24 @@ impl MachineARM64 {
         allow_imm: ImmType,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(sz, src1, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(sz, src2, &mut temps, allow_imm, true, None)?;
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            sz,
+            src1,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 =
+            self.location_to_reg(sz, src2, &mut temps, allow_imm, true, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         op(&mut self.assembler, sz, src1, src2, dest)?;
         if dst != dest {
             self.move_location(sz, dest, dst)?;
@@ -525,7 +639,13 @@ impl MachineARM64 {
     }
     fn emit_relaxed_binop3_neon(
         &mut self,
-        op: fn(&mut Assembler, Size, Location, Location, Location) -> Result<(), CompileError>,
+        op: fn(
+            &mut Assembler,
+            Size,
+            Location,
+            Location,
+            Location,
+        ) -> Result<(), CompileError>,
         sz: Size,
         src1: Location,
         src2: Location,
@@ -533,9 +653,12 @@ impl MachineARM64 {
         allow_imm: ImmType,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_neon(sz, src1, &mut temps, ImmType::None, true)?;
-        let src2 = self.location_to_neon(sz, src2, &mut temps, allow_imm, true)?;
-        let dest = self.location_to_neon(sz, dst, &mut temps, ImmType::None, false)?;
+        let src1 =
+            self.location_to_neon(sz, src1, &mut temps, ImmType::None, true)?;
+        let src2 =
+            self.location_to_neon(sz, src2, &mut temps, allow_imm, true)?;
+        let dest =
+            self.location_to_neon(sz, dst, &mut temps, ImmType::None, false)?;
         op(&mut self.assembler, sz, src1, src2, dest)?;
         if dst != dest {
             self.move_location(sz, dest, dst)?;
@@ -552,19 +675,32 @@ impl MachineARM64 {
         src: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, false, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetDWord) {
                     self.assembler.emit_ldr(Size::S64, dest, src)?;
-                } else if self.compatible_imm(offset as i64, ImmType::UnscaledOffset) {
+                } else if self
+                    .compatible_imm(offset as i64, ImmType::UnscaledOffset)
+                {
                     self.assembler.emit_ldur(Size::S64, dest, addr, offset)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_ldr(
                         Size::S64,
                         dest,
@@ -590,19 +726,32 @@ impl MachineARM64 {
         src: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, false, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetWord) {
                     self.assembler.emit_ldr(Size::S32, dest, src)?;
-                } else if self.compatible_imm(offset as i64, ImmType::UnscaledOffset) {
+                } else if self
+                    .compatible_imm(offset as i64, ImmType::UnscaledOffset)
+                {
                     self.assembler.emit_ldur(Size::S32, dest, addr, offset)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_ldr(
                         Size::S32,
                         dest,
@@ -628,17 +777,28 @@ impl MachineARM64 {
         src: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, false, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetWord) {
                     self.assembler.emit_ldrsw(Size::S64, dest, src)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_ldrsw(
                         Size::S64,
                         dest,
@@ -664,17 +824,28 @@ impl MachineARM64 {
         src: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, false, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetHWord) {
                     self.assembler.emit_ldrh(Size::S32, dest, src)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_ldrh(
                         Size::S32,
                         dest,
@@ -700,17 +871,28 @@ impl MachineARM64 {
         src: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, false, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetHWord) {
                     self.assembler.emit_ldrsh(sz, dest, src)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_ldrsh(
                         sz,
                         dest,
@@ -736,17 +918,28 @@ impl MachineARM64 {
         src: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, false, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetByte) {
                     self.assembler.emit_ldrb(Size::S32, dest, src)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_ldrb(
                         Size::S32,
                         dest,
@@ -772,17 +965,28 @@ impl MachineARM64 {
         src: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(sz, dst, &mut temps, ImmType::None, false, None)?;
+        let dest = self.location_to_reg(
+            sz,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetByte) {
                     self.assembler.emit_ldrsb(sz, dest, src)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_ldrsb(
                         sz,
                         dest,
@@ -801,21 +1005,38 @@ impl MachineARM64 {
         }
         Ok(())
     }
-    fn emit_relaxed_str64(&mut self, dst: Location, src: Location) -> Result<(), CompileError> {
+    fn emit_relaxed_str64(
+        &mut self,
+        dst: Location,
+        src: Location,
+    ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dst = self.location_to_reg(Size::S64, dst, &mut temps, ImmType::NoneXzr, true, None)?;
+        let dst = self.location_to_reg(
+            Size::S64,
+            dst,
+            &mut temps,
+            ImmType::NoneXzr,
+            true,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetDWord) {
                     self.assembler.emit_str(Size::S64, dst, src)?;
-                } else if self.compatible_imm(offset as i64, ImmType::UnscaledOffset) {
+                } else if self
+                    .compatible_imm(offset as i64, ImmType::UnscaledOffset)
+                {
                     self.assembler.emit_stur(Size::S64, dst, addr, offset)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_str(
                         Size::S64,
                         dst,
@@ -824,28 +1045,47 @@ impl MachineARM64 {
                     temps.push(tmp);
                 }
             }
-            _ => codegen_error!("singlepass can't emit str64 {:?} {:?}", dst, src),
+            _ => {
+                codegen_error!("singlepass can't emit str64 {:?} {:?}", dst, src)
+            }
         }
         for r in temps {
             self.release_gpr(r);
         }
         Ok(())
     }
-    fn emit_relaxed_str32(&mut self, dst: Location, src: Location) -> Result<(), CompileError> {
+    fn emit_relaxed_str32(
+        &mut self,
+        dst: Location,
+        src: Location,
+    ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dst = self.location_to_reg(Size::S64, dst, &mut temps, ImmType::NoneXzr, true, None)?;
+        let dst = self.location_to_reg(
+            Size::S64,
+            dst,
+            &mut temps,
+            ImmType::NoneXzr,
+            true,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetWord) {
                     self.assembler.emit_str(Size::S32, dst, src)?;
-                } else if self.compatible_imm(offset as i64, ImmType::UnscaledOffset) {
+                } else if self
+                    .compatible_imm(offset as i64, ImmType::UnscaledOffset)
+                {
                     self.assembler.emit_stur(Size::S32, dst, addr, offset)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_str(
                         Size::S32,
                         dst,
@@ -861,19 +1101,34 @@ impl MachineARM64 {
         }
         Ok(())
     }
-    fn emit_relaxed_str16(&mut self, dst: Location, src: Location) -> Result<(), CompileError> {
+    fn emit_relaxed_str16(
+        &mut self,
+        dst: Location,
+        src: Location,
+    ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dst = self.location_to_reg(Size::S64, dst, &mut temps, ImmType::NoneXzr, true, None)?;
+        let dst = self.location_to_reg(
+            Size::S64,
+            dst,
+            &mut temps,
+            ImmType::NoneXzr,
+            true,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetHWord) {
                     self.assembler.emit_strh(Size::S32, dst, src)?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_strh(
                         Size::S32,
                         dst,
@@ -889,20 +1144,38 @@ impl MachineARM64 {
         }
         Ok(())
     }
-    fn emit_relaxed_str8(&mut self, dst: Location, src: Location) -> Result<(), CompileError> {
+    fn emit_relaxed_str8(
+        &mut self,
+        dst: Location,
+        src: Location,
+    ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dst = self.location_to_reg(Size::S64, dst, &mut temps, ImmType::NoneXzr, true, None)?;
+        let dst = self.location_to_reg(
+            Size::S64,
+            dst,
+            &mut temps,
+            ImmType::NoneXzr,
+            true,
+            None,
+        )?;
         match src {
             Location::Memory(addr, offset) => {
                 if self.compatible_imm(offset as i64, ImmType::OffsetByte) {
-                    self.assembler
-                        .emit_strb(Size::S32, dst, Location::Memory(addr, offset))?;
+                    self.assembler.emit_strb(
+                        Size::S32,
+                        dst,
+                        Location::Memory(addr, offset),
+                    )?;
                 } else {
                     let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                        CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                        CompileError::Codegen(
+                            "singlepass cannot acquire temp gpr".to_owned(),
+                        )
                     })?;
-                    self.assembler
-                        .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                    self.assembler.emit_mov_imm(
+                        Location::GPR(tmp),
+                        (offset as i64) as u64,
+                    )?;
                     self.assembler.emit_strb(
                         Size::S32,
                         dst,
@@ -933,7 +1206,9 @@ impl MachineARM64 {
             }
             Location::Memory(_, _) => {
                 let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 self.emit_relaxed_cmp(Size::S64, loc_b, loc_a)?;
                 self.assembler.emit_cset(Size::S32, Location::GPR(tmp), c)?;
@@ -941,7 +1216,9 @@ impl MachineARM64 {
                 self.release_gpr(tmp);
             }
             _ => {
-                codegen_error!("singlepass emit_compop_i64_dynamic_b unreachable");
+                codegen_error!(
+                    "singlepass emit_compop_i64_dynamic_b unreachable"
+                );
             }
         }
         Ok(())
@@ -961,7 +1238,9 @@ impl MachineARM64 {
             }
             Location::Memory(_, _) => {
                 let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 self.emit_relaxed_cmp(Size::S32, loc_b, loc_a)?;
                 self.assembler.emit_cset(Size::S32, Location::GPR(tmp), c)?;
@@ -969,7 +1248,9 @@ impl MachineARM64 {
                 self.release_gpr(tmp);
             }
             _ => {
-                codegen_error!("singlepass emit_cmpop_i32_dynamic_b unreachable");
+                codegen_error!(
+                    "singlepass emit_cmpop_i32_dynamic_b unreachable"
+                );
             }
         }
         Ok(())
@@ -990,7 +1271,9 @@ impl MachineARM64 {
         cb: F,
     ) -> Result<(), CompileError> {
         let tmp_addr = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
 
         // Reusing `tmp_addr` for temporary indirection here, since it's not used before the last reference to `{base,bound}_loc`.
@@ -1012,10 +1295,14 @@ impl MachineARM64 {
         };
 
         let tmp_base = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         let tmp_bound = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
 
         // Load base into temporary register.
@@ -1023,7 +1310,11 @@ impl MachineARM64 {
 
         // Load bound into temporary register, if needed.
         if need_check {
-            self.emit_relaxed_ldr64(Size::S64, Location::GPR(tmp_bound), bound_loc)?;
+            self.emit_relaxed_ldr64(
+                Size::S64,
+                Location::GPR(tmp_bound),
+                bound_loc,
+            )?;
 
             // Wasm -> Effective.
             // Assuming we never underflow - should always be true on Linux/macOS and Windows >=8,
@@ -1043,7 +1334,9 @@ impl MachineARM64 {
                 )?;
             } else {
                 let tmp2 = self.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 self.assembler
                     .emit_mov_imm(Location::GPR(tmp2), value_size as u64)?;
@@ -1073,7 +1366,9 @@ impl MachineARM64 {
                 )?;
             } else {
                 let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 self.assembler
                     .emit_mov_imm(Location::GPR(tmp), memarg.offset as _)?;
@@ -1128,7 +1423,11 @@ impl MachineARM64 {
         let begin = self.assembler.get_offset().0;
         cb(self, tmp_addr)?;
         let end = self.assembler.get_offset().0;
-        self.mark_address_range_with_trap_code(TrapCode::HeapAccessOutOfBounds, begin, end);
+        self.mark_address_range_with_trap_code(
+            TrapCode::HeapAccessOutOfBounds,
+            begin,
+            end,
+        );
 
         self.release_gpr(tmp_addr);
         Ok(())
@@ -1172,7 +1471,11 @@ impl MachineARM64 {
         true
     }
 
-    fn emit_push(&mut self, sz: Size, src: Location) -> Result<(), CompileError> {
+    fn emit_push(
+        &mut self,
+        sz: Size,
+        src: Location,
+    ) -> Result<(), CompileError> {
         match (sz, src) {
             (Size::S64, Location::GPR(_)) | (Size::S64, Location::SIMD(_)) => {
                 let offset = if self.pushed {
@@ -1192,7 +1495,14 @@ impl MachineARM64 {
             }
             (Size::S64, _) => {
                 let mut temps = vec![];
-                let src = self.location_to_reg(sz, src, &mut temps, ImmType::None, true, None)?;
+                let src = self.location_to_reg(
+                    sz,
+                    src,
+                    &mut temps,
+                    ImmType::None,
+                    true,
+                    None,
+                )?;
                 let offset = if self.pushed {
                     0
                 } else {
@@ -1224,8 +1534,13 @@ impl MachineARM64 {
         if !self.pushed {
             match (sz, src1, src2) {
                 (Size::S64, Location::GPR(_), Location::GPR(_)) => {
-                    self.assembler
-                        .emit_stpdb(Size::S64, src1, src2, GPR::XzrSp, 16)?;
+                    self.assembler.emit_stpdb(
+                        Size::S64,
+                        src1,
+                        src2,
+                        GPR::XzrSp,
+                        16,
+                    )?;
                 }
                 _ => {
                     self.emit_push(sz, src1)?;
@@ -1267,8 +1582,13 @@ impl MachineARM64 {
         if !self.pushed {
             match (sz, dst1, dst2) {
                 (Size::S64, Location::GPR(_), Location::GPR(_)) => {
-                    self.assembler
-                        .emit_ldpia(Size::S64, dst1, dst2, GPR::XzrSp, 16)?;
+                    self.assembler.emit_ldpia(
+                        Size::S64,
+                        dst1,
+                        dst2,
+                        GPR::XzrSp,
+                        16,
+                    )?;
                 }
                 _ => {
                     self.emit_pop(sz, dst2)?;
@@ -1282,25 +1602,40 @@ impl MachineARM64 {
         Ok(())
     }
 
-    fn set_default_nan(&mut self, temps: &mut Vec<GPR>) -> Result<GPR, CompileError> {
+    fn set_default_nan(
+        &mut self,
+        temps: &mut Vec<GPR>,
+    ) -> Result<GPR, CompileError> {
         // temporarly set FPCR to DefaultNan
         let old_fpcr = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         temps.push(old_fpcr);
         self.assembler.emit_read_fpcr(old_fpcr)?;
         let new_fpcr = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         temps.push(new_fpcr);
         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         temps.push(tmp);
-        self.assembler
-            .emit_mov(Size::S32, Location::Imm32(1), Location::GPR(tmp))?;
-        self.assembler
-            .emit_mov(Size::S64, Location::GPR(old_fpcr), Location::GPR(new_fpcr))?;
+        self.assembler.emit_mov(
+            Size::S32,
+            Location::Imm32(1),
+            Location::GPR(tmp),
+        )?;
+        self.assembler.emit_mov(
+            Size::S64,
+            Location::GPR(old_fpcr),
+            Location::GPR(new_fpcr),
+        )?;
         // DN is bit 25 of FPCR
         self.assembler.emit_bfi(
             Size::S64,
@@ -1312,19 +1647,29 @@ impl MachineARM64 {
         self.assembler.emit_write_fpcr(new_fpcr)?;
         Ok(old_fpcr)
     }
-    fn set_trap_enabled(&mut self, temps: &mut Vec<GPR>) -> Result<GPR, CompileError> {
+    fn set_trap_enabled(
+        &mut self,
+        temps: &mut Vec<GPR>,
+    ) -> Result<GPR, CompileError> {
         // temporarly set FPCR to DefaultNan
         let old_fpcr = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         temps.push(old_fpcr);
         self.assembler.emit_read_fpcr(old_fpcr)?;
         let new_fpcr = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         temps.push(new_fpcr);
-        self.assembler
-            .emit_mov(Size::S64, Location::GPR(old_fpcr), Location::GPR(new_fpcr))?;
+        self.assembler.emit_mov(
+            Size::S64,
+            Location::GPR(old_fpcr),
+            Location::GPR(new_fpcr),
+        )?;
         // IOE is bit 8 of FPCR
         self.assembler
             .emit_bfc(Size::S64, 8, 1, Location::GPR(new_fpcr))?;
@@ -1338,7 +1683,9 @@ impl MachineARM64 {
     fn reset_exception_fpsr(&mut self) -> Result<(), CompileError> {
         // reset exception count in FPSR
         let fpsr = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         self.assembler.emit_read_fpsr(fpsr)?;
         // IOC is 0
@@ -1350,7 +1697,9 @@ impl MachineARM64 {
     }
     fn read_fpsr(&mut self) -> Result<GPR, CompileError> {
         let fpsr = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         self.assembler.emit_read_fpsr(fpsr)?;
         Ok(fpsr)
@@ -1413,7 +1762,10 @@ impl MachineARM64 {
     fn emit_unwind_op(&mut self, op: UnwindOps) {
         self.unwind_ops.push((self.get_offset().0, op));
     }
-    fn emit_illegal_op_internal(&mut self, trap: TrapCode) -> Result<(), CompileError> {
+    fn emit_illegal_op_internal(
+        &mut self,
+        trap: TrapCode,
+    ) -> Result<(), CompileError> {
         self.assembler.emit_udf(0xc0 | (trap as u8) as u16)
     }
 }
@@ -1494,7 +1846,10 @@ impl Machine for MachineARM64 {
         self.used_gprs_insert(gpr);
     }
 
-    fn push_used_gpr(&mut self, used_gprs: &[GPR]) -> Result<usize, CompileError> {
+    fn push_used_gpr(
+        &mut self,
+        used_gprs: &[GPR],
+    ) -> Result<usize, CompileError> {
         if used_gprs.len() % 2 == 1 {
             self.emit_push(Size::S64, Location::GPR(GPR::XzrSp))?;
         }
@@ -1555,7 +1910,10 @@ impl Machine for MachineARM64 {
         assert!(self.used_simd_remove(&simd));
     }
 
-    fn push_used_simd(&mut self, used_neons: &[NEON]) -> Result<usize, CompileError> {
+    fn push_used_simd(
+        &mut self,
+        used_neons: &[NEON],
+    ) -> Result<usize, CompileError> {
         let stack_adjust = if used_neons.len() & 1 == 1 {
             (used_neons.len() * 8) as u32 + 8
         } else {
@@ -1572,7 +1930,10 @@ impl Machine for MachineARM64 {
         }
         Ok(stack_adjust as usize)
     }
-    fn pop_used_simd(&mut self, used_neons: &[NEON]) -> Result<(), CompileError> {
+    fn pop_used_simd(
+        &mut self,
+        used_neons: &[NEON],
+    ) -> Result<(), CompileError> {
         for (i, r) in used_neons.iter().enumerate() {
             self.assembler.emit_ldr(
                 Size::S64,
@@ -1598,7 +1959,12 @@ impl Machine for MachineARM64 {
         self.src_loc = offset;
     }
     /// Marks each address in the code range emitted by `f` with the trap code `code`.
-    fn mark_address_range_with_trap_code(&mut self, code: TrapCode, begin: usize, end: usize) {
+    fn mark_address_range_with_trap_code(
+        &mut self,
+        code: TrapCode,
+        begin: usize,
+        end: usize,
+    ) {
         for i in begin..end {
             self.trap_table.offset_to_code.insert(i, code);
         }
@@ -1668,8 +2034,13 @@ impl Machine for MachineARM64 {
     }
 
     // Adjust stack for locals
-    fn adjust_stack(&mut self, delta_stack_offset: u32) -> Result<(), CompileError> {
-        let delta = if self.compatible_imm(delta_stack_offset as _, ImmType::Bits12) {
+    fn adjust_stack(
+        &mut self,
+        delta_stack_offset: u32,
+    ) -> Result<(), CompileError> {
+        let delta = if self
+            .compatible_imm(delta_stack_offset as _, ImmType::Bits12)
+        {
             Location::Imm32(delta_stack_offset as _)
         } else {
             let tmp = GPR::X17;
@@ -1685,8 +2056,13 @@ impl Machine for MachineARM64 {
         )
     }
     // restore stack
-    fn restore_stack(&mut self, delta_stack_offset: u32) -> Result<(), CompileError> {
-        let delta = if self.compatible_imm(delta_stack_offset as _, ImmType::Bits12) {
+    fn restore_stack(
+        &mut self,
+        delta_stack_offset: u32,
+    ) -> Result<(), CompileError> {
+        let delta = if self
+            .compatible_imm(delta_stack_offset as _, ImmType::Bits12)
+        {
             Location::Imm32(delta_stack_offset as _)
         } else {
             let tmp = GPR::X17;
@@ -1701,7 +2077,10 @@ impl Machine for MachineARM64 {
             Location::GPR(GPR::XzrSp),
         )
     }
-    fn pop_stack_locals(&mut self, delta_stack_offset: u32) -> Result<(), CompileError> {
+    fn pop_stack_locals(
+        &mut self,
+        delta_stack_offset: u32,
+    ) -> Result<(), CompileError> {
         let real_delta = if delta_stack_offset & 15 != 0 {
             delta_stack_offset + 8
         } else {
@@ -1743,7 +2122,11 @@ impl Machine for MachineARM64 {
     }
 
     // Zero a location that is 32bits
-    fn zero_location(&mut self, size: Size, location: Location) -> Result<(), CompileError> {
+    fn zero_location(
+        &mut self,
+        size: Size,
+        location: Location,
+    ) -> Result<(), CompileError> {
         self.move_location(size, Location::GPR(GPR::XzrSp), location)
     }
 
@@ -1758,7 +2141,11 @@ impl Machine for MachineARM64 {
     }
 
     // Determine a local's location.
-    fn get_local_location(&self, idx: usize, callee_saved_regs_size: usize) -> Location {
+    fn get_local_location(
+        &self,
+        idx: usize,
+        callee_saved_regs_size: usize,
+    ) -> Location {
         // Use callee-saved registers for the first locals.
         match idx {
             0 => Location::GPR(GPR::X19),
@@ -1769,35 +2156,53 @@ impl Machine for MachineARM64 {
             5 => Location::GPR(GPR::X24),
             6 => Location::GPR(GPR::X25),
             7 => Location::GPR(GPR::X26),
-            _ => Location::Memory(GPR::X29, -(((idx - 7) * 8 + callee_saved_regs_size) as i32)),
+            _ => Location::Memory(
+                GPR::X29,
+                -(((idx - 7) * 8 + callee_saved_regs_size) as i32),
+            ),
         }
     }
     // Move a local to the stack
-    fn move_local(&mut self, stack_offset: i32, location: Location) -> Result<(), CompileError> {
+    fn move_local(
+        &mut self,
+        stack_offset: i32,
+        location: Location,
+    ) -> Result<(), CompileError> {
         if stack_offset < 256 {
-            self.assembler
-                .emit_stur(Size::S64, location, GPR::X29, -stack_offset)?;
+            self.assembler.emit_stur(
+                Size::S64,
+                location,
+                GPR::X29,
+                -stack_offset,
+            )?;
         } else {
             let tmp = GPR::X17;
             if stack_offset < 0x1_0000 {
-                self.assembler
-                    .emit_mov_imm(Location::GPR(tmp), (-stack_offset as i64) as u64)?;
+                self.assembler.emit_mov_imm(
+                    Location::GPR(tmp),
+                    (-stack_offset as i64) as u64,
+                )?;
                 self.assembler.emit_str(
                     Size::S64,
                     location,
                     Location::Memory2(GPR::X29, tmp, Multiplier::One, 0),
                 )?;
             } else {
-                self.assembler
-                    .emit_mov_imm(Location::GPR(tmp), (stack_offset as i64) as u64)?;
+                self.assembler.emit_mov_imm(
+                    Location::GPR(tmp),
+                    (stack_offset as i64) as u64,
+                )?;
                 self.assembler.emit_sub(
                     Size::S64,
                     Location::GPR(GPR::X29),
                     Location::GPR(tmp),
                     Location::GPR(tmp),
                 )?;
-                self.assembler
-                    .emit_str(Size::S64, location, Location::GPR(tmp))?;
+                self.assembler.emit_str(
+                    Size::S64,
+                    location,
+                    Location::GPR(tmp),
+                )?;
             }
         }
         match location {
@@ -1815,7 +2220,10 @@ impl Machine for MachineARM64 {
     }
 
     // List of register to save, depending on the CallingConvention
-    fn list_to_save(&self, _calling_convention: CallingConvention) -> Vec<Location> {
+    fn list_to_save(
+        &self,
+        _calling_convention: CallingConvention,
+    ) -> Vec<Location> {
         vec![]
     }
 
@@ -1901,7 +2309,8 @@ impl Machine for MachineARM64 {
                     if sz > 1 && *stack_args & (sz - 1) != 0 {
                         *stack_args = (*stack_args + (sz - 1)) & !(sz - 1);
                     }
-                    let loc = Location::Memory(GPR::X29, 16 * 2 + *stack_args as i32);
+                    let loc =
+                        Location::Memory(GPR::X29, 16 * 2 + *stack_args as i32);
                     *stack_args += sz;
                     loc
                 }
@@ -1916,7 +2325,8 @@ impl Machine for MachineARM64 {
                 6 => Location::GPR(GPR::X6),
                 7 => Location::GPR(GPR::X7),
                 _ => {
-                    let loc = Location::Memory(GPR::X29, 16 * 2 + *stack_args as i32);
+                    let loc =
+                        Location::Memory(GPR::X29, 16 * 2 + *stack_args as i32);
                     *stack_args += 8;
                     loc
                 }
@@ -1953,17 +2363,23 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         match source {
             Location::GPR(_) | Location::SIMD(_) => match dest {
-                Location::GPR(_) | Location::SIMD(_) => self.assembler.emit_mov(size, source, dest),
+                Location::GPR(_) | Location::SIMD(_) => {
+                    self.assembler.emit_mov(size, source, dest)
+                }
                 Location::Memory(addr, offs) => {
                     if self.offset_is_ok(size, offs) {
                         self.assembler.emit_str(size, source, dest)
-                    } else if self.compatible_imm(offs as i64, ImmType::UnscaledOffset) {
+                    } else if self
+                        .compatible_imm(offs as i64, ImmType::UnscaledOffset)
+                    {
                         self.assembler.emit_stur(size, source, addr, offs)
                     } else {
                         let tmp = GPR::X17;
                         if offs < 0 {
-                            self.assembler
-                                .emit_mov_imm(Location::GPR(tmp), (-offs) as u64)?;
+                            self.assembler.emit_mov_imm(
+                                Location::GPR(tmp),
+                                (-offs) as u64,
+                            )?;
                             self.assembler.emit_sub(
                                 Size::S64,
                                 Location::GPR(addr),
@@ -1980,8 +2396,11 @@ impl Machine for MachineARM64 {
                                 Location::GPR(tmp),
                             )?;
                         }
-                        self.assembler
-                            .emit_str(size, source, Location::Memory(tmp, 0))
+                        self.assembler.emit_str(
+                            size,
+                            source,
+                            Location::Memory(tmp, 0),
+                        )
                     }
                 }
                 _ => codegen_error!(
@@ -2007,7 +2426,9 @@ impl Machine for MachineARM64 {
                 ),
             },
             Location::Imm32(val) => match dest {
-                Location::GPR(_) => self.assembler.emit_mov_imm(dest, val as u64),
+                Location::GPR(_) => {
+                    self.assembler.emit_mov_imm(dest, val as u64)
+                }
                 Location::Memory(_, _) => match size {
                     Size::S64 => self.emit_relaxed_str64(source, dest),
                     Size::S32 => self.emit_relaxed_str32(source, dest),
@@ -2045,8 +2466,10 @@ impl Machine for MachineARM64 {
                     } else {
                         let tmp = GPR::X17;
                         if offs < 0 {
-                            self.assembler
-                                .emit_mov_imm(Location::GPR(tmp), (-offs) as u64)?;
+                            self.assembler.emit_mov_imm(
+                                Location::GPR(tmp),
+                                (-offs) as u64,
+                            )?;
                             self.assembler.emit_sub(
                                 Size::S64,
                                 Location::GPR(addr),
@@ -2063,14 +2486,23 @@ impl Machine for MachineARM64 {
                                 Location::GPR(tmp),
                             )?;
                         }
-                        self.assembler
-                            .emit_ldr(size, dest, Location::Memory(tmp, 0))
+                        self.assembler.emit_ldr(
+                            size,
+                            dest,
+                            Location::Memory(tmp, 0),
+                        )
                     }
                 }
                 _ => {
                     let mut temps = vec![];
-                    let src =
-                        self.location_to_reg(size, source, &mut temps, ImmType::None, true, None)?;
+                    let src = self.location_to_reg(
+                        size,
+                        source,
+                        &mut temps,
+                        ImmType::None,
+                        true,
+                        None,
+                    )?;
                     self.move_location(size, src, dest)?;
                     for r in temps {
                         self.release_gpr(r);
@@ -2099,7 +2531,14 @@ impl Machine for MachineARM64 {
             codegen_error!("singlepass move_location_extend unreachable");
         }
         let mut temps = vec![];
-        let dst = self.location_to_reg(size_op, dest, &mut temps, ImmType::None, false, None)?;
+        let dst = self.location_to_reg(
+            size_op,
+            dest,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let src = match (size_val, signed, source) {
             (Size::S64, _, _) => source,
             (Size::S32, false, Location::GPR(_)) => {
@@ -2187,7 +2626,9 @@ impl Machine for MachineARM64 {
         let label = self.assembler.get_label();
         let mut temps = vec![];
         let dest = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         temps.push(dest);
         let cnt = self.location_to_reg(
@@ -2199,8 +2640,12 @@ impl Machine for MachineARM64 {
             None,
         )?;
         let dest = match last_stack_loc {
-            Location::GPR(_) => codegen_error!("singlepass init_stack_loc unreachable"),
-            Location::SIMD(_) => codegen_error!("singlepass init_stack_loc unreachable"),
+            Location::GPR(_) => {
+                codegen_error!("singlepass init_stack_loc unreachable")
+            }
+            Location::SIMD(_) => {
+                codegen_error!("singlepass init_stack_loc unreachable")
+            }
             Location::Memory(reg, offset) => {
                 if offset < 0 {
                     let offset = (-offset) as u32;
@@ -2213,10 +2658,14 @@ impl Machine for MachineARM64 {
                         )?;
                     } else {
                         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                            CompileError::Codegen(
+                                "singlepass cannot acquire temp gpr".to_owned(),
+                            )
                         })?;
-                        self.assembler
-                            .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                        self.assembler.emit_mov_imm(
+                            Location::GPR(tmp),
+                            (offset as i64) as u64,
+                        )?;
                         self.assembler.emit_sub(
                             Size::S64,
                             Location::GPR(reg),
@@ -2237,10 +2686,14 @@ impl Machine for MachineARM64 {
                         )?;
                     } else {
                         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                            CompileError::Codegen(
+                                "singlepass cannot acquire temp gpr".to_owned(),
+                            )
                         })?;
-                        self.assembler
-                            .emit_mov_imm(Location::GPR(tmp), (offset as i64) as u64)?;
+                        self.assembler.emit_mov_imm(
+                            Location::GPR(tmp),
+                            (offset as i64) as u64,
+                        )?;
                         self.assembler.emit_add(
                             Size::S64,
                             Location::GPR(reg),
@@ -2252,11 +2705,18 @@ impl Machine for MachineARM64 {
                     dest
                 }
             }
-            _ => codegen_error!("singlepass can't emit init_stack_loc {:?}", last_stack_loc),
+            _ => codegen_error!(
+                "singlepass can't emit init_stack_loc {:?}",
+                last_stack_loc
+            ),
         };
         self.assembler.emit_label(label)?;
-        self.assembler
-            .emit_stria(Size::S64, Location::GPR(GPR::XzrSp), dest, 8)?;
+        self.assembler.emit_stria(
+            Size::S64,
+            Location::GPR(GPR::XzrSp),
+            dest,
+            8,
+        )?;
         self.assembler
             .emit_sub(Size::S64, cnt, Location::Imm8(1), cnt)?;
         self.assembler.emit_cbnz_label(Size::S64, cnt, label)?;
@@ -2266,7 +2726,10 @@ impl Machine for MachineARM64 {
         Ok(())
     }
     // Restore save_area
-    fn restore_saved_area(&mut self, saved_area_offset: i32) -> Result<(), CompileError> {
+    fn restore_saved_area(
+        &mut self,
+        saved_area_offset: i32,
+    ) -> Result<(), CompileError> {
         let real_delta = if saved_area_offset & 15 != 0 {
             self.pushed = true;
             saved_area_offset + 8
@@ -2283,7 +2746,9 @@ impl Machine for MachineARM64 {
             )?;
         } else {
             let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                CompileError::Codegen(
+                    "singlepass cannot acquire temp gpr".to_owned(),
+                )
             })?;
             self.assembler
                 .emit_mov_imm(Location::GPR(tmp), real_delta as u64)?;
@@ -2309,7 +2774,10 @@ impl Machine for MachineARM64 {
     // assembler finalize
     fn assembler_finalize(self) -> Result<Vec<u8>, CompileError> {
         self.assembler.finalize().map_err(|e| {
-            CompileError::Codegen(format!("Assembler failed finalization with: {:?}", e))
+            CompileError::Codegen(format!(
+                "Assembler failed finalization with: {:?}",
+                e
+            ))
         })
     }
 
@@ -2323,13 +2791,21 @@ impl Machine for MachineARM64 {
     }
 
     fn emit_function_prolog(&mut self) -> Result<(), CompileError> {
-        self.emit_double_push(Size::S64, Location::GPR(GPR::X29), Location::GPR(GPR::X30))?; // save LR too
+        self.emit_double_push(
+            Size::S64,
+            Location::GPR(GPR::X29),
+            Location::GPR(GPR::X30),
+        )?; // save LR too
         self.emit_unwind_op(UnwindOps::Push2Regs {
             reg1: GPR::X29.to_dwarf(),
             reg2: GPR::X30.to_dwarf(),
             up_to_sp: 16,
         });
-        self.emit_double_push(Size::S64, Location::GPR(GPR::X27), Location::GPR(GPR::X28))?;
+        self.emit_double_push(
+            Size::S64,
+            Location::GPR(GPR::X27),
+            Location::GPR(GPR::X28),
+        )?;
         self.emit_unwind_op(UnwindOps::Push2Regs {
             reg1: GPR::X27.to_dwarf(),
             reg2: GPR::X28.to_dwarf(),
@@ -2355,8 +2831,16 @@ impl Machine for MachineARM64 {
             Location::GPR(GPR::XzrSp),
         )?;
         self.pushed = false; // SP is restored, consider it aligned
-        self.emit_double_pop(Size::S64, Location::GPR(GPR::X27), Location::GPR(GPR::X28))?;
-        self.emit_double_pop(Size::S64, Location::GPR(GPR::X29), Location::GPR(GPR::X30))?;
+        self.emit_double_pop(
+            Size::S64,
+            Location::GPR(GPR::X27),
+            Location::GPR(GPR::X28),
+        )?;
+        self.emit_double_pop(
+            Size::S64,
+            Location::GPR(GPR::X29),
+            Location::GPR(GPR::X30),
+        )?;
         Ok(())
     }
 
@@ -2383,8 +2867,11 @@ impl Machine for MachineARM64 {
     }
 
     fn emit_function_return_float(&mut self) -> Result<(), CompileError> {
-        self.assembler
-            .emit_mov(Size::S64, Location::GPR(GPR::X0), Location::SIMD(NEON::V0))
+        self.assembler.emit_mov(
+            Size::S64,
+            Location::GPR(GPR::X0),
+            Location::SIMD(NEON::V0),
+        )
     }
 
     fn arch_supports_canonicalize_nan(&self) -> bool {
@@ -2407,14 +2894,34 @@ impl Machine for MachineARM64 {
             (Size::S64, Location::SIMD(_), Location::SIMD(_)) => {
                 self.assembler.emit_fmax(sz, input, input, output)?;
             }
-            (Size::S32, Location::SIMD(_), _) | (Size::S64, Location::SIMD(_), _) => {
-                let tmp = self.location_to_neon(sz, output, &mut tempn, ImmType::None, false)?;
+            (Size::S32, Location::SIMD(_), _)
+            | (Size::S64, Location::SIMD(_), _) => {
+                let tmp = self.location_to_neon(
+                    sz,
+                    output,
+                    &mut tempn,
+                    ImmType::None,
+                    false,
+                )?;
                 self.assembler.emit_fmax(sz, input, input, tmp)?;
                 self.move_location(sz, tmp, output)?;
             }
-            (Size::S32, Location::Memory(_, _), _) | (Size::S64, Location::Memory(_, _), _) => {
-                let src = self.location_to_neon(sz, input, &mut tempn, ImmType::None, true)?;
-                let tmp = self.location_to_neon(sz, output, &mut tempn, ImmType::None, false)?;
+            (Size::S32, Location::Memory(_, _), _)
+            | (Size::S64, Location::Memory(_, _), _) => {
+                let src = self.location_to_neon(
+                    sz,
+                    input,
+                    &mut tempn,
+                    ImmType::None,
+                    true,
+                )?;
+                let tmp = self.location_to_neon(
+                    sz,
+                    output,
+                    &mut tempn,
+                    ImmType::None,
+                    false,
+                )?;
                 self.assembler.emit_fmax(sz, src, src, tmp)?;
                 if tmp != output {
                     self.move_location(sz, tmp, output)?;
@@ -2482,7 +2989,10 @@ impl Machine for MachineARM64 {
         self.assembler.emit_brk()
     }
 
-    fn emit_call_location(&mut self, location: Location) -> Result<(), CompileError> {
+    fn emit_call_location(
+        &mut self,
+        location: Location,
+    ) -> Result<(), CompileError> {
         let mut temps = vec![];
         let loc = self.location_to_reg(
             Size::S64,
@@ -2555,8 +3065,22 @@ impl Machine for MachineARM64 {
         flags: bool,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let src = self.location_to_reg(size, source, &mut temps, ImmType::Bits12, true, None)?;
-        let dst = self.location_to_reg(size, dest, &mut temps, ImmType::None, true, None)?;
+        let src = self.location_to_reg(
+            size,
+            source,
+            &mut temps,
+            ImmType::Bits12,
+            true,
+            None,
+        )?;
+        let dst = self.location_to_reg(
+            size,
+            dest,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
         if flags {
             self.assembler.emit_adds(size, dst, src, dst)?;
         } else {
@@ -2578,8 +3102,22 @@ impl Machine for MachineARM64 {
         flags: bool,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let src = self.location_to_reg(size, source, &mut temps, ImmType::Bits12, true, None)?;
-        let dst = self.location_to_reg(size, dest, &mut temps, ImmType::None, true, None)?;
+        let src = self.location_to_reg(
+            size,
+            source,
+            &mut temps,
+            ImmType::Bits12,
+            true,
+            None,
+        )?;
+        let dst = self.location_to_reg(
+            size,
+            dest,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
         if flags {
             self.assembler.emit_subs(size, dst, src, dst)?;
         } else {
@@ -2624,12 +3162,20 @@ impl Machine for MachineARM64 {
     }
 
     // jmp table
-    fn emit_jmp_to_jumptable(&mut self, label: Label, cond: Location) -> Result<(), CompileError> {
+    fn emit_jmp_to_jumptable(
+        &mut self,
+        label: Label,
+        cond: Location,
+    ) -> Result<(), CompileError> {
         let tmp1 = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         let tmp2 = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
 
         self.assembler.emit_load_label(tmp1, label)?;
@@ -2657,10 +3203,18 @@ impl Machine for MachineARM64 {
         self.assembler.emit_ret()
     }
 
-    fn emit_push(&mut self, size: Size, loc: Location) -> Result<(), CompileError> {
+    fn emit_push(
+        &mut self,
+        size: Size,
+        loc: Location,
+    ) -> Result<(), CompileError> {
         self.emit_push(size, loc)
     }
-    fn emit_pop(&mut self, size: Size, loc: Location) -> Result<(), CompileError> {
+    fn emit_pop(
+        &mut self,
+        size: Size,
+        loc: Location,
+    ) -> Result<(), CompileError> {
         self.emit_pop(size, loc)
     }
 
@@ -2679,9 +3233,16 @@ impl Machine for MachineARM64 {
         codegen_error!("singlepass location_neg unimplemented");
     }
 
-    fn emit_imul_imm32(&mut self, size: Size, imm32: u32, gpr: GPR) -> Result<(), CompileError> {
+    fn emit_imul_imm32(
+        &mut self,
+        size: Size,
+        imm32: u32,
+        gpr: GPR,
+    ) -> Result<(), CompileError> {
         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         self.assembler
             .emit_mov_imm(Location::GPR(tmp), imm32 as u64)?;
@@ -2733,19 +3294,35 @@ impl Machine for MachineARM64 {
                 Size::S8 => self.emit_relaxed_ldr8s(sz_dst, dst, src),
                 Size::S16 => self.emit_relaxed_ldr16s(sz_dst, dst, src),
                 Size::S32 => self.emit_relaxed_ldr32s(sz_dst, dst, src),
-                _ => codegen_error!("singlepass emit_relaxed_sign_extension unreachable"),
+                _ => codegen_error!(
+                    "singlepass emit_relaxed_sign_extension unreachable"
+                ),
             },
             _ => {
                 let mut temps = vec![];
-                let src =
-                    self.location_to_reg(sz_src, src, &mut temps, ImmType::None, true, None)?;
-                let dest =
-                    self.location_to_reg(sz_dst, dst, &mut temps, ImmType::None, false, None)?;
+                let src = self.location_to_reg(
+                    sz_src,
+                    src,
+                    &mut temps,
+                    ImmType::None,
+                    true,
+                    None,
+                )?;
+                let dest = self.location_to_reg(
+                    sz_dst,
+                    dst,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 match sz_src {
                     Size::S8 => self.assembler.emit_sxtb(sz_dst, src, dest),
                     Size::S16 => self.assembler.emit_sxth(sz_dst, src, dest),
                     Size::S32 => self.assembler.emit_sxtw(sz_dst, src, dest),
-                    _ => codegen_error!("singlepass emit_relaxed_sign_extension unreachable"),
+                    _ => codegen_error!(
+                        "singlepass emit_relaxed_sign_extension unreachable"
+                    ),
                 }?;
                 if dst != dest {
                     self.move_location(sz_dst, dest, dst)?;
@@ -2812,13 +3389,38 @@ impl Machine for MachineARM64 {
         _integer_overflow: Label,
     ) -> Result<usize, CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(Size::S32, loc_a, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(Size::S32, loc_b, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            Size::S32,
+            loc_a,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 = self.location_to_reg(
+            Size::S32,
+            loc_b,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
 
-        self.assembler
-            .emit_cbz_label_far(Size::S32, src2, integer_division_by_zero)?;
-        let offset = self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
+        self.assembler.emit_cbz_label_far(
+            Size::S32,
+            src2,
+            integer_division_by_zero,
+        )?;
+        let offset =
+            self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
         self.assembler.emit_udiv(Size::S32, src1, src2, dest)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -2837,12 +3439,36 @@ impl Machine for MachineARM64 {
         integer_overflow: Label,
     ) -> Result<usize, CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(Size::S32, loc_a, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(Size::S32, loc_b, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            Size::S32,
+            loc_a,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 = self.location_to_reg(
+            Size::S32,
+            loc_b,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
 
-        self.assembler
-            .emit_cbz_label_far(Size::S32, src2, integer_division_by_zero)?;
+        self.assembler.emit_cbz_label_far(
+            Size::S32,
+            src2,
+            integer_division_by_zero,
+        )?;
         let label_nooverflow = self.assembler.get_label();
         let tmp = self.location_to_reg(
             Size::S32,
@@ -2859,7 +3485,8 @@ impl Machine for MachineARM64 {
         self.assembler.emit_cmp(Size::S32, tmp, src2)?;
         self.assembler
             .emit_bcond_label_far(Condition::Eq, integer_overflow)?;
-        let offset = self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
+        let offset =
+            self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
         self.assembler.emit_label(label_nooverflow)?;
         self.assembler.emit_sdiv(Size::S32, src1, src2, dest)?;
         if ret != dest {
@@ -2879,12 +3506,35 @@ impl Machine for MachineARM64 {
         _integer_overflow: Label,
     ) -> Result<usize, CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(Size::S32, loc_a, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(Size::S32, loc_b, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            Size::S32,
+            loc_a,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 = self.location_to_reg(
+            Size::S32,
+            loc_b,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let dest = if dest == src1 || dest == src2 {
             let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                CompileError::Codegen(
+                    "singlepass cannot acquire temp gpr".to_owned(),
+                )
             })?;
             temps.push(tmp);
             self.assembler
@@ -2893,9 +3543,13 @@ impl Machine for MachineARM64 {
         } else {
             dest
         };
-        self.assembler
-            .emit_cbz_label_far(Size::S32, src2, integer_division_by_zero)?;
-        let offset = self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
+        self.assembler.emit_cbz_label_far(
+            Size::S32,
+            src2,
+            integer_division_by_zero,
+        )?;
+        let offset =
+            self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
         self.assembler.emit_udiv(Size::S32, src1, src2, dest)?;
         // unsigned remainder : src1 - (src1/src2)*src2
         self.assembler
@@ -2917,12 +3571,35 @@ impl Machine for MachineARM64 {
         _integer_overflow: Label,
     ) -> Result<usize, CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(Size::S32, loc_a, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(Size::S32, loc_b, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            Size::S32,
+            loc_a,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 = self.location_to_reg(
+            Size::S32,
+            loc_b,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let dest = if dest == src1 || dest == src2 {
             let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                CompileError::Codegen(
+                    "singlepass cannot acquire temp gpr".to_owned(),
+                )
             })?;
             temps.push(tmp);
             self.assembler
@@ -2931,9 +3608,13 @@ impl Machine for MachineARM64 {
         } else {
             dest
         };
-        self.assembler
-            .emit_cbz_label_far(Size::S32, src2, integer_division_by_zero)?;
-        let offset = self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
+        self.assembler.emit_cbz_label_far(
+            Size::S32,
+            src2,
+            integer_division_by_zero,
+        )?;
+        let offset =
+            self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
         self.assembler.emit_sdiv(Size::S32, src1, src2, dest)?;
         // unsigned remainder : src1 - (src1/src2)*src2
         self.assembler
@@ -3071,13 +3752,35 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         self.emit_cmpop_i32_dynamic_b(Condition::Eq, loc_a, loc_b, ret)
     }
-    fn i32_clz(&mut self, src: Location, dst: Location) -> Result<(), CompileError> {
+    fn i32_clz(
+        &mut self,
+        src: Location,
+        dst: Location,
+    ) -> Result<(), CompileError> {
         self.emit_relaxed_binop(Assembler::emit_clz, Size::S32, src, dst, true)
     }
-    fn i32_ctz(&mut self, src: Location, dst: Location) -> Result<(), CompileError> {
+    fn i32_ctz(
+        &mut self,
+        src: Location,
+        dst: Location,
+    ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let src = self.location_to_reg(Size::S32, src, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S32, dst, &mut temps, ImmType::None, false, None)?;
+        let src = self.location_to_reg(
+            Size::S32,
+            src,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         self.assembler.emit_rbit(Size::S32, src, dest)?;
         self.assembler.emit_clz(Size::S32, dest, dest)?;
         if dst != dest {
@@ -3088,27 +3791,53 @@ impl Machine for MachineARM64 {
         }
         Ok(())
     }
-    fn i32_popcnt(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
+    fn i32_popcnt(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
         if self.has_neon {
             let mut temps = vec![];
 
-            let src_gpr =
-                self.location_to_reg(Size::S32, loc, &mut temps, ImmType::None, true, None)?;
-            let dst_gpr =
-                self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+            let src_gpr = self.location_to_reg(
+                Size::S32,
+                loc,
+                &mut temps,
+                ImmType::None,
+                true,
+                None,
+            )?;
+            let dst_gpr = self.location_to_reg(
+                Size::S32,
+                ret,
+                &mut temps,
+                ImmType::None,
+                false,
+                None,
+            )?;
 
             let mut neon_temps = vec![];
             let neon_temp = self.acquire_temp_simd().ok_or_else(|| {
-                CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                CompileError::Codegen(
+                    "singlepass cannot acquire temp gpr".to_owned(),
+                )
             })?;
             neon_temps.push(neon_temp);
 
-            self.assembler
-                .emit_fmov(Size::S32, src_gpr, Size::S32, Location::SIMD(neon_temp))?;
+            self.assembler.emit_fmov(
+                Size::S32,
+                src_gpr,
+                Size::S32,
+                Location::SIMD(neon_temp),
+            )?;
             self.assembler.emit_cnt(neon_temp, neon_temp)?;
             self.assembler.emit_addv(neon_temp, neon_temp)?;
-            self.assembler
-                .emit_fmov(Size::S32, Location::SIMD(neon_temp), Size::S32, dst_gpr)?;
+            self.assembler.emit_fmov(
+                Size::S32,
+                Location::SIMD(neon_temp),
+                Size::S32,
+                dst_gpr,
+            )?;
 
             if ret != dst_gpr {
                 self.move_location(Size::S32, dst_gpr, ret)?;
@@ -3123,13 +3852,27 @@ impl Machine for MachineARM64 {
             }
         } else {
             let mut temps = vec![];
-            let src =
-                self.location_to_reg(Size::S32, loc, &mut temps, ImmType::None, true, None)?;
-            let dest =
-                self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+            let src = self.location_to_reg(
+                Size::S32,
+                loc,
+                &mut temps,
+                ImmType::None,
+                true,
+                None,
+            )?;
+            let dest = self.location_to_reg(
+                Size::S32,
+                ret,
+                &mut temps,
+                ImmType::None,
+                false,
+                None,
+            )?;
             let src = if src == loc {
                 let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 temps.push(tmp);
                 self.assembler
@@ -3140,15 +3883,20 @@ impl Machine for MachineARM64 {
             };
             let tmp = {
                 let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 temps.push(tmp);
                 Location::GPR(tmp)
             };
             let label_loop = self.assembler.get_label();
             let label_exit = self.assembler.get_label();
-            self.assembler
-                .emit_mov(Size::S32, Location::GPR(GPR::XzrSp), dest)?; // 0 => dest
+            self.assembler.emit_mov(
+                Size::S32,
+                Location::GPR(GPR::XzrSp),
+                dest,
+            )?; // 0 => dest
             self.assembler.emit_cbz_label(Size::S32, src, label_exit)?; // src==0, exit
             self.assembler.emit_label(label_loop)?; // loop:
             self.assembler
@@ -3233,8 +3981,14 @@ impl Machine for MachineARM64 {
                     true,
                     None,
                 )?;
-                let tmp2 =
-                    self.location_to_reg(Size::S32, loc_b, &mut temps, ImmType::None, true, None)?;
+                let tmp2 = self.location_to_reg(
+                    Size::S32,
+                    loc_b,
+                    &mut temps,
+                    ImmType::None,
+                    true,
+                    None,
+                )?;
                 self.assembler.emit_sub(Size::S32, tmp1, tmp2, tmp1)?;
                 tmp1
             }
@@ -3288,7 +4042,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr32(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr32(
+                    Size::S32,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i32_load_8u(
@@ -3312,7 +4072,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr8(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr8(Size::S32, ret, Location::Memory(addr, 0))
+            },
         )
     }
     fn i32_load_8s(
@@ -3336,7 +4098,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr8s(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr8s(
+                    Size::S32,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i32_load_16u(
@@ -3360,7 +4128,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr16(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr16(
+                    Size::S32,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i32_load_16s(
@@ -3384,7 +4158,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr16s(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr16s(
+                    Size::S32,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i32_atomic_load(
@@ -3408,7 +4188,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr32(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr32(
+                    Size::S32,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i32_atomic_load_8u(
@@ -3432,7 +4218,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr8(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr8(Size::S32, ret, Location::Memory(addr, 0))
+            },
         )
     }
     fn i32_atomic_load_16u(
@@ -3456,7 +4244,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr16(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr16(
+                    Size::S32,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i32_save(
@@ -3480,7 +4274,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str32(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str32(target_value, Location::Memory(addr, 0))
+            },
         )
     }
     fn i32_save_8(
@@ -3504,7 +4300,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str8(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str8(target_value, Location::Memory(addr, 0))
+            },
         )
     }
     fn i32_save_16(
@@ -3528,7 +4326,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str16(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str16(target_value, Location::Memory(addr, 0))
+            },
         )
     }
     fn i32_atomic_save(
@@ -3552,7 +4352,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str32(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str32(target_value, Location::Memory(addr, 0))
+            },
         )?;
         self.assembler.emit_dmb()
     }
@@ -3577,7 +4379,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str8(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str8(target_value, Location::Memory(addr, 0))
+            },
         )?;
         self.assembler.emit_dmb()
     }
@@ -3602,7 +4406,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str16(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str16(target_value, Location::Memory(addr, 0))
+            },
         )?;
         self.assembler.emit_dmb()
     }
@@ -3632,18 +4438,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_add32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -3651,8 +4470,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -3693,18 +4515,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_add32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S32,
@@ -3712,8 +4547,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -3754,18 +4592,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_add32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S32,
@@ -3773,8 +4624,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -3815,18 +4669,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_sub32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -3834,8 +4701,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -3876,18 +4746,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_sub32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S32,
@@ -3895,8 +4778,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -3937,18 +4823,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_sub32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S32,
@@ -3956,8 +4855,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -3998,18 +4900,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_and32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -4017,8 +4932,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4059,18 +4977,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_and32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S32,
@@ -4078,8 +5009,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4120,18 +5054,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_and32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S32,
@@ -4139,8 +5086,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4181,18 +5131,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_or32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -4200,8 +5163,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4242,18 +5208,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_or32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S32,
@@ -4261,8 +5240,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4303,18 +5285,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_or32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S32,
@@ -4322,8 +5317,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4364,18 +5362,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_xor32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -4383,8 +5394,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4425,18 +5439,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_xor32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S32,
@@ -4444,8 +5471,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4486,18 +5516,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_xor32(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S32,
@@ -4505,8 +5548,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4547,25 +5593,45 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S32, loc, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S32,
+                    loc,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.assembler.emit_stlxr(
                     Size::S32,
                     Location::GPR(tmp),
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4605,25 +5671,45 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S32, loc, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S32,
+                    loc,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.assembler.emit_stlxrb(
                     Size::S32,
                     Location::GPR(tmp),
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4663,25 +5749,45 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S32, loc, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S32,
+                    loc,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.assembler.emit_stlxrh(
                     Size::S32,
                     Location::GPR(tmp),
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -4722,18 +5828,35 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S32, new, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S32,
+                    new,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
                 let nosame = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_relaxed_cmp(Size::S32, dst, cmp)?;
                 this.assembler.emit_bcond_label(Condition::Ne, nosame)?;
                 this.assembler.emit_stlxr(
@@ -4742,8 +5865,11 @@ impl Machine for MachineARM64 {
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 this.emit_label(nosame)?;
@@ -4785,18 +5911,35 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S32, new, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S32,
+                    new,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
                 let nosame = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_relaxed_cmp(Size::S32, dst, cmp)?;
                 this.assembler.emit_bcond_label(Condition::Ne, nosame)?;
                 this.assembler.emit_stlxrb(
@@ -4805,8 +5948,11 @@ impl Machine for MachineARM64 {
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 this.emit_label(nosame)?;
@@ -4848,18 +5994,35 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S32, new, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S32,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S32,
+                    new,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
                 let nosame = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_relaxed_cmp(Size::S32, dst, cmp)?;
                 this.assembler.emit_bcond_label(Condition::Ne, nosame)?;
                 this.assembler.emit_stlxrh(
@@ -4868,8 +6031,11 @@ impl Machine for MachineARM64 {
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 this.emit_label(nosame)?;
@@ -4958,13 +6124,38 @@ impl Machine for MachineARM64 {
         _integer_overflow: Label,
     ) -> Result<usize, CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(Size::S64, loc_a, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(Size::S64, loc_b, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            Size::S64,
+            loc_a,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 = self.location_to_reg(
+            Size::S64,
+            loc_b,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
 
-        self.assembler
-            .emit_cbz_label_far(Size::S64, src2, integer_division_by_zero)?;
-        let offset = self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
+        self.assembler.emit_cbz_label_far(
+            Size::S64,
+            src2,
+            integer_division_by_zero,
+        )?;
+        let offset =
+            self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
         self.assembler.emit_udiv(Size::S64, src1, src2, dest)?;
         if ret != dest {
             self.move_location(Size::S64, dest, ret)?;
@@ -4983,12 +6174,36 @@ impl Machine for MachineARM64 {
         integer_overflow: Label,
     ) -> Result<usize, CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(Size::S64, loc_a, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(Size::S64, loc_b, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            Size::S64,
+            loc_a,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 = self.location_to_reg(
+            Size::S64,
+            loc_b,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
 
-        self.assembler
-            .emit_cbz_label_far(Size::S64, src2, integer_division_by_zero)?;
+        self.assembler.emit_cbz_label_far(
+            Size::S64,
+            src2,
+            integer_division_by_zero,
+        )?;
         let label_nooverflow = self.assembler.get_label();
         let tmp = self.location_to_reg(
             Size::S64,
@@ -5005,7 +6220,8 @@ impl Machine for MachineARM64 {
         self.assembler.emit_cmp(Size::S64, tmp, src2)?;
         self.assembler
             .emit_bcond_label_far(Condition::Eq, integer_overflow)?;
-        let offset = self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
+        let offset =
+            self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
         self.assembler.emit_label(label_nooverflow)?;
         self.assembler.emit_sdiv(Size::S64, src1, src2, dest)?;
         if ret != dest {
@@ -5025,12 +6241,35 @@ impl Machine for MachineARM64 {
         _integer_overflow: Label,
     ) -> Result<usize, CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(Size::S64, loc_a, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(Size::S64, loc_b, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            Size::S64,
+            loc_a,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 = self.location_to_reg(
+            Size::S64,
+            loc_b,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let dest = if dest == src1 || dest == src2 {
             let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                CompileError::Codegen(
+                    "singlepass cannot acquire temp gpr".to_owned(),
+                )
             })?;
             temps.push(tmp);
             self.assembler
@@ -5039,9 +6278,13 @@ impl Machine for MachineARM64 {
         } else {
             dest
         };
-        self.assembler
-            .emit_cbz_label_far(Size::S64, src2, integer_division_by_zero)?;
-        let offset = self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
+        self.assembler.emit_cbz_label_far(
+            Size::S64,
+            src2,
+            integer_division_by_zero,
+        )?;
+        let offset =
+            self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
         self.assembler.emit_udiv(Size::S64, src1, src2, dest)?;
         // unsigned remainder : src1 - (src1/src2)*src2
         self.assembler
@@ -5063,12 +6306,35 @@ impl Machine for MachineARM64 {
         _integer_overflow: Label,
     ) -> Result<usize, CompileError> {
         let mut temps = vec![];
-        let src1 = self.location_to_reg(Size::S64, loc_a, &mut temps, ImmType::None, true, None)?;
-        let src2 = self.location_to_reg(Size::S64, loc_b, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+        let src1 = self.location_to_reg(
+            Size::S64,
+            loc_a,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let src2 = self.location_to_reg(
+            Size::S64,
+            loc_b,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let dest = if dest == src1 || dest == src2 {
             let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                CompileError::Codegen(
+                    "singlepass cannot acquire temp gpr".to_owned(),
+                )
             })?;
             temps.push(tmp);
             self.assembler
@@ -5077,9 +6343,13 @@ impl Machine for MachineARM64 {
         } else {
             dest
         };
-        self.assembler
-            .emit_cbz_label_far(Size::S64, src2, integer_division_by_zero)?;
-        let offset = self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
+        self.assembler.emit_cbz_label_far(
+            Size::S64,
+            src2,
+            integer_division_by_zero,
+        )?;
+        let offset =
+            self.mark_instruction_with_trap_code(TrapCode::IntegerOverflow);
         self.assembler.emit_sdiv(Size::S64, src1, src2, dest)?;
         // unsigned remainder : src1 - (src1/src2)*src2
         self.assembler
@@ -5217,13 +6487,35 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         self.emit_cmpop_i64_dynamic_b(Condition::Eq, loc_a, loc_b, ret)
     }
-    fn i64_clz(&mut self, src: Location, dst: Location) -> Result<(), CompileError> {
+    fn i64_clz(
+        &mut self,
+        src: Location,
+        dst: Location,
+    ) -> Result<(), CompileError> {
         self.emit_relaxed_binop(Assembler::emit_clz, Size::S64, src, dst, true)
     }
-    fn i64_ctz(&mut self, src: Location, dst: Location) -> Result<(), CompileError> {
+    fn i64_ctz(
+        &mut self,
+        src: Location,
+        dst: Location,
+    ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let src = self.location_to_reg(Size::S64, src, &mut temps, ImmType::None, true, None)?;
-        let dest = self.location_to_reg(Size::S64, dst, &mut temps, ImmType::None, false, None)?;
+        let src = self.location_to_reg(
+            Size::S64,
+            src,
+            &mut temps,
+            ImmType::None,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            dst,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
         self.assembler.emit_rbit(Size::S64, src, dest)?;
         self.assembler.emit_clz(Size::S64, dest, dest)?;
         if dst != dest {
@@ -5234,27 +6526,53 @@ impl Machine for MachineARM64 {
         }
         Ok(())
     }
-    fn i64_popcnt(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
+    fn i64_popcnt(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
         if self.has_neon {
             let mut temps = vec![];
 
-            let src_gpr =
-                self.location_to_reg(Size::S64, loc, &mut temps, ImmType::None, true, None)?;
-            let dst_gpr =
-                self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+            let src_gpr = self.location_to_reg(
+                Size::S64,
+                loc,
+                &mut temps,
+                ImmType::None,
+                true,
+                None,
+            )?;
+            let dst_gpr = self.location_to_reg(
+                Size::S64,
+                ret,
+                &mut temps,
+                ImmType::None,
+                false,
+                None,
+            )?;
 
             let mut neon_temps = vec![];
             let neon_temp = self.acquire_temp_simd().ok_or_else(|| {
-                CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                CompileError::Codegen(
+                    "singlepass cannot acquire temp gpr".to_owned(),
+                )
             })?;
             neon_temps.push(neon_temp);
 
-            self.assembler
-                .emit_fmov(Size::S64, src_gpr, Size::S64, Location::SIMD(neon_temp))?;
+            self.assembler.emit_fmov(
+                Size::S64,
+                src_gpr,
+                Size::S64,
+                Location::SIMD(neon_temp),
+            )?;
             self.assembler.emit_cnt(neon_temp, neon_temp)?;
             self.assembler.emit_addv(neon_temp, neon_temp)?;
-            self.assembler
-                .emit_fmov(Size::S64, Location::SIMD(neon_temp), Size::S64, dst_gpr)?;
+            self.assembler.emit_fmov(
+                Size::S64,
+                Location::SIMD(neon_temp),
+                Size::S64,
+                dst_gpr,
+            )?;
 
             if ret != dst_gpr {
                 self.move_location(Size::S64, dst_gpr, ret)?;
@@ -5269,13 +6587,27 @@ impl Machine for MachineARM64 {
             }
         } else {
             let mut temps = vec![];
-            let src =
-                self.location_to_reg(Size::S64, loc, &mut temps, ImmType::None, true, None)?;
-            let dest =
-                self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+            let src = self.location_to_reg(
+                Size::S64,
+                loc,
+                &mut temps,
+                ImmType::None,
+                true,
+                None,
+            )?;
+            let dest = self.location_to_reg(
+                Size::S64,
+                ret,
+                &mut temps,
+                ImmType::None,
+                false,
+                None,
+            )?;
             let src = if src == loc {
                 let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 temps.push(tmp);
                 self.assembler
@@ -5286,15 +6618,20 @@ impl Machine for MachineARM64 {
             };
             let tmp = {
                 let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 temps.push(tmp);
                 Location::GPR(tmp)
             };
             let label_loop = self.assembler.get_label();
             let label_exit = self.assembler.get_label();
-            self.assembler
-                .emit_mov(Size::S32, Location::GPR(GPR::XzrSp), dest)?; // dest <= 0
+            self.assembler.emit_mov(
+                Size::S32,
+                Location::GPR(GPR::XzrSp),
+                dest,
+            )?; // dest <= 0
             self.assembler.emit_cbz_label(Size::S64, src, label_exit)?; // src == 0, then goto label_exit
             self.assembler.emit_label(label_loop)?;
             self.assembler
@@ -5381,8 +6718,14 @@ impl Machine for MachineARM64 {
                     true,
                     None,
                 )?;
-                let tmp2 =
-                    self.location_to_reg(Size::S64, loc_b, &mut temps, ImmType::None, true, None)?;
+                let tmp2 = self.location_to_reg(
+                    Size::S64,
+                    loc_b,
+                    &mut temps,
+                    ImmType::None,
+                    true,
+                    None,
+                )?;
                 self.assembler.emit_sub(Size::S64, tmp1, tmp2, tmp1)?;
                 tmp1
             }
@@ -5436,7 +6779,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr64(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr64(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_load_8u(
@@ -5460,7 +6809,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr8(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr8(Size::S64, ret, Location::Memory(addr, 0))
+            },
         )
     }
     fn i64_load_8s(
@@ -5484,7 +6835,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr8s(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr8s(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_load_16u(
@@ -5508,7 +6865,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr16(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr16(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_load_16s(
@@ -5532,7 +6895,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr16s(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr16s(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_load_32u(
@@ -5556,7 +6925,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr32(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr32(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_load_32s(
@@ -5580,7 +6955,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr32s(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr32s(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_atomic_load(
@@ -5604,7 +6985,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr64(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr64(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_atomic_load_8u(
@@ -5628,7 +7015,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr8(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr8(Size::S64, ret, Location::Memory(addr, 0))
+            },
         )
     }
     fn i64_atomic_load_16u(
@@ -5652,7 +7041,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr16(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr16(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_atomic_load_32u(
@@ -5676,7 +7071,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr32(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr32(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn i64_save(
@@ -5700,7 +7101,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str64(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str64(target_value, Location::Memory(addr, 0))
+            },
         )
     }
     fn i64_save_8(
@@ -5724,7 +7127,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str8(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str8(target_value, Location::Memory(addr, 0))
+            },
         )
     }
     fn i64_save_16(
@@ -5748,7 +7153,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str16(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str16(target_value, Location::Memory(addr, 0))
+            },
         )
     }
     fn i64_save_32(
@@ -5772,7 +7179,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str32(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str32(target_value, Location::Memory(addr, 0))
+            },
         )
     }
     fn i64_atomic_save(
@@ -5796,7 +7205,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str64(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str64(target_value, Location::Memory(addr, 0))
+            },
         )?;
         self.assembler.emit_dmb()
     }
@@ -5821,7 +7232,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str8(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str8(target_value, Location::Memory(addr, 0))
+            },
         )?;
         self.assembler.emit_dmb()
     }
@@ -5846,7 +7259,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str16(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str16(target_value, Location::Memory(addr, 0))
+            },
         )?;
         self.assembler.emit_dmb()
     }
@@ -5871,7 +7286,9 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_str32(target_value, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_str32(target_value, Location::Memory(addr, 0))
+            },
         )?;
         self.assembler.emit_dmb()
     }
@@ -5901,18 +7318,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_add64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S64,
@@ -5920,8 +7350,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -5962,18 +7395,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_add64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S64,
@@ -5981,8 +7427,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6023,18 +7472,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_add64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S64,
@@ -6042,8 +7504,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6084,18 +7549,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_add64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -6103,8 +7581,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6145,18 +7626,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_sub64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S64,
@@ -6164,8 +7658,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6206,18 +7703,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_sub64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S64,
@@ -6225,8 +7735,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6267,18 +7780,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_sub64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S64,
@@ -6286,8 +7812,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6328,18 +7857,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_sub64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -6347,8 +7889,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6389,18 +7934,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_and64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S64,
@@ -6408,8 +7966,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6450,18 +8011,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_and64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S64,
@@ -6469,8 +8043,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6511,18 +8088,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_and64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S64,
@@ -6530,8 +8120,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6572,18 +8165,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_and64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -6591,8 +8197,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6633,18 +8242,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_or64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S64,
@@ -6652,8 +8274,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6694,18 +8319,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_or64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S64,
@@ -6713,8 +8351,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6755,18 +8396,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_or64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S64,
@@ -6774,8 +8428,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6816,18 +8473,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_or64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -6835,8 +8505,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6877,18 +8550,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_xor64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S64,
@@ -6896,8 +8582,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6938,18 +8627,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_xor64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrb(
                     Size::S64,
@@ -6957,8 +8659,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -6999,18 +8704,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_xor64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxrh(
                     Size::S64,
@@ -7018,8 +8736,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -7060,18 +8781,31 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp1 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
                 let tmp2 = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_binop_xor64(dst, loc, Location::GPR(tmp1))?;
                 this.assembler.emit_stlxr(
                     Size::S32,
@@ -7079,8 +8813,11 @@ impl Machine for MachineARM64 {
                     Location::GPR(tmp1),
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp2), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp2),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -7121,25 +8858,45 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S64, loc, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S64,
+                    loc,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.assembler.emit_stlxr(
                     Size::S64,
                     Location::GPR(tmp),
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -7179,25 +8936,45 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S64, loc, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S64,
+                    loc,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.assembler.emit_stlxrb(
                     Size::S64,
                     Location::GPR(tmp),
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -7237,25 +9014,45 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S64, loc, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S64,
+                    loc,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.assembler.emit_stlxrh(
                     Size::S64,
                     Location::GPR(tmp),
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -7295,25 +9092,45 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S64, loc, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S64,
+                    loc,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.assembler.emit_stlxr(
                     Size::S32,
                     Location::GPR(tmp),
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 if dst != ret {
@@ -7354,18 +9171,35 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S64, new, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S64,
+                    new,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
                 let nosame = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_relaxed_cmp(Size::S64, dst, cmp)?;
                 this.assembler.emit_bcond_label(Condition::Ne, nosame)?;
                 this.assembler.emit_stlxr(
@@ -7374,8 +9208,11 @@ impl Machine for MachineARM64 {
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 this.emit_label(nosame)?;
@@ -7417,18 +9254,35 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S64, new, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S64,
+                    new,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
                 let nosame = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrb(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrb(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_relaxed_cmp(Size::S64, dst, cmp)?;
                 this.assembler.emit_bcond_label(Condition::Ne, nosame)?;
                 this.assembler.emit_stlxrb(
@@ -7437,8 +9291,11 @@ impl Machine for MachineARM64 {
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 this.emit_label(nosame)?;
@@ -7480,18 +9337,35 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S64, new, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S64,
+                    new,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
                 let nosame = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxrh(Size::S64, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxrh(
+                    Size::S64,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_relaxed_cmp(Size::S64, dst, cmp)?;
                 this.assembler.emit_bcond_label(Condition::Ne, nosame)?;
                 this.assembler.emit_stlxrh(
@@ -7500,8 +9374,11 @@ impl Machine for MachineARM64 {
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 this.emit_label(nosame)?;
@@ -7543,18 +9420,35 @@ impl Machine for MachineARM64 {
             |this, addr| {
                 let mut temps = vec![];
                 let tmp = this.acquire_temp_gpr().ok_or_else(|| {
-                    CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+                    CompileError::Codegen(
+                        "singlepass cannot acquire temp gpr".to_owned(),
+                    )
                 })?;
-                let dst =
-                    this.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-                let org =
-                    this.location_to_reg(Size::S64, new, &mut temps, ImmType::None, false, None)?;
+                let dst = this.location_to_reg(
+                    Size::S64,
+                    ret,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
+                let org = this.location_to_reg(
+                    Size::S64,
+                    new,
+                    &mut temps,
+                    ImmType::None,
+                    false,
+                    None,
+                )?;
                 let reread = this.get_label();
                 let nosame = this.get_label();
 
                 this.emit_label(reread)?;
-                this.assembler
-                    .emit_ldaxr(Size::S32, dst, Location::GPR(addr))?;
+                this.assembler.emit_ldaxr(
+                    Size::S32,
+                    dst,
+                    Location::GPR(addr),
+                )?;
                 this.emit_relaxed_cmp(Size::S64, dst, cmp)?;
                 this.assembler.emit_bcond_label(Condition::Ne, nosame)?;
                 this.assembler.emit_stlxr(
@@ -7563,8 +9457,11 @@ impl Machine for MachineARM64 {
                     org,
                     Location::GPR(addr),
                 )?;
-                this.assembler
-                    .emit_cbnz_label(Size::S32, Location::GPR(tmp), reread)?;
+                this.assembler.emit_cbnz_label(
+                    Size::S32,
+                    Location::GPR(tmp),
+                    reread,
+                )?;
                 this.assembler.emit_dmb()?;
 
                 this.emit_label(nosame)?;
@@ -7601,7 +9498,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr32(Size::S32, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr32(
+                    Size::S32,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn f32_save(
@@ -7629,9 +9532,16 @@ impl Machine for MachineARM64 {
             unaligned_atomic,
             |this, addr| {
                 if !canonicalize {
-                    this.emit_relaxed_str32(target_value, Location::Memory(addr, 0))
+                    this.emit_relaxed_str32(
+                        target_value,
+                        Location::Memory(addr, 0),
+                    )
                 } else {
-                    this.canonicalize_nan(Size::S32, target_value, Location::Memory(addr, 0))
+                    this.canonicalize_nan(
+                        Size::S32,
+                        target_value,
+                        Location::Memory(addr, 0),
+                    )
                 }
             },
         )
@@ -7657,7 +9567,13 @@ impl Machine for MachineARM64 {
             offset,
             heap_access_oob,
             unaligned_atomic,
-            |this, addr| this.emit_relaxed_ldr64(Size::S64, ret, Location::Memory(addr, 0)),
+            |this, addr| {
+                this.emit_relaxed_ldr64(
+                    Size::S64,
+                    ret,
+                    Location::Memory(addr, 0),
+                )
+            },
         )
     }
     fn f64_save(
@@ -7685,9 +9601,16 @@ impl Machine for MachineARM64 {
             unaligned_atomic,
             |this, addr| {
                 if !canonicalize {
-                    this.emit_relaxed_str64(target_value, Location::Memory(addr, 0))
+                    this.emit_relaxed_str64(
+                        target_value,
+                        Location::Memory(addr, 0),
+                    )
                 } else {
-                    this.canonicalize_nan(Size::S64, target_value, Location::Memory(addr, 0))
+                    this.canonicalize_nan(
+                        Size::S64,
+                        target_value,
+                        Location::Memory(addr, 0),
+                    )
                 }
             },
         )
@@ -7701,8 +9624,21 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         let mut gprs = vec![];
         let mut neons = vec![];
-        let src = self.location_to_reg(Size::S64, loc, &mut gprs, ImmType::NoneXzr, true, None)?;
-        let dest = self.location_to_neon(Size::S64, ret, &mut neons, ImmType::None, false)?;
+        let src = self.location_to_reg(
+            Size::S64,
+            loc,
+            &mut gprs,
+            ImmType::NoneXzr,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_neon(
+            Size::S64,
+            ret,
+            &mut neons,
+            ImmType::None,
+            false,
+        )?;
         if signed {
             self.assembler.emit_scvtf(Size::S64, src, Size::S64, dest)?;
         } else {
@@ -7727,8 +9663,21 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         let mut gprs = vec![];
         let mut neons = vec![];
-        let src = self.location_to_reg(Size::S32, loc, &mut gprs, ImmType::NoneXzr, true, None)?;
-        let dest = self.location_to_neon(Size::S64, ret, &mut neons, ImmType::None, false)?;
+        let src = self.location_to_reg(
+            Size::S32,
+            loc,
+            &mut gprs,
+            ImmType::NoneXzr,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_neon(
+            Size::S64,
+            ret,
+            &mut neons,
+            ImmType::None,
+            false,
+        )?;
         if signed {
             self.assembler.emit_scvtf(Size::S32, src, Size::S64, dest)?;
         } else {
@@ -7753,8 +9702,21 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         let mut gprs = vec![];
         let mut neons = vec![];
-        let src = self.location_to_reg(Size::S64, loc, &mut gprs, ImmType::NoneXzr, true, None)?;
-        let dest = self.location_to_neon(Size::S32, ret, &mut neons, ImmType::None, false)?;
+        let src = self.location_to_reg(
+            Size::S64,
+            loc,
+            &mut gprs,
+            ImmType::NoneXzr,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_neon(
+            Size::S32,
+            ret,
+            &mut neons,
+            ImmType::None,
+            false,
+        )?;
         if signed {
             self.assembler.emit_scvtf(Size::S64, src, Size::S32, dest)?;
         } else {
@@ -7779,8 +9741,21 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         let mut gprs = vec![];
         let mut neons = vec![];
-        let src = self.location_to_reg(Size::S32, loc, &mut gprs, ImmType::NoneXzr, true, None)?;
-        let dest = self.location_to_neon(Size::S32, ret, &mut neons, ImmType::None, false)?;
+        let src = self.location_to_reg(
+            Size::S32,
+            loc,
+            &mut gprs,
+            ImmType::NoneXzr,
+            true,
+            None,
+        )?;
+        let dest = self.location_to_neon(
+            Size::S32,
+            ret,
+            &mut neons,
+            ImmType::None,
+            false,
+        )?;
         if signed {
             self.assembler.emit_scvtf(Size::S32, src, Size::S32, dest)?;
         } else {
@@ -7806,8 +9781,21 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         let mut gprs = vec![];
         let mut neons = vec![];
-        let src = self.location_to_neon(Size::S64, loc, &mut neons, ImmType::None, true)?;
-        let dest = self.location_to_reg(Size::S64, ret, &mut gprs, ImmType::None, false, None)?;
+        let src = self.location_to_neon(
+            Size::S64,
+            loc,
+            &mut neons,
+            ImmType::None,
+            true,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut gprs,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let old_fpcr = if !sat {
             self.reset_exception_fpsr()?;
             self.set_trap_enabled(&mut gprs)?
@@ -7822,7 +9810,12 @@ impl Machine for MachineARM64 {
                 .emit_fcvtzu(Size::S64, src, Size::S64, dest)?;
         }
         if !sat {
-            self.trap_float_convertion_errors(old_fpcr, Size::S64, src, &mut gprs)?;
+            self.trap_float_convertion_errors(
+                old_fpcr,
+                Size::S64,
+                src,
+                &mut gprs,
+            )?;
         }
         if ret != dest {
             self.move_location(Size::S64, dest, ret)?;
@@ -7844,8 +9837,21 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         let mut gprs = vec![];
         let mut neons = vec![];
-        let src = self.location_to_neon(Size::S64, loc, &mut neons, ImmType::None, true)?;
-        let dest = self.location_to_reg(Size::S32, ret, &mut gprs, ImmType::None, false, None)?;
+        let src = self.location_to_neon(
+            Size::S64,
+            loc,
+            &mut neons,
+            ImmType::None,
+            true,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut gprs,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let old_fpcr = if !sat {
             self.reset_exception_fpsr()?;
             self.set_trap_enabled(&mut gprs)?
@@ -7860,7 +9866,12 @@ impl Machine for MachineARM64 {
                 .emit_fcvtzu(Size::S64, src, Size::S32, dest)?;
         }
         if !sat {
-            self.trap_float_convertion_errors(old_fpcr, Size::S64, src, &mut gprs)?;
+            self.trap_float_convertion_errors(
+                old_fpcr,
+                Size::S64,
+                src,
+                &mut gprs,
+            )?;
         }
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -7882,8 +9893,21 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         let mut gprs = vec![];
         let mut neons = vec![];
-        let src = self.location_to_neon(Size::S32, loc, &mut neons, ImmType::None, true)?;
-        let dest = self.location_to_reg(Size::S64, ret, &mut gprs, ImmType::None, false, None)?;
+        let src = self.location_to_neon(
+            Size::S32,
+            loc,
+            &mut neons,
+            ImmType::None,
+            true,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut gprs,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let old_fpcr = if !sat {
             self.reset_exception_fpsr()?;
             self.set_trap_enabled(&mut gprs)?
@@ -7898,7 +9922,12 @@ impl Machine for MachineARM64 {
                 .emit_fcvtzu(Size::S32, src, Size::S64, dest)?;
         }
         if !sat {
-            self.trap_float_convertion_errors(old_fpcr, Size::S32, src, &mut gprs)?;
+            self.trap_float_convertion_errors(
+                old_fpcr,
+                Size::S32,
+                src,
+                &mut gprs,
+            )?;
         }
         if ret != dest {
             self.move_location(Size::S64, dest, ret)?;
@@ -7920,8 +9949,21 @@ impl Machine for MachineARM64 {
     ) -> Result<(), CompileError> {
         let mut gprs = vec![];
         let mut neons = vec![];
-        let src = self.location_to_neon(Size::S32, loc, &mut neons, ImmType::None, true)?;
-        let dest = self.location_to_reg(Size::S32, ret, &mut gprs, ImmType::None, false, None)?;
+        let src = self.location_to_neon(
+            Size::S32,
+            loc,
+            &mut neons,
+            ImmType::None,
+            true,
+        )?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut gprs,
+            ImmType::None,
+            false,
+            None,
+        )?;
         let old_fpcr = if !sat {
             self.reset_exception_fpsr()?;
             self.set_trap_enabled(&mut gprs)?
@@ -7936,7 +9978,12 @@ impl Machine for MachineARM64 {
                 .emit_fcvtzu(Size::S32, src, Size::S32, dest)?;
         }
         if !sat {
-            self.trap_float_convertion_errors(old_fpcr, Size::S32, src, &mut gprs)?;
+            self.trap_float_convertion_errors(
+                old_fpcr,
+                Size::S32,
+                src,
+                &mut gprs,
+            )?;
         }
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -7949,18 +9996,54 @@ impl Machine for MachineARM64 {
         }
         Ok(())
     }
-    fn convert_f64_f32(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_fcvt, Size::S32, loc, ret, true)
+    fn convert_f64_f32(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcvt,
+            Size::S32,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn convert_f32_f64(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_fcvt, Size::S64, loc, ret, true)
+    fn convert_f32_f64(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcvt,
+            Size::S64,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f64_neg(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_fneg, Size::S64, loc, ret, true)
+    fn f64_neg(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fneg,
+            Size::S64,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f64_abs(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
+    fn f64_abs(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
 
         self.move_location(Size::S64, loc, Location::GPR(tmp))?;
@@ -7975,7 +10058,11 @@ impl Machine for MachineARM64 {
         self.release_gpr(tmp);
         Ok(())
     }
-    fn emit_i64_copysign(&mut self, tmp1: GPR, tmp2: GPR) -> Result<(), CompileError> {
+    fn emit_i64_copysign(
+        &mut self,
+        tmp1: GPR,
+        tmp2: GPR,
+    ) -> Result<(), CompileError> {
         self.assembler.emit_and(
             Size::S64,
             Location::GPR(tmp1),
@@ -7997,20 +10084,70 @@ impl Machine for MachineARM64 {
             Location::GPR(tmp1),
         )
     }
-    fn f64_sqrt(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_fsqrt, Size::S64, loc, ret, true)
+    fn f64_sqrt(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fsqrt,
+            Size::S64,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f64_trunc(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_frintz, Size::S64, loc, ret, true)
+    fn f64_trunc(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_frintz,
+            Size::S64,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f64_ceil(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_frintp, Size::S64, loc, ret, true)
+    fn f64_ceil(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_frintp,
+            Size::S64,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f64_floor(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_frintm, Size::S64, loc, ret, true)
+    fn f64_floor(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_frintm,
+            Size::S64,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f64_nearest(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_frintn, Size::S64, loc, ret, true)
+    fn f64_nearest(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_frintn,
+            Size::S64,
+            loc,
+            ret,
+            true,
+        )
     }
     fn f64_cmp_ge(
         &mut self,
@@ -8019,8 +10156,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S64, loc_b, loc_a, false)?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S64,
+            loc_b,
+            loc_a,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Ls)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8037,8 +10187,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S64, loc_b, loc_a, false)?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S64,
+            loc_b,
+            loc_a,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Cc)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8055,8 +10218,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S64, loc_a, loc_b, false)?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S64,
+            loc_a,
+            loc_b,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Ls)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8073,8 +10249,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S64, loc_a, loc_b, false)?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S64,
+            loc_a,
+            loc_b,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Cc)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8091,8 +10280,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S64, loc_a, loc_b, false)?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S64,
+            loc_a,
+            loc_b,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Ne)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8109,8 +10311,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S64, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S64, loc_a, loc_b, false)?;
+        let dest = self.location_to_reg(
+            Size::S64,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S64,
+            loc_a,
+            loc_b,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Eq)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8224,12 +10439,28 @@ impl Machine for MachineARM64 {
             ImmType::None,
         )
     }
-    fn f32_neg(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_fneg, Size::S32, loc, ret, true)
+    fn f32_neg(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fneg,
+            Size::S32,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f32_abs(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
+    fn f32_abs(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
         let tmp = self.acquire_temp_gpr().ok_or_else(|| {
-            CompileError::Codegen("singlepass cannot acquire temp gpr".to_owned())
+            CompileError::Codegen(
+                "singlepass cannot acquire temp gpr".to_owned(),
+            )
         })?;
         self.move_location(Size::S32, loc, Location::GPR(tmp))?;
         self.assembler.emit_and(
@@ -8242,7 +10473,11 @@ impl Machine for MachineARM64 {
         self.release_gpr(tmp);
         Ok(())
     }
-    fn emit_i32_copysign(&mut self, tmp1: GPR, tmp2: GPR) -> Result<(), CompileError> {
+    fn emit_i32_copysign(
+        &mut self,
+        tmp1: GPR,
+        tmp2: GPR,
+    ) -> Result<(), CompileError> {
         self.assembler.emit_and(
             Size::S32,
             Location::GPR(tmp1),
@@ -8262,20 +10497,70 @@ impl Machine for MachineARM64 {
             Location::GPR(tmp1),
         )
     }
-    fn f32_sqrt(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_fsqrt, Size::S32, loc, ret, true)
+    fn f32_sqrt(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fsqrt,
+            Size::S32,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f32_trunc(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_frintz, Size::S32, loc, ret, true)
+    fn f32_trunc(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_frintz,
+            Size::S32,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f32_ceil(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_frintp, Size::S32, loc, ret, true)
+    fn f32_ceil(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_frintp,
+            Size::S32,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f32_floor(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_frintm, Size::S32, loc, ret, true)
+    fn f32_floor(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_frintm,
+            Size::S32,
+            loc,
+            ret,
+            true,
+        )
     }
-    fn f32_nearest(&mut self, loc: Location, ret: Location) -> Result<(), CompileError> {
-        self.emit_relaxed_binop_neon(Assembler::emit_frintn, Size::S32, loc, ret, true)
+    fn f32_nearest(
+        &mut self,
+        loc: Location,
+        ret: Location,
+    ) -> Result<(), CompileError> {
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_frintn,
+            Size::S32,
+            loc,
+            ret,
+            true,
+        )
     }
     fn f32_cmp_ge(
         &mut self,
@@ -8284,8 +10569,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S32, loc_b, loc_a, false)?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S32,
+            loc_b,
+            loc_a,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Ls)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8302,8 +10600,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S32, loc_b, loc_a, false)?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S32,
+            loc_b,
+            loc_a,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Cc)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8320,8 +10631,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S32, loc_a, loc_b, false)?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S32,
+            loc_a,
+            loc_b,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Ls)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8338,8 +10662,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S32, loc_a, loc_b, false)?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S32,
+            loc_a,
+            loc_b,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Cc)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8356,8 +10693,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S32, loc_a, loc_b, false)?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S32,
+            loc_a,
+            loc_b,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Ne)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8374,8 +10724,21 @@ impl Machine for MachineARM64 {
         ret: Location,
     ) -> Result<(), CompileError> {
         let mut temps = vec![];
-        let dest = self.location_to_reg(Size::S32, ret, &mut temps, ImmType::None, false, None)?;
-        self.emit_relaxed_binop_neon(Assembler::emit_fcmp, Size::S32, loc_a, loc_b, false)?;
+        let dest = self.location_to_reg(
+            Size::S32,
+            ret,
+            &mut temps,
+            ImmType::None,
+            false,
+            None,
+        )?;
+        self.emit_relaxed_binop_neon(
+            Assembler::emit_fcmp,
+            Size::S32,
+            loc_a,
+            loc_b,
+            false,
+        )?;
         self.assembler.emit_cset(Size::S32, dest, Condition::Eq)?;
         if ret != dest {
             self.move_location(Size::S32, dest, ret)?;
@@ -8504,7 +10867,11 @@ impl Machine for MachineARM64 {
         sig: &FunctionType,
         calling_convention: CallingConvention,
     ) -> Result<FunctionBody, CompileError> {
-        gen_std_dynamic_import_trampoline_arm64(vmoffsets, sig, calling_convention)
+        gen_std_dynamic_import_trampoline_arm64(
+            vmoffsets,
+            sig,
+            calling_convention,
+        )
     }
     // Singlepass calls import functions through a trampoline.
     fn gen_import_call_trampoline(
@@ -8514,10 +10881,18 @@ impl Machine for MachineARM64 {
         sig: &FunctionType,
         calling_convention: CallingConvention,
     ) -> Result<CustomSection, CompileError> {
-        gen_import_call_trampoline_arm64(vmoffsets, index, sig, calling_convention)
+        gen_import_call_trampoline_arm64(
+            vmoffsets,
+            index,
+            sig,
+            calling_convention,
+        )
     }
     #[cfg(feature = "unwind")]
-    fn gen_dwarf_unwind_info(&mut self, code_len: usize) -> Option<UnwindInstructions> {
+    fn gen_dwarf_unwind_info(
+        &mut self,
+        code_len: usize,
+    ) -> Option<UnwindInstructions> {
         let mut instructions = vec![];
         for &(instruction_offset, ref inst) in &self.unwind_ops {
             let instruction_offset = instruction_offset as u32;
@@ -8529,7 +10904,10 @@ impl Machine for MachineARM64 {
                     ));
                     instructions.push((
                         instruction_offset,
-                        CallFrameInstruction::Offset(AArch64::X29, -(up_to_sp as i32)),
+                        CallFrameInstruction::Offset(
+                            AArch64::X29,
+                            -(up_to_sp as i32),
+                        ),
                     ));
                 }
                 UnwindOps::Push2Regs {
@@ -8543,11 +10921,17 @@ impl Machine for MachineARM64 {
                     ));
                     instructions.push((
                         instruction_offset,
-                        CallFrameInstruction::Offset(dwarf_index(reg2), -(up_to_sp as i32) + 8),
+                        CallFrameInstruction::Offset(
+                            dwarf_index(reg2),
+                            -(up_to_sp as i32) + 8,
+                        ),
                     ));
                     instructions.push((
                         instruction_offset,
-                        CallFrameInstruction::Offset(dwarf_index(reg1), -(up_to_sp as i32)),
+                        CallFrameInstruction::Offset(
+                            dwarf_index(reg1),
+                            -(up_to_sp as i32),
+                        ),
                     ));
                 }
                 UnwindOps::DefineNewFrame => {
@@ -8556,10 +10940,14 @@ impl Machine for MachineARM64 {
                         CallFrameInstruction::CfaRegister(AArch64::X29),
                     ));
                 }
-                UnwindOps::SaveRegister { reg, bp_neg_offset } => instructions.push((
-                    instruction_offset,
-                    CallFrameInstruction::Offset(dwarf_index(reg), -bp_neg_offset),
-                )),
+                UnwindOps::SaveRegister { reg, bp_neg_offset } => instructions
+                    .push((
+                        instruction_offset,
+                        CallFrameInstruction::Offset(
+                            dwarf_index(reg),
+                            -bp_neg_offset,
+                        ),
+                    )),
             }
         }
         Some(UnwindInstructions {
@@ -8568,7 +10956,10 @@ impl Machine for MachineARM64 {
         })
     }
     #[cfg(not(feature = "unwind"))]
-    fn gen_dwarf_unwind_info(&mut self, _code_len: usize) -> Option<UnwindInstructions> {
+    fn gen_dwarf_unwind_info(
+        &mut self,
+        _code_len: usize,
+    ) -> Option<UnwindInstructions> {
         None
     }
 
@@ -8581,10 +10972,25 @@ impl Machine for MachineARM64 {
 mod test {
     use super::*;
 
-    fn test_move_location(machine: &mut MachineARM64, size: Size) -> Result<(), CompileError> {
-        machine.move_location(size, Location::GPR(GPR::X1), Location::GPR(GPR::X2))?;
-        machine.move_location(size, Location::GPR(GPR::X1), Location::Memory(GPR::X2, 10))?;
-        machine.move_location(size, Location::GPR(GPR::X1), Location::Memory(GPR::X2, -10))?;
+    fn test_move_location(
+        machine: &mut MachineARM64,
+        size: Size,
+    ) -> Result<(), CompileError> {
+        machine.move_location(
+            size,
+            Location::GPR(GPR::X1),
+            Location::GPR(GPR::X2),
+        )?;
+        machine.move_location(
+            size,
+            Location::GPR(GPR::X1),
+            Location::Memory(GPR::X2, 10),
+        )?;
+        machine.move_location(
+            size,
+            Location::GPR(GPR::X1),
+            Location::Memory(GPR::X2, -10),
+        )?;
         machine.move_location(
             size,
             Location::GPR(GPR::X1),
@@ -8595,8 +11001,16 @@ mod test {
             Location::GPR(GPR::X1),
             Location::Memory(GPR::X2, -1024),
         )?;
-        machine.move_location(size, Location::Memory(GPR::X2, 10), Location::GPR(GPR::X1))?;
-        machine.move_location(size, Location::Memory(GPR::X2, -10), Location::GPR(GPR::X1))?;
+        machine.move_location(
+            size,
+            Location::Memory(GPR::X2, 10),
+            Location::GPR(GPR::X1),
+        )?;
+        machine.move_location(
+            size,
+            Location::Memory(GPR::X2, -10),
+            Location::GPR(GPR::X1),
+        )?;
         machine.move_location(
             size,
             Location::Memory(GPR::X2, 1024),
@@ -8607,8 +11021,16 @@ mod test {
             Location::Memory(GPR::X2, -1024),
             Location::GPR(GPR::X1),
         )?;
-        machine.move_location(size, Location::GPR(GPR::X1), Location::SIMD(NEON::V0))?;
-        machine.move_location(size, Location::SIMD(NEON::V0), Location::GPR(GPR::X1))?;
+        machine.move_location(
+            size,
+            Location::GPR(GPR::X1),
+            Location::SIMD(NEON::V0),
+        )?;
+        machine.move_location(
+            size,
+            Location::SIMD(NEON::V0),
+            Location::GPR(GPR::X1),
+        )?;
         machine.move_location(
             size,
             Location::SIMD(NEON::V0),
@@ -8713,7 +11135,12 @@ mod test {
 
     fn test_binop_op(
         machine: &mut MachineARM64,
-        op: fn(&mut MachineARM64, Location, Location, Location) -> Result<(), CompileError>,
+        op: fn(
+            &mut MachineARM64,
+            Location,
+            Location,
+            Location,
+        ) -> Result<(), CompileError>,
     ) -> Result<(), CompileError> {
         op(
             machine,
@@ -8763,7 +11190,12 @@ mod test {
 
     fn test_float_binop_op(
         machine: &mut MachineARM64,
-        op: fn(&mut MachineARM64, Location, Location, Location) -> Result<(), CompileError>,
+        op: fn(
+            &mut MachineARM64,
+            Location,
+            Location,
+            Location,
+        ) -> Result<(), CompileError>,
     ) -> Result<(), CompileError> {
         op(
             machine,
@@ -8819,7 +11251,12 @@ mod test {
 
     fn test_float_cmp_op(
         machine: &mut MachineARM64,
-        op: fn(&mut MachineARM64, Location, Location, Location) -> Result<(), CompileError>,
+        op: fn(
+            &mut MachineARM64,
+            Location,
+            Location,
+            Location,
+        ) -> Result<(), CompileError>,
     ) -> Result<(), CompileError> {
         op(
             machine,

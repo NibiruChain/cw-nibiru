@@ -5,12 +5,15 @@
 #![allow(missing_docs)]
 
 //! Types for modules.
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use wasmer_types::{
-    entity::PrimaryMap, Features, MemoryIndex, MemoryStyle, ModuleInfo, TableIndex, TableStyle,
+    entity::PrimaryMap, Features, MemoryIndex, MemoryStyle, ModuleInfo,
+    TableIndex, TableStyle,
 };
 
 /// The required info for compiling a module.
@@ -20,7 +23,9 @@ use wasmer_types::{
 /// or the `MemoryStyle` and `TableStyle`).
 #[cfg_attr(feature = "enable-serde", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
-#[derive(Debug, Clone, PartialEq, Eq, RkyvSerialize, RkyvDeserialize, Archive)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, RkyvSerialize, RkyvDeserialize, Archive,
+)]
 #[rkyv(derive(Debug))]
 pub struct CompileModuleInfo {
     /// The features used for compiling the module

@@ -151,10 +151,12 @@ impl VMTable {
                     }
                     MaybeInstanceOwned::Instance(table_loc)
                 } else {
-                    MaybeInstanceOwned::Host(Box::new(UnsafeCell::new(VMTableDefinition {
-                        base: base as _,
-                        current_elements: table_minimum as _,
-                    })))
+                    MaybeInstanceOwned::Host(Box::new(UnsafeCell::new(
+                        VMTableDefinition {
+                            base: base as _,
+                            current_elements: table_minimum as _,
+                        },
+                    )))
                 },
             }),
         }
@@ -219,8 +221,12 @@ impl VMTable {
     pub fn get(&self, index: u32) -> Option<TableElement> {
         let raw_data = self.vec.get(index as usize).cloned()?;
         Some(match self.table.ty {
-            ValType::ExternRef => TableElement::ExternRef(unsafe { raw_data.extern_ref }),
-            ValType::FuncRef => TableElement::FuncRef(unsafe { raw_data.func_ref }),
+            ValType::ExternRef => {
+                TableElement::ExternRef(unsafe { raw_data.extern_ref })
+            }
+            ValType::FuncRef => {
+                TableElement::FuncRef(unsafe { raw_data.func_ref })
+            }
             _ => todo!("getting invalid type from table, handle this error"),
         })
     }
@@ -230,7 +236,11 @@ impl VMTable {
     /// # Errors
     ///
     /// Returns an error if the index is out of bounds.
-    pub fn set(&mut self, index: u32, reference: TableElement) -> Result<(), Trap> {
+    pub fn set(
+        &mut self,
+        index: u32,
+        reference: TableElement,
+    ) -> Result<(), Trap> {
         match self.vec.get_mut(index as usize) {
             Some(slot) => {
                 match (self.table.ty, reference) {
@@ -321,7 +331,12 @@ impl VMTable {
     ///
     /// Returns an error if the range is out of bounds of either the source or
     /// destination tables.
-    pub fn copy_within(&mut self, dst_index: u32, src_index: u32, len: u32) -> Result<(), Trap> {
+    pub fn copy_within(
+        &mut self,
+        dst_index: u32,
+        src_index: u32,
+        len: u32,
+    ) -> Result<(), Trap> {
         // https://webassembly.github.io/bulk-memory-operations/core/exec/instructions.html#exec-table-copy
 
         if src_index.checked_add(len).map_or(true, |n| n > self.size()) {

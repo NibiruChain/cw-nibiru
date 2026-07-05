@@ -38,7 +38,11 @@ impl Instance {
     ) -> Result<(Self, Exports), InstantiationError> {
         let mut imports = Imports::new();
         for (import_ty, extern_ty) in module.imports().zip(externs.iter()) {
-            imports.define(import_ty.module(), import_ty.name(), extern_ty.clone());
+            imports.define(
+                import_ty.module(),
+                import_ty.name(),
+                extern_ty.clone(),
+            );
         }
         Self::new(store, module, &imports)
     }
@@ -66,8 +70,11 @@ impl Instance {
                 let context = store.jsc().context();
                 let extern_type = export_type.ty();
                 // Annotation is here to prevent spurious IDE warnings.
-                let js_export = instance_exports.get_property(&context, name.to_string());
-                let extern_ = Extern::from_jsvalue(&mut store, extern_type, &js_export).unwrap();
+                let js_export =
+                    instance_exports.get_property(&context, name.to_string());
+                let extern_ =
+                    Extern::from_jsvalue(&mut store, extern_type, &js_export)
+                        .unwrap();
                 Ok((name.to_string(), extern_))
             })
             .collect::<Result<Exports, InstantiationError>>()?;

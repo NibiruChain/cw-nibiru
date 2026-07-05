@@ -16,9 +16,9 @@ impl VMGlobal {
             ty: global_type,
             // TODO: Currently all globals are host-owned, we should inline the
             // VMGlobalDefinition in VMContext for instance-defined globals.
-            vm_global_definition: MaybeInstanceOwned::Host(Box::new(UnsafeCell::new(
-                VMGlobalDefinition::new(),
-            ))),
+            vm_global_definition: MaybeInstanceOwned::Host(Box::new(
+                UnsafeCell::new(VMGlobalDefinition::new()),
+            )),
         }
     }
 
@@ -37,9 +37,11 @@ impl VMGlobal {
         unsafe {
             Self {
                 ty: self.ty,
-                vm_global_definition: MaybeInstanceOwned::Host(Box::new(UnsafeCell::new(
-                    self.vm_global_definition.as_ptr().as_ref().clone(),
-                ))),
+                vm_global_definition: MaybeInstanceOwned::Host(Box::new(
+                    UnsafeCell::new(
+                        self.vm_global_definition.as_ptr().as_ref().clone(),
+                    ),
+                )),
             }
         }
     }

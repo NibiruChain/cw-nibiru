@@ -16,7 +16,10 @@ struct Add2Mul {
 }
 
 impl ModuleMiddleware for Add2MulGen {
-    fn generate_function_middleware(&self, _: LocalFunctionIndex) -> Box<dyn FunctionMiddleware> {
+    fn generate_function_middleware(
+        &self,
+        _: LocalFunctionIndex,
+    ) -> Box<dyn FunctionMiddleware> {
         Box::new(Add2Mul {
             value_off: self.value_off,
         })
@@ -56,7 +59,10 @@ struct Fusion {
 }
 
 impl ModuleMiddleware for FusionGen {
-    fn generate_function_middleware(&self, _: LocalFunctionIndex) -> Box<dyn FunctionMiddleware> {
+    fn generate_function_middleware(
+        &self,
+        _: LocalFunctionIndex,
+    ) -> Box<dyn FunctionMiddleware> {
         Box::new(Fusion { state: 0 })
     }
 }
@@ -139,7 +145,8 @@ fn middleware_one_to_multi(mut config: crate::Config) -> Result<()> {
 
 #[compiler_test(middlewares)]
 fn middleware_multi_to_one(mut config: crate::Config) -> Result<()> {
-    config.set_middlewares(vec![Arc::new(FusionGen) as Arc<dyn ModuleMiddleware>]);
+    config
+        .set_middlewares(vec![Arc::new(FusionGen) as Arc<dyn ModuleMiddleware>]);
     let mut store = config.store();
     let wat = r#"(module
         (func (export "testfunc") (param i32 i32) (result i32)

@@ -148,11 +148,18 @@ impl Global {
     /// // This results in an error: `RuntimeError`.
     /// g.set(&mut store, Value::I64(2)).unwrap();
     /// ```
-    pub fn set(&self, store: &mut impl AsStoreMut, val: Value) -> Result<(), RuntimeError> {
+    pub fn set(
+        &self,
+        store: &mut impl AsStoreMut,
+        val: Value,
+    ) -> Result<(), RuntimeError> {
         self.0.set(store, val)
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, vm_extern: VMExternGlobal) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_extern: VMExternGlobal,
+    ) -> Self {
         Self(global_impl::Global::from_vm_extern(store, vm_extern))
     }
 
@@ -169,7 +176,9 @@ impl Global {
 impl std::cmp::Eq for Global {}
 
 impl<'a> Exportable<'a> for Global {
-    fn get_self_from_extern(_extern: &'a Extern) -> Result<&'a Self, ExportError> {
+    fn get_self_from_extern(
+        _extern: &'a Extern,
+    ) -> Result<&'a Self, ExportError> {
         match _extern {
             Extern::Global(global) => Ok(global),
             _ => Err(ExportError::IncompatibleType),

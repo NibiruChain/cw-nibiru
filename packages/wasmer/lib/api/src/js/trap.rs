@@ -32,7 +32,9 @@ impl Trap {
     pub fn downcast<T: Error + 'static>(self) -> Result<T, Self> {
         match self.inner {
             // We only try to downcast user errors
-            InnerTrap::User(err) if err.is::<T>() => Ok(*err.downcast::<T>().unwrap()),
+            InnerTrap::User(err) if err.is::<T>() => {
+                Ok(*err.downcast::<T>().unwrap())
+            }
             _ => Err(self),
         }
     }

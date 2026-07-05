@@ -27,24 +27,28 @@ fn value_to_table_element(
         return Err(RuntimeError::new("cannot pass Value across contexts"));
     }
     Ok(match val {
-        Value::ExternRef(extern_ref) => {
-            wasmer_vm::TableElement::ExternRef(extern_ref.map(|e| e.vm_externref()))
-        }
-        Value::FuncRef(func_ref) => {
-            wasmer_vm::TableElement::FuncRef(func_ref.map(|f| f.vm_funcref(store)))
-        }
+        Value::ExternRef(extern_ref) => wasmer_vm::TableElement::ExternRef(
+            extern_ref.map(|e| e.vm_externref()),
+        ),
+        Value::FuncRef(func_ref) => wasmer_vm::TableElement::FuncRef(
+            func_ref.map(|f| f.vm_funcref(store)),
+        ),
         _ => return Err(RuntimeError::new("val is not reference")),
     })
 }
 
-fn value_from_table_element(store: &mut impl AsStoreMut, item: wasmer_vm::TableElement) -> Value {
+fn value_from_table_element(
+    store: &mut impl AsStoreMut,
+    item: wasmer_vm::TableElement,
+) -> Value {
     match item {
-        wasmer_vm::TableElement::FuncRef(funcref) => {
-            Value::FuncRef(funcref.map(|f| unsafe { Function::from_vm_funcref(store, f) }))
-        }
-        wasmer_vm::TableElement::ExternRef(extern_ref) => {
-            Value::ExternRef(extern_ref.map(|e| unsafe { ExternRef::from_vm_externref(store, e) }))
-        }
+        wasmer_vm::TableElement::FuncRef(funcref) => Value::FuncRef(
+            funcref.map(|f| unsafe { Function::from_vm_funcref(store, f) }),
+        ),
+        wasmer_vm::TableElement::ExternRef(extern_ref) => Value::ExternRef(
+            extern_ref
+                .map(|e| unsafe { ExternRef::from_vm_externref(store, e) }),
+        ),
     }
 }
 
@@ -105,7 +109,9 @@ impl Table {
         self.handle
             .get_mut(store.objects_mut())
             .grow(delta, item)
-            .ok_or_else(|| RuntimeError::new(format!("failed to grow table by `{}`", delta)))
+            .ok_or_else(|| {
+                RuntimeError::new(format!("failed to grow table by `{}`", delta))
+            })
     }
 
     pub fn copy(
@@ -121,7 +127,9 @@ impl Table {
                 "cross-`Store` table copies are not supported",
             ));
         }
-        if dst_table.handle.internal_handle() == src_table.handle.internal_handle() {
+        if dst_table.handle.internal_handle()
+            == src_table.handle.internal_handle()
+        {
             let table = dst_table.handle.get_mut(store.objects_mut());
             table.copy_within(dst_index, src_index, len)
         } else {
@@ -135,10 +143,16 @@ impl Table {
         Ok(())
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, vm_extern: VMExternTable) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_extern: VMExternTable,
+    ) -> Self {
         Self {
             handle: unsafe {
-                StoreHandle::from_internal(store.as_store_ref().objects().id(), vm_extern)
+                StoreHandle::from_internal(
+                    store.as_store_ref().objects().id(),
+                    vm_extern,
+                )
             },
         }
     }

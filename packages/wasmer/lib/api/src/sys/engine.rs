@@ -2,7 +2,8 @@ use std::{path::Path, sync::Arc};
 
 use shared_buffer::OwnedBuffer;
 pub use wasmer_compiler::{
-    types::target::Target, Artifact, BaseTunables, CompilerConfig, Engine, EngineBuilder, Tunables,
+    types::target::Target, Artifact, BaseTunables, CompilerConfig, Engine,
+    EngineBuilder, Tunables,
 };
 #[cfg(feature = "compiler")]
 use wasmer_types::Features;
@@ -10,7 +11,8 @@ use wasmer_types::{DeserializeError, HashAlgorithm};
 
 /// Get the default config for the sys Engine
 #[allow(unreachable_code)]
-pub fn get_default_compiler_config() -> Option<Box<dyn wasmer_compiler::CompilerConfig>> {
+pub fn get_default_compiler_config(
+) -> Option<Box<dyn wasmer_compiler::CompilerConfig>> {
     cfg_if::cfg_if! {
         if #[cfg(feature = "cranelift")] {
             Some(Box::<wasmer_compiler_cranelift::Cranelift>::default())
@@ -55,7 +57,11 @@ pub(crate) fn default_engine() -> Engine {
 pub trait NativeEngineExt {
     /// Create a new `Engine` with the given config
     #[cfg(feature = "compiler")]
-    fn new(compiler_config: Box<dyn CompilerConfig>, target: Target, features: Features) -> Self;
+    fn new(
+        compiler_config: Box<dyn CompilerConfig>,
+        target: Target,
+        features: Features,
+    ) -> Self;
 
     /// Sets the hash algorithm
     fn set_hash_algorithm(&mut self, hash_algorithm: Option<HashAlgorithm>);
@@ -107,7 +113,11 @@ pub trait NativeEngineExt {
 
 impl NativeEngineExt for crate::engine::Engine {
     #[cfg(feature = "compiler")]
-    fn new(compiler_config: Box<dyn CompilerConfig>, target: Target, features: Features) -> Self {
+    fn new(
+        compiler_config: Box<dyn CompilerConfig>,
+        target: Target,
+        features: Features,
+    ) -> Self {
         Self(Engine::new(compiler_config, target, features))
     }
 

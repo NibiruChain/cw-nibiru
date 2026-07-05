@@ -11,8 +11,8 @@
 use enumset::{EnumSet, EnumSetType};
 use std::str::FromStr;
 pub use target_lexicon::{
-    Aarch64Architecture, Architecture, BinaryFormat, CallingConvention, Endianness, Environment,
-    OperatingSystem, PointerWidth, Triple, Vendor,
+    Aarch64Architecture, Architecture, BinaryFormat, CallingConvention,
+    Endianness, Environment, OperatingSystem, PointerWidth, Triple, Vendor,
 };
 use wasmer_types::error::ParseCpuFeatureError;
 
@@ -114,7 +114,11 @@ impl CpuFeature {
         features
     }
 
-    #[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+    #[cfg(not(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64"
+    )))]
     /// Retrieves the features for the current Host
     pub fn for_host() -> EnumSet<Self> {
         // We default to an empty hash set

@@ -58,7 +58,10 @@ fn imports() -> Result<(), String> {
             ImportType::new(
                 "host",
                 "global",
-                ExternType::Global(GlobalType::new(Type::I32, Mutability::Const))
+                ExternType::Global(GlobalType::new(
+                    Type::I32,
+                    Mutability::Const
+                ))
             )
         ]
     );
@@ -126,7 +129,10 @@ fn exports() -> Result<(), String> {
             ),
             ExportType::new(
                 "global",
-                ExternType::Global(GlobalType::new(Type::I32, Mutability::Const))
+                ExternType::Global(GlobalType::new(
+                    Type::I32,
+                    Mutability::Const
+                ))
             )
         ]
     );
@@ -227,7 +233,8 @@ fn calling_host_functions_with_negative_values_works() -> Result<(), String> {
             }),
         }
     };
-    let instance = Instance::new(&mut store, &module, &imports).map_err(|e| format!("{e:?}"))?;
+    let instance = Instance::new(&mut store, &module, &imports)
+        .map_err(|e| format!("{e:?}"))?;
 
     let f1: TypedFunction<(), ()> = instance
         .exports
@@ -281,7 +288,8 @@ fn calling_host_functions_with_negative_values_works() -> Result<(), String> {
 fn module_custom_sections() -> Result<(), String> {
     let store = Store::default();
     let custom_section_wasm_bytes = include_bytes!("simple-name-section.wasm");
-    let module = Module::new(&store, custom_section_wasm_bytes).map_err(|e| format!("{e:?}"))?;
+    let module = Module::new(&store, custom_section_wasm_bytes)
+        .map_err(|e| format!("{e:?}"))?;
     let sections = module.custom_sections("name");
     let sections_vec: Vec<Box<[u8]>> = sections.collect();
     assert_eq!(sections_vec.len(), 1);

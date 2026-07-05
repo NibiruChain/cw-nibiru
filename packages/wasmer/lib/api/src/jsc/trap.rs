@@ -30,7 +30,9 @@ impl Trap {
     pub fn downcast<T: Error + 'static>(self) -> Result<T, Self> {
         match self.inner {
             // We only try to downcast user errors
-            InnerTrap::User(err) if err.is::<T>() => Ok(*err.downcast::<T>().unwrap()),
+            InnerTrap::User(err) if err.is::<T>() => {
+                Ok(*err.downcast::<T>().unwrap())
+            }
             _ => Err(self),
         }
     }
@@ -57,9 +59,14 @@ impl Trap {
             InnerTrap::User(err) => {
                 let obj = JSObject::new(ctx);
                 let err_ptr = Box::leak(Box::new(err));
-                let wasmer_error_ptr = JSValue::number(&ctx, err_ptr as *mut _ as usize as _);
-                obj.set_property(&ctx, "wasmer_error_ptr".to_string(), wasmer_error_ptr)
-                    .unwrap();
+                let wasmer_error_ptr =
+                    JSValue::number(&ctx, err_ptr as *mut _ as usize as _);
+                obj.set_property(
+                    &ctx,
+                    "wasmer_error_ptr".to_string(),
+                    wasmer_error_ptr,
+                )
+                .unwrap();
                 obj.to_jsvalue()
             }
             InnerTrap::JSC(value) => value,
@@ -68,7 +75,8 @@ impl Trap {
 
     pub(crate) fn from_jsvalue(ctx: &JSContext, val: JSValue) -> Self {
         let obj_val = val.to_object(ctx).unwrap();
-        let wasmer_error_ptr = obj_val.get_property(&ctx, "wasmer_error_ptr".to_string());
+        let wasmer_error_ptr =
+            obj_val.get_property(&ctx, "wasmer_error_ptr".to_string());
         if wasmer_error_ptr.is_number(ctx) {
             let err_ptr = wasmer_error_ptr.to_number(ctx).unwrap() as usize
                 as *mut Box<dyn Error + Send + Sync>;

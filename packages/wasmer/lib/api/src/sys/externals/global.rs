@@ -20,7 +20,9 @@ impl Global {
         mutability: Mutability,
     ) -> Result<Self, RuntimeError> {
         if !val.is_from_store(store) {
-            return Err(RuntimeError::new("cross-`Store` values are not supported"));
+            return Err(RuntimeError::new(
+                "cross-`Store` values are not supported",
+            ));
         }
         let global = VMGlobal::new(GlobalType {
             mutability,
@@ -52,12 +54,20 @@ impl Global {
         }
     }
 
-    pub fn set(&self, store: &mut impl AsStoreMut, val: Value) -> Result<(), RuntimeError> {
+    pub fn set(
+        &self,
+        store: &mut impl AsStoreMut,
+        val: Value,
+    ) -> Result<(), RuntimeError> {
         if !val.is_from_store(store) {
-            return Err(RuntimeError::new("cross-`Store` values are not supported"));
+            return Err(RuntimeError::new(
+                "cross-`Store` values are not supported",
+            ));
         }
         if self.ty(store).mutability != Mutability::Var {
-            return Err(RuntimeError::new("Attempted to set an immutable global"));
+            return Err(RuntimeError::new(
+                "Attempted to set an immutable global",
+            ));
         }
         if val.ty() != self.ty(store).ty {
             return Err(RuntimeError::new(format!(
@@ -76,10 +86,16 @@ impl Global {
         Ok(())
     }
 
-    pub(crate) fn from_vm_extern(store: &mut impl AsStoreMut, vm_extern: VMExternGlobal) -> Self {
+    pub(crate) fn from_vm_extern(
+        store: &mut impl AsStoreMut,
+        vm_extern: VMExternGlobal,
+    ) -> Self {
         Self {
             handle: unsafe {
-                StoreHandle::from_internal(store.as_store_ref().objects().id(), vm_extern)
+                StoreHandle::from_internal(
+                    store.as_store_ref().objects().id(),
+                    vm_extern,
+                )
             },
         }
     }

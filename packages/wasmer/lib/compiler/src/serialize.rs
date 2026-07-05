@@ -12,10 +12,13 @@ use crate::types::{
     target::CpuFeature,
 };
 use enumset::EnumSet;
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 use wasmer_types::{
-    entity::PrimaryMap, DeserializeError, Features, FunctionIndex, LocalFunctionIndex, MemoryIndex,
-    MemoryStyle, ModuleInfo, OwnedDataInitializer, SerializeError, SignatureIndex, TableIndex,
+    entity::PrimaryMap, DeserializeError, Features, FunctionIndex,
+    LocalFunctionIndex, MemoryIndex, MemoryStyle, ModuleInfo,
+    OwnedDataInitializer, SerializeError, SignatureIndex, TableIndex,
     TableStyle,
 };
 
@@ -29,7 +32,8 @@ pub use wasmer_types::MetadataHeader;
 pub struct SerializableCompilation {
     pub function_bodies: PrimaryMap<LocalFunctionIndex, FunctionBody>,
     pub function_relocations: PrimaryMap<LocalFunctionIndex, Vec<Relocation>>,
-    pub function_frame_info: PrimaryMap<LocalFunctionIndex, CompiledFunctionFrameInfo>,
+    pub function_frame_info:
+        PrimaryMap<LocalFunctionIndex, CompiledFunctionFrameInfo>,
     pub function_call_trampolines: PrimaryMap<SignatureIndex, FunctionBody>,
     pub dynamic_function_trampolines: PrimaryMap<FunctionIndex, FunctionBody>,
     pub custom_sections: PrimaryMap<SectionIndex, CustomSection>,
@@ -90,7 +94,9 @@ impl SerializableModule {
     /// Right now we are not doing any extra work for validation, but
     /// `rkyv` has an option to do bytecheck on the serialized data before
     /// serializing (via `rkyv::check_archived_value`).
-    pub unsafe fn deserialize_unchecked(metadata_slice: &[u8]) -> Result<Self, DeserializeError> {
+    pub unsafe fn deserialize_unchecked(
+        metadata_slice: &[u8],
+    ) -> Result<Self, DeserializeError> {
         let archived = Self::archive_from_slice(metadata_slice)?;
         Self::deserialize_from_archive(archived)
     }
@@ -104,7 +110,9 @@ impl SerializableModule {
     /// # Safety
     /// Unsafe because it loads executable code into memory.
     /// The loaded bytes must be trusted.
-    pub unsafe fn deserialize(metadata_slice: &[u8]) -> Result<Self, DeserializeError> {
+    pub unsafe fn deserialize(
+        metadata_slice: &[u8],
+    ) -> Result<Self, DeserializeError> {
         let archived = Self::archive_from_slice_checked(metadata_slice)?;
         Self::deserialize_from_archive(archived)
     }

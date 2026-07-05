@@ -15,7 +15,8 @@ pub use crate::sys::store::NativeStoreExt;
 pub use crate::sys::tunables::BaseTunables;
 #[cfg(feature = "compiler")]
 pub use wasmer_compiler::{
-    wasmparser, CompilerConfig, FunctionMiddleware, MiddlewareReaderState, ModuleMiddleware,
+    wasmparser, CompilerConfig, FunctionMiddleware, MiddlewareReaderState,
+    ModuleMiddleware,
 };
 pub use wasmer_compiler::{Artifact, EngineBuilder, Features, Tunables};
 #[cfg(feature = "cranelift")]

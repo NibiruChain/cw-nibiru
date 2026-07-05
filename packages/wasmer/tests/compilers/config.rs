@@ -27,7 +27,10 @@ impl Config {
         }
     }
 
-    pub fn set_middlewares(&mut self, middlewares: Vec<Arc<dyn ModuleMiddleware>>) {
+    pub fn set_middlewares(
+        &mut self,
+        middlewares: Vec<Arc<dyn ModuleMiddleware>>,
+    ) {
         self.middlewares = middlewares;
     }
 
@@ -50,7 +53,10 @@ impl Config {
         Store::new(engine)
     }
 
-    pub fn engine(&self, compiler_config: Box<dyn CompilerConfig>) -> wasmer::Engine {
+    pub fn engine(
+        &self,
+        compiler_config: Box<dyn CompilerConfig>,
+    ) -> wasmer::Engine {
         let mut engine = wasmer::sys::EngineBuilder::new(compiler_config);
         if let Some(ref features) = self.features {
             engine = engine.set_features(Some(features.clone()));

@@ -55,7 +55,11 @@ impl Trap {
     /// Construct a new Wasm trap with the given source location and backtrace.
     ///
     /// Internally saves a backtrace when constructed.
-    pub fn wasm(pc: usize, backtrace: Backtrace, signal_trap: Option<TrapCode>) -> Self {
+    pub fn wasm(
+        pc: usize,
+        backtrace: Backtrace,
+        signal_trap: Option<TrapCode>,
+    ) -> Self {
         Self::Wasm {
             pc,
             backtrace,
@@ -91,7 +95,9 @@ impl Trap {
     pub fn downcast<T: Error + 'static>(self) -> Result<T, Self> {
         match self {
             // We only try to downcast user errors
-            Self::User(err) if err.is::<T>() => Ok(*err.downcast::<T>().unwrap()),
+            Self::User(err) if err.is::<T>() => {
+                Ok(*err.downcast::<T>().unwrap())
+            }
             _ => Err(self),
         }
     }

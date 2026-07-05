@@ -211,7 +211,8 @@ impl NativeWasmTypeInto for Option<ExternRef> {
 
     #[inline]
     unsafe fn from_raw(store: &mut impl AsStoreMut, raw: RawValue) -> Self {
-        VMExternRef::from_raw(raw).map(|e| ExternRef::from_vm_externref(store, e))
+        VMExternRef::from_raw(raw)
+            .map(|e| ExternRef::from_vm_externref(store, e))
     }
 }
 
@@ -233,7 +234,8 @@ impl NativeWasmType for Function {
 impl NativeWasmTypeInto for Option<Function> {
     #[inline]
     unsafe fn from_abi(store: &mut impl AsStoreMut, abi: Self::Abi) -> Self {
-        VMFuncRef::from_raw(RawValue { funcref: abi }).map(|f| Function::from_vm_funcref(store, f))
+        VMFuncRef::from_raw(RawValue { funcref: abi })
+            .map(|f| Function::from_vm_funcref(store, f))
     }
 
     #[inline]
@@ -429,7 +431,10 @@ where
     /// Constructs `Self` based on an array of values.
     ///
     /// # Safety
-    unsafe fn from_array(store: &mut impl AsStoreMut, array: Self::Array) -> Self;
+    unsafe fn from_array(
+        store: &mut impl AsStoreMut,
+        array: Self::Array,
+    ) -> Self;
 
     /// Constructs `Self` based on a slice of values.
     ///
@@ -459,7 +464,10 @@ where
     /// `CStruct`.
     ///
     /// # Safety
-    unsafe fn from_c_struct(store: &mut impl AsStoreMut, c_struct: Self::CStruct) -> Self;
+    unsafe fn from_c_struct(
+        store: &mut impl AsStoreMut,
+        c_struct: Self::CStruct,
+    ) -> Self;
 
     /// Builds and returns a C struct of type `CStruct` from a
     /// tuple (list) of values.
@@ -547,7 +555,10 @@ mod test_into_result {
             struct E;
 
             impl fmt::Display for E {
-                fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fn fmt(
+                    &self,
+                    formatter: &mut fmt::Formatter<'_>,
+                ) -> fmt::Result {
                     write!(formatter, "E")
                 }
             }
@@ -593,7 +604,10 @@ impl WasmTypeList for Infallible {
         []
     }
 
-    unsafe fn from_c_struct(_: &mut impl AsStoreMut, self_: Self::CStruct) -> Self {
+    unsafe fn from_c_struct(
+        _: &mut impl AsStoreMut,
+        self_: Self::CStruct,
+    ) -> Self {
         self_
     }
 

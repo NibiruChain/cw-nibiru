@@ -105,18 +105,24 @@ impl Value {
     ///
     /// # Safety
     ///
-    pub unsafe fn from_raw(store: &mut impl crate::AsStoreMut, ty: Type, raw: RawValue) -> Self {
+    pub unsafe fn from_raw(
+        store: &mut impl crate::AsStoreMut,
+        ty: Type,
+        raw: RawValue,
+    ) -> Self {
         match ty {
             Type::I32 => Self::I32(raw.i32),
             Type::I64 => Self::I64(raw.i64),
             Type::F32 => Self::F32(raw.f32),
             Type::F64 => Self::F64(raw.f64),
             Type::V128 => Self::V128(raw.u128),
-            Type::FuncRef => {
-                Self::FuncRef(VMFuncRef::from_raw(raw).map(|f| Function::from_vm_funcref(store, f)))
-            }
+            Type::FuncRef => Self::FuncRef(
+                VMFuncRef::from_raw(raw)
+                    .map(|f| Function::from_vm_funcref(store, f)),
+            ),
             Type::ExternRef => Self::ExternRef(
-                VMExternRef::from_raw(raw).map(|e| ExternRef::from_vm_externref(store, e)),
+                VMExternRef::from_raw(raw)
+                    .map(|e| ExternRef::from_vm_externref(store, e)),
             ),
         }
     }

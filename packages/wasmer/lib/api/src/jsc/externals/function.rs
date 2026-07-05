@@ -1,12 +1,18 @@
 use crate::errors::RuntimeError;
-use crate::externals::function::{HostFunction, HostFunctionKind, WithEnv, WithoutEnv};
+use crate::externals::function::{
+    HostFunction, HostFunctionKind, WithEnv, WithoutEnv,
+};
 use crate::function_env::{FunctionEnv, FunctionEnvMut};
 use crate::jsc::as_js::{param_from_js, AsJs};
 use crate::jsc::engine::JSC;
 use crate::jsc::store::{InternalStoreHandle, StoreHandle};
 use crate::jsc::trap::Trap;
-use crate::jsc::vm::{VMExtern, VMFuncRef, VMFunction, VMFunctionCallback, VMFunctionEnvironment};
-use crate::native_type::{FromToNativeWasmType, IntoResult, NativeWasmTypeInto, WasmTypeList};
+use crate::jsc::vm::{
+    VMExtern, VMFuncRef, VMFunction, VMFunctionCallback, VMFunctionEnvironment,
+};
+use crate::native_type::{
+    FromToNativeWasmType, IntoResult, NativeWasmTypeInto, WasmTypeList,
+};
 use crate::store::{AsStoreMut, AsStoreRef, StoreMut};
 use crate::value::Value;
 use std::fmt;
@@ -16,7 +22,8 @@ use std::panic::{self, AssertUnwindSafe};
 use wasmer_types::{FunctionType, RawValue};
 
 use rusty_jsc::{
-    callback, callback_closure, JSContext, JSObject, JSObjectCallAsFunctionCallback, JSValue,
+    callback, callback_closure, JSContext, JSObject,
+    JSObjectCallAsFunctionCallback, JSValue,
 };
 
 #[derive(Clone, PartialEq)]
@@ -49,7 +56,10 @@ impl Function {
     ) -> Self
     where
         FT: Into<FunctionType>,
-        F: Fn(FunctionEnvMut<'_, T>, &[Value]) -> Result<Vec<Value>, RuntimeError>
+        F: Fn(
+                FunctionEnvMut<'_, T>,
+                &[Value],
+            ) -> Result<Vec<Value>, RuntimeError>
             + 'static
             + Send
             + Sync,
@@ -65,14 +75,18 @@ impl Function {
                                                          function: JSObject,
                                                          this: JSObject,
                                                          args: &[JSValue]|
-              -> Result<JSValue, JSValue> {
+              -> Result<
+            JSValue,
+            JSValue,
+        > {
             let global = ctx.get_global_object();
             let store_ptr = global
                 .get_property(&ctx, "__store_ptr".to_string())
                 .to_number(&ctx)
                 .unwrap();
 
-            let mut store = unsafe { StoreMut::from_raw(store_ptr as usize as *mut _) };
+            let mut store =
+                unsafe { StoreMut::from_raw(store_ptr as usize as *mut _) };
 
             let env: FunctionEnvMut<T> = raw_env.clone().into_mut(&mut store);
 
@@ -149,7 +163,10 @@ impl Function {
                 Some(&callback),
                 &[
                     JSValue::undefined(&context),
-                    JSValue::number(&context, env.handle.internal_handle().index() as f64),
+                    JSValue::number(
+                        &context,
+                        env.handle.internal_handle().index() as f64,
+                    ),
                 ],
             )
             .unwrap()
@@ -239,7 +256,9 @@ impl Function {
                 let result = result.to_object(&context).unwrap();
                 Ok((0..n)
                     .map(|i| {
-                        let js_val = result.get_property_at_index(&context, i as _).unwrap();
+                        let js_val = result
+                            .get_property_at_index(&context, i as _)
+                            .unwrap();
                         param_from_js(&context, &result_types[i], &js_val)
                     })
                     .collect::<Vec<_>>()
@@ -248,7 +267,10 @@ impl Function {
         }
     }
 
-    pub(crate) fn from_vm_extern(_store: &mut impl AsStoreMut, internal: VMFunction) -> Self {
+    pub(crate) fn from_vm_extern(
+        _store: &mut impl AsStoreMut,
+        internal: VMFunction,
+    ) -> Self {
         Self { handle: internal }
     }
 
@@ -313,7 +335,11 @@ where
     /// Get the address of this `WasmFunction`.
     #[allow(dead_code)]
     pub fn callback(&self, context: &JSContext) -> JSObject {
-        JSObject::new_function_with_callback(context, "FunctionCallback".to_string(), self.callback)
+        JSObject::new_function_with_callback(
+            context,
+            "FunctionCallback".to_string(),
+            self.callback,
+        )
     }
 }
 

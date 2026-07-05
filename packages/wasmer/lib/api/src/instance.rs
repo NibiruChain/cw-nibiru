@@ -68,7 +68,8 @@ impl Instance {
         module: &Module,
         imports: &Imports,
     ) -> Result<Self, InstantiationError> {
-        let (_inner, exports) = instance_imp::Instance::new(store, module, imports)?;
+        let (_inner, exports) =
+            instance_imp::Instance::new(store, module, imports)?;
         Ok(Self {
             _inner,
             module: module.clone(),
@@ -92,7 +93,8 @@ impl Instance {
         module: &Module,
         externs: &[Extern],
     ) -> Result<Self, InstantiationError> {
-        let (_inner, exports) = instance_imp::Instance::new_by_index(store, module, externs)?;
+        let (_inner, exports) =
+            instance_imp::Instance::new_by_index(store, module, externs)?;
         Ok(Self {
             _inner,
             module: module.clone(),

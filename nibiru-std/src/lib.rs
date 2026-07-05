@@ -1,5 +1,4 @@
 pub mod address;
-pub mod bindings;
 pub mod errors;
 pub mod math;
 pub mod proto;

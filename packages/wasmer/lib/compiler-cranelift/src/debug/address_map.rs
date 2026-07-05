@@ -6,7 +6,8 @@ use wasmer_types::entity::PrimaryMap;
 use wasmer_types::LocalFunctionIndex;
 
 /// Value ranges for functions.
-pub type ValueLabelsRanges = PrimaryMap<LocalFunctionIndex, cranelift_codegen::ValueLabelsRanges>;
+pub type ValueLabelsRanges =
+    PrimaryMap<LocalFunctionIndex, cranelift_codegen::ValueLabelsRanges>;
 
 /// Stack slots for functions.
 pub type StackSlots = PrimaryMap<LocalFunctionIndex, ir::StackSlots>;

@@ -2,7 +2,9 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-use wasmer::{imports, Instance, Memory, MemoryLocation, MemoryType, Module, Store};
+use wasmer::{
+    imports, Instance, Memory, MemoryLocation, MemoryType, Module, Store,
+};
 
 #[test]
 #[cfg_attr(feature = "wasmi", ignore = "wasmi does not support threads")]
@@ -19,7 +21,8 @@ fn test_shared_memory_atomics_notify_send() {
         .map_err(|e| format!("{e:?}"))
         .unwrap();
 
-    let mem = Memory::new(&mut store, MemoryType::new(10, Some(65536), true)).unwrap();
+    let mem =
+        Memory::new(&mut store, MemoryType::new(10, Some(65536), true)).unwrap();
 
     let imports = imports! {
         "host" => {
@@ -72,7 +75,8 @@ fn test_shared_memory_disable_atomics() {
     use wasmer::AtomicsError;
 
     let mut store = Store::default();
-    let mem = Memory::new(&mut store, MemoryType::new(10, Some(65536), true)).unwrap();
+    let mem =
+        Memory::new(&mut store, MemoryType::new(10, Some(65536), true)).unwrap();
 
     let mem = mem.as_shared(&store).unwrap();
     mem.disable_atomics().unwrap();

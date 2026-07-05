@@ -155,7 +155,8 @@ fn holochain_typed_function() -> anyhow::Result<()> {
     };
 
     // Define the host function and WASM instance
-    let multiply_typed = Function::new_typed_with_env(&mut store, &env, multiply_by_3);
+    let multiply_typed =
+        Function::new_typed_with_env(&mut store, &env, multiply_by_3);
     let import_object = imports! {
         "env" => {
             "multiply_typed" => multiply_typed,

@@ -6,7 +6,9 @@ use crate::lib::std::string::{String, ToString};
 use crate::lib::std::vec::Vec;
 use crate::units::Pages;
 
-use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
+use rkyv::{
+    Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize,
+};
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 
@@ -69,7 +71,10 @@ pub struct V128(pub(crate) [u8; 16]);
 
 #[cfg(feature = "artifact-size")]
 impl loupe::MemoryUsage for V128 {
-    fn size_of_val(&self, _tracker: &mut dyn loupe::MemoryUsageTracker) -> usize {
+    fn size_of_val(
+        &self,
+        _tracker: &mut dyn loupe::MemoryUsageTracker,
+    ) -> usize {
         16 * 8
     }
 }
@@ -143,7 +148,10 @@ fn is_global_compatible(exported: GlobalType, imported: GlobalType) -> bool {
     exported_ty == imported_ty && imported_mutability == exported_mutability
 }
 
-fn is_table_element_type_compatible(exported_type: Type, imported_type: Type) -> bool {
+fn is_table_element_type_compatible(
+    exported_type: Type,
+    imported_type: Type,
+) -> bool {
     match exported_type {
         Type::FuncRef => true,
         _ => imported_type == exported_type,
@@ -167,7 +175,8 @@ fn is_table_compatible(
     } = imported;
 
     is_table_element_type_compatible(*exported_ty, *imported_ty)
-        && *imported_minimum <= imported_runtime_size.unwrap_or(*exported_minimum)
+        && *imported_minimum
+            <= imported_runtime_size.unwrap_or(*exported_minimum)
         && (imported_maximum.is_none()
             || (!exported_maximum.is_none()
                 && imported_maximum.unwrap() >= exported_maximum.unwrap()))
@@ -228,12 +237,20 @@ impl ExternType {
         (Memory(MemoryType) memory unwrap_memory)
     }
     /// Check if two externs are compatible
-    pub fn is_compatible_with(&self, other: &Self, runtime_size: Option<u32>) -> bool {
+    pub fn is_compatible_with(
+        &self,
+        other: &Self,
+        runtime_size: Option<u32>,
+    ) -> bool {
         match (self, other) {
             (Self::Function(a), Self::Function(b)) => a == b,
             (Self::Global(a), Self::Global(b)) => is_global_compatible(*a, *b),
-            (Self::Table(a), Self::Table(b)) => is_table_compatible(a, b, runtime_size),
-            (Self::Memory(a), Self::Memory(b)) => is_memory_compatible(a, b, runtime_size),
+            (Self::Table(a), Self::Table(b)) => {
+                is_table_compatible(a, b, runtime_size)
+            }
+            (Self::Memory(a), Self::Memory(b)) => {
+                is_memory_compatible(a, b, runtime_size)
+            }
             // The rest of possibilities, are not compatible
             _ => false,
         }
@@ -334,7 +351,17 @@ impl From<&Self> for FunctionType {
 }
 
 /// Indicator of whether a global is mutable or not
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, RkyvSerialize, RkyvDeserialize, Archive)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Archive,
+)]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[rkyv(derive(Debug), compare(PartialOrd, PartialEq))]
@@ -373,7 +400,17 @@ impl From<Mutability> for bool {
 }
 
 /// WebAssembly global.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, RkyvSerialize, RkyvDeserialize, Archive)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Archive,
+)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[rkyv(derive(Debug), compare(PartialEq))]
@@ -418,7 +455,9 @@ impl fmt::Display for GlobalType {
 }
 
 /// Globals are initialized via the `const` operators or by referring to another import.
-#[derive(Debug, Clone, Copy, PartialEq, RkyvSerialize, RkyvDeserialize, Archive)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, RkyvSerialize, RkyvDeserialize, Archive,
+)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "artifact-size", derive(loupe::MemoryUsage))]
 #[rkyv(derive(Debug), compare(PartialEq))]
@@ -511,7 +550,11 @@ pub struct MemoryType {
 impl MemoryType {
     /// Creates a new descriptor for a WebAssembly memory given the specified
     /// limits of the memory.
-    pub fn new<IntoPages>(minimum: IntoPages, maximum: Option<IntoPages>, shared: bool) -> Self
+    pub fn new<IntoPages>(
+        minimum: IntoPages,
+        maximum: Option<IntoPages>,
+        shared: bool,
+    ) -> Self
     where
         IntoPages: Into<Pages>,
     {
@@ -623,8 +666,10 @@ mod tests {
 
     const VOID_TO_VOID: ([Type; 0], [Type; 0]) = ([], []);
     const I32_I32_TO_VOID: ([Type; 2], [Type; 0]) = ([Type::I32, Type::I32], []);
-    const V128_I64_TO_I32: ([Type; 2], [Type; 1]) = ([Type::V128, Type::I64], [Type::I32]);
-    const NINE_V128_TO_NINE_I32: ([Type; 9], [Type; 9]) = ([Type::V128; 9], [Type::I32; 9]);
+    const V128_I64_TO_I32: ([Type; 2], [Type; 1]) =
+        ([Type::V128, Type::I64], [Type::I32]);
+    const NINE_V128_TO_NINE_I32: ([Type; 9], [Type; 9]) =
+        ([Type::V128; 9], [Type::I32; 9]);
 
     #[test]
     fn convert_tuple_to_functiontype() {
