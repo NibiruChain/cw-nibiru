@@ -93,6 +93,7 @@ test-wasmer-cov:
   root="$(git rev-parse --show-toplevel)"
   output="${root}/lcov-wasmer.info"
   cd "${root}/packages/wasmer"
+  rustup component add llvm-tools-preview --toolchain 1.81
   cargo llvm-cov clean --workspace
   cargo llvm-cov --no-report -p wasmer --lib \
     --no-default-features --features cranelift,singlepass,wat
@@ -104,7 +105,7 @@ test-wasmer-cov:
     -p wasmer-compiler-singlepass \
     -p wasmer-compiler-cranelift
   cargo llvm-cov --no-report --test compilers --features 'cranelift,singlepass'
-  cargo llvm-cov report --lcov --output-path "${output}"
+  cargo llvm-cov report --lcov --output-path "${output}" --no-default-ignore-filename-regex
   echo "Wrote ${output}"
 
 # Test everything and output coverage report.
