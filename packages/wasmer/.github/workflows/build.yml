@@ -1,3 +1,5 @@
+# NIBIRU: Upstream CLI/C-API release matrix — reference only, not run by nibi-wasm CI.
+# Product crates (lib/cli, lib/c-api, LLVM) removed in Phase 1; this file will not pass as-is.
 name: Builds
 
 env:
