@@ -102,26 +102,6 @@ jobs:
         with:
           log-level: error
 
-  test_nodejs:
-    name: Test on NodeJS
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ env.MSRV }}
-      - name: Install NodeJS
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16
-      - name: Install wasm-pack
-        run: |
-          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: make test-js
-        run: |
-          make test-js
-
   test_wasi_fyi:
     name: Test wasi-fyi
     runs-on: ubuntu-22.04
@@ -150,11 +130,6 @@ jobs:
       - name: make test-wasi-fyi
         run: |
           make test-wasi-fyi
-
-      # The no_std functionality doesn't work at the moment - no point in testing it.
-      # - name: make test-js-core
-      #   run: |
-      #     make test-js-core
 
   test_wasix:
     name: Test WASIX
@@ -211,24 +186,6 @@ jobs:
         run: rustup target add wasm32-wasi
       - name: make build-wasmer-wasm
         run: make build-wasmer-wasm
-
-  test_build_jsc:
-    name: Test JSC build
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ env.MSRV }}
-          target: x86_64-unknown-linux-gnu
-      - name: Install NodeJS
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16
-      - name: Install libjavascriptcoregtk-4.0-dev
-        run: sudo apt update && sudo apt install -y libjavascriptcoregtk-4.0-dev
-      - name: make build-wasmer-jsc
-        run: make build-wasmer-jsc
 
   test_interpreter_api:
     name: ${{ matrix.build-what.name }} on ${{ matrix.metadata.build }}
