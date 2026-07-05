@@ -86,9 +86,10 @@ jobs:
             ~/.cargo/git/db/
             packages/wasmer/target/
           key: ${{ runner.os }}-wasmer-cargo-${{ hashFiles('packages/wasmer/Cargo.lock') }}
+      - name: "Install just"
+        uses: taiki-e/install-action@just
       - name: "Run Wasmer tests"
-        working-directory: packages/wasmer
-        run: cargo t
+        run: just test-wasmer
 
   coverage:
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'

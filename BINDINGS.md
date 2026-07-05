@@ -42,6 +42,28 @@ and implemented trait `CustomQuery`. The current pattern uses protobuf request
 types with `QueryRequest::Stargate`, while the chain decides which query paths
 are accepted.
 
+This does not mean custom bindings are unsupported by `wasmd` or invalid for
+every chain. Custom bindings remain an official extension point for chains that
+need contract-specific behavior, deterministic query shaping, or functionality
+that does not map cleanly to a standard transaction message. The Nibiru decision
+was narrower: for module transactions, prefer protobuf-backed messages and
+standard `sdk.Msg` routing over a second Nibiru-specific Rust and Go interface.
+
+Osmosis reached a similar conclusion while evaluating custom contract bindings.
+In [osmosis-labs/osmosis PR #1484](https://github.com/osmosis-labs/osmosis/pull/1484#issuecomment-1176960176),
+ValarDragon wrote:
+
+> Closing for now, as we want to go with an approach of using StargateMsg and
+> StargateQuery. This is because we don't want to maintain a separate interface
+> layer in go just for cosmwasm — we should just promise interface compatibility
+> at one point, or make a native backwards compatible abstraction.
+
+That is the maintenance problem this document should preserve. Custom bindings
+can be useful, but they create another API surface: Rust message/query enums,
+Go encoders and queriers, test fixtures, mocks, and docs that must stay aligned
+with the module API. When protobuf messages are already the module API,
+`nibiru-std` should expose those generated types to contracts instead.
+
 ## msg.rs 
 
 - [ ] Create a `NibiruMsg` enum that has fields corresponding to each message in the module. The fields don't need to be grouped by module, and the standard convention is to name the `NibiruMsg::FieldExample` with the corresponding RPC proto method. For example, 

@@ -67,6 +67,22 @@ test *pkg:
 test-all:
   cargo test
 
+# Run vendored Wasmer package tests (same coverage as CI job `wasmer`).
+test-wasmer:
+  #!/usr/bin/env bash
+  # TODO: Wire Wasmer validation into `just test`, `just test-all`, and/or `just tidy`
+  # once we decide how it should interact with root-workspace `cargo test` and
+  # package `cosmwasm-vm` (separate Cargo workspace, longer runtime, cache paths).
+  set -euo pipefail
+  manifest="packages/wasmer/Cargo.toml"
+  cargo test --manifest-path "$manifest" -p wasmer --lib --no-default-features --features cranelift,singlepass,wat
+  cargo test --manifest-path "$manifest" -p wasmer-vm --lib
+  cargo test --manifest-path "$manifest" -p wasmer-types --lib
+  cargo test --manifest-path "$manifest" -p wasmer-middlewares --lib
+  cargo test --manifest-path "$manifest" -p wasmer-compiler --lib
+  cargo test --manifest-path "$manifest" -p wasmer-compiler-singlepass --lib
+  cargo test --manifest-path "$manifest" -p wasmer-compiler-cranelift --lib
+
 # Test everything and output coverage report.
 test-coverage:
   cargo llvm-cov --lcov --output-path lcov.info \
