@@ -38,23 +38,19 @@ crossbeam-queue = "0.3.8"
 members = [
 	"lib/api",
 	"lib/api/macro-wasmer-universal-test",
-	"lib/backend-api",
 	"lib/cache",
 	"lib/compiler-cranelift",
 	"lib/compiler-llvm",
 	"lib/compiler-singlepass",
 	"lib/compiler",
-	"lib/config",
 	"lib/derive",
 	"lib/types",
 	"lib/vm",
-	"lib/package",
 	"tests/integration/cli",
 	"tests/integration/ios",
 	"tests/lib/compiler-test-derive",
 	"tests/lib/wast",
 	"tests/wasi-wast",
-	"tests/wasmer-argus",
 ]
 exclude = ["./lib/cli/tests/packages/axum"]
 resolver = "2"
@@ -69,10 +65,6 @@ rust-version = "1.81"
 version = "5.0.6"
 
 [workspace.dependencies]
-# Repo-local crates
-wasmer-package = { version = "0.4.0", path = "lib/package" }
-wasmer-config = { path = "./lib/config" }
-
 # Wasmer-owned crates
 webc = { version = "8.0.0" }
 shared-buffer = "0.1.4"
