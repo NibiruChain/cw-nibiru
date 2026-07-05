@@ -15,7 +15,6 @@ Wasm smart contract sandbox for Nibiru.
 ├── 📂 nibiru-std      # Nibiru standard library for smart contracts
     └── 📦 proto       # Types and traits for QueryRequest::Stargate and CosmosMsg::Stargate
          └──           #   Includes constructors for Cosmos, IBC, and Nibiru. 
-    └── 📦 bindings    # For sending CosmosMsg::Custom msgs on Nibiru (soon deprecated).
 ├── 📂 packages        # Other Rust packages
     └── 📦 cw-address-like # Address-like helper traits for CosmWasm types.
     └── 📦 easy-addr       # Address construction helpers for tests.

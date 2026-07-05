@@ -1,5 +1,46 @@
 
+# Wasm bindings notes
 
+## How the integration patterns differ
+
+These notes capture an older Nibiru CosmWasm design that used chain-specific
+wasm bindings. The original idea was to let contracts call Nibiru modules
+through custom Rust enums, such as enum `NibiruMsg` and enum `NibiruQuery`, and
+then have Go code in the chain convert those custom payloads into module calls.
+
+Nibiru moved away from that pattern. Contracts should use standard protobuf
+transaction messages and query messages through `CosmosMsg::Stargate` and
+`QueryRequest::Stargate` instead. This keeps the contract interface aligned
+with normal Cosmos SDK message routing, validation, and tooling.
+
+Old Custom pattern:
+
+```text
+CosmWasm contract
+  -> CosmosMsg::Custom with NibiruMsg JSON
+  -> Go CustomEncoder
+  -> SDK module handler
+```
+
+Current Stargate pattern:
+
+```text
+CosmWasm contract
+  -> CosmosMsg::Stargate with protobuf bytes
+  -> wasmd Stargate encoder
+  -> sdk.Msg validation and routing
+  -> SDK module handler
+```
+
+The Custom pattern required a Nibiru-specific contract API and a Nibiru-specific
+Go interpreter for that API. The Stargate pattern uses generated protobuf types
+from crate `nibiru-std`, so contract code can construct the same transaction
+messages that external users, wallets, and other tooling understand.
+
+The same distinction applies to queries. The old plan used a custom query enum
+and implemented trait `CustomQuery`. The current pattern uses protobuf request
+types with `QueryRequest::Stargate`, while the chain decides which query paths
+are accepted.
 
 ## msg.rs 
 
