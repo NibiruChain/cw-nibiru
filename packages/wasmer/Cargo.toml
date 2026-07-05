@@ -40,7 +40,6 @@ members = [
 	"lib/api/macro-wasmer-universal-test",
 	"lib/backend-api",
 	"lib/cache",
-	"lib/cli-compiler",
 	"lib/compiler-cranelift",
 	"lib/compiler-llvm",
 	"lib/compiler-singlepass",
