@@ -3240,6 +3240,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-block-hooks-tester"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "easy-addr",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "wasm-encoder"
 version = "0.244.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
