@@ -3,9 +3,7 @@ use cosmwasm_std::{
 };
 
 use crate::{
-    msg::{
-        ExecuteMsg, InstantiateMsg, QueryMsg, SudoMsg, WasmSudoMsg,
-    },
+    msg::{ExecuteMsg, InstantiateMsg, QueryMsg, SudoMsg, WasmSudoMsg},
     state::{State, STATE},
 };
 
@@ -44,18 +42,21 @@ pub fn execute(
             query_error,
             wasm_sudo_msg_calls,
         } => {
-            STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-                if let Some(count) = count {
-                    state.count = count;
-                }
-                if let Some(query_error) = query_error {
-                    state.query_error = query_error;
-                }
-                if let Some(wasm_sudo_msg_calls) = wasm_sudo_msg_calls {
-                    state.wasm_sudo_msg_calls = wasm_sudo_msg_calls;
-                }
-                Ok(state)
-            })?;
+            STATE.update(
+                deps.storage,
+                |mut state| -> Result<_, ContractError> {
+                    if let Some(count) = count {
+                        state.count = count;
+                    }
+                    if let Some(query_error) = query_error {
+                        state.query_error = query_error;
+                    }
+                    if let Some(wasm_sudo_msg_calls) = wasm_sudo_msg_calls {
+                        state.wasm_sudo_msg_calls = wasm_sudo_msg_calls;
+                    }
+                    Ok(state)
+                },
+            )?;
             Ok(Response::default().add_attribute("method", "config"))
         }
     }
@@ -226,7 +227,8 @@ mod tests {
             from_json(query(deps.as_ref(), env, QueryMsg::EndBlockPlan {})?)?;
 
         assert_eq!(queried_calls, calls);
-        let sudo_msg: SudoMsg = serde_json::from_value(queried_calls[0].msg.clone())?;
+        let sudo_msg: SudoMsg =
+            serde_json::from_value(queried_calls[0].msg.clone())?;
         assert_eq!(sudo_msg, SudoMsg::Increment { by: 7 });
         Ok(())
     }
@@ -375,7 +377,10 @@ mod tests {
         assert_eq!(begin_block, r#"{"begin_block_plan":{}}"#);
         assert_eq!(end_block, r#"{"end_block_plan":{}}"#);
         assert_eq!(instantiate, r#"{}"#);
-        assert_eq!(config, r#"{"config":{"count":42,"query_error":false,"wasm_sudo_msg_calls":[{"contract_addr":"target_contract","msg":{"fail_after_write":{"by":9}}}]}}"#);
+        assert_eq!(
+            config,
+            r#"{"config":{"count":42,"query_error":false,"wasm_sudo_msg_calls":[{"contract_addr":"target_contract","msg":{"fail_after_write":{"by":9}}}]}}"#
+        );
         assert_eq!(increment, r#"{"increment":{"by":7}}"#);
         assert_eq!(set, r#"{"set":{"count":42}}"#);
         assert_eq!(fail_before, r#"{"fail_before_write":{}}"#);

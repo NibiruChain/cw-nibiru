@@ -1,4 +1,3 @@
-use crate::state;
 use cosmwasm_schema::cw_serde;
 
 #[cw_serde]
@@ -11,7 +10,7 @@ pub enum ExecuteMsg {
 #[derive(cosmwasm_schema::QueryResponses)]
 pub enum QueryMsg {
     // Count returns the JSON-encoded state
-    #[returns(state::State)]
+    #[returns(crate::state::State)]
     Count {},
 }
 

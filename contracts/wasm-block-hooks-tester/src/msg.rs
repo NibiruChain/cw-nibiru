@@ -1,8 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use serde_json::Value;
 
-use crate::state::State;
-
 /// InstantiateMsg creates a blank fixture. Tests configure behavior later with
 /// ExecuteMsg::Config so every scenario has explicit setup.
 #[cw_serde]
@@ -58,6 +56,6 @@ pub enum QueryMsg {
     EndBlockPlan {},
 
     /// State returns fixture state for tests.
-    #[returns(State)]
+    #[returns(crate::state::State)]
     State {},
 }
