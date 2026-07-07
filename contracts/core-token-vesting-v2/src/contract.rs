@@ -129,7 +129,7 @@ fn reward_users(
     if !(whitelist.is_member(&info.sender) || whitelist.is_admin(&info.sender)) {
         return Err(StdError::generic_err(format!(
             "Sender {} is unauthorized to reward users.",
-            &info.sender
+            info.sender
         ))
         .into());
     }
@@ -237,7 +237,7 @@ fn deregister_vesting_accounts(
     if !(whitelist.is_member(&info.sender) || whitelist.is_admin(&info.sender)) {
         return Err(StdError::generic_err(format!(
             "Sender {} is not authorized to deregister vesting accounts.",
-            &info.sender
+            info.sender
         ))
         .into());
     }

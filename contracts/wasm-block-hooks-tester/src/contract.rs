@@ -4,8 +4,7 @@ use cosmwasm_std::{
 
 use crate::{
     msg::{
-        ExecuteMsg, HookDispatch, InstantiateMsg, QueryMsg, RegistryMode,
-        SudoMsg,
+        ExecuteMsg, InstantiateMsg, QueryMsg, SudoMsg, WasmSudoMsg,
     },
     state::{State, STATE},
 };
@@ -17,15 +16,14 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     STATE.save(
         deps.storage,
         &State {
-            count: msg.count,
-            registry_mode: msg.registry_mode,
-            target_addr: msg.target_addr,
-            valid_payload_increment: msg.valid_payload_increment.unwrap_or(1),
+            count: 0,
+            query_error: false,
+            wasm_sudo_msg_calls: vec![],
             last_sudo: None,
         },
     )?;
@@ -41,46 +39,24 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::SetRegistryMode { mode } => {
-            STATE.update(
-                deps.storage,
-                |mut state| -> Result<_, ContractError> {
-                    state.registry_mode = mode;
-                    Ok(state)
-                },
-            )?;
-            Ok(Response::default().add_attribute("method", "set_registry_mode"))
-        }
-        ExecuteMsg::SetTargetAddr { target_addr } => {
-            STATE.update(
-                deps.storage,
-                |mut state| -> Result<_, ContractError> {
-                    state.target_addr = target_addr;
-                    Ok(state)
-                },
-            )?;
-            Ok(Response::default().add_attribute("method", "set_target_addr"))
-        }
-        ExecuteMsg::SetCount { count } => {
-            STATE.update(
-                deps.storage,
-                |mut state| -> Result<_, ContractError> {
+        ExecuteMsg::Config {
+            count,
+            query_error,
+            wasm_sudo_msg_calls,
+        } => {
+            STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
+                if let Some(count) = count {
                     state.count = count;
-                    Ok(state)
-                },
-            )?;
-            Ok(Response::default().add_attribute("method", "set_count"))
-        }
-        ExecuteMsg::SetValidPayloadIncrement { by } => {
-            STATE.update(
-                deps.storage,
-                |mut state| -> Result<_, ContractError> {
-                    state.valid_payload_increment = by;
-                    Ok(state)
-                },
-            )?;
-            Ok(Response::default()
-                .add_attribute("method", "set_valid_payload_increment"))
+                }
+                if let Some(query_error) = query_error {
+                    state.query_error = query_error;
+                }
+                if let Some(wasm_sudo_msg_calls) = wasm_sudo_msg_calls {
+                    state.wasm_sudo_msg_calls = wasm_sudo_msg_calls;
+                }
+                Ok(state)
+            })?;
+            Ok(Response::default().add_attribute("method", "config"))
         }
     }
 }
@@ -150,40 +126,12 @@ pub fn sudo(
     }
 }
 
-fn query_plan(deps: Deps, env: Env) -> Result<Vec<HookDispatch>, ContractError> {
+fn query_plan(deps: Deps, _env: Env) -> Result<Vec<WasmSudoMsg>, ContractError> {
     let state = STATE.load(deps.storage)?;
-    let target_addr = state
-        .target_addr
-        .clone()
-        .unwrap_or_else(|| env.contract.address.to_string());
-    let valid_payload = serde_json::to_value(SudoMsg::Increment {
-        by: state.valid_payload_increment,
-    })?;
-
-    match state.registry_mode {
-        RegistryMode::Empty {} => Ok(vec![]),
-        RegistryMode::SingleValid {} => Ok(vec![HookDispatch {
-            contract_addr: target_addr,
-            msg: valid_payload,
-        }]),
-        RegistryMode::MixedValidAndInvalid {} => Ok(vec![
-            HookDispatch {
-                contract_addr: target_addr.clone(),
-                msg: valid_payload.clone(),
-            },
-            HookDispatch {
-                contract_addr: "not-a-wasm-contract-address".to_string(),
-                msg: valid_payload,
-            },
-            HookDispatch {
-                contract_addr: target_addr,
-                msg: serde_json::json!("not-a-sudo-object"),
-            },
-        ]),
-        RegistryMode::QueryError {} => {
-            anyhow::bail!("fixture registry query error")
-        }
+    if state.query_error {
+        anyhow::bail!("fixture registry query error");
     }
+    Ok(state.wasm_sudo_msg_calls)
 }
 
 #[cfg(test)]
@@ -191,24 +139,18 @@ mod tests {
     use cosmwasm_std::{
         from_json,
         testing::{mock_dependencies, mock_env, mock_info},
-        Addr,
     };
 
     use crate::{
         contract::{execute, instantiate, query, sudo},
-        msg::{
-            ExecuteMsg, HookDispatch, InstantiateMsg, QueryMsg, RegistryMode,
-            SudoMsg,
-        },
+        msg::{ExecuteMsg, InstantiateMsg, QueryMsg, SudoMsg, WasmSudoMsg},
         state::State,
     };
 
     const SENDER: &str = "sender";
     const TARGET: &str = "target_contract";
 
-    fn setup(
-        registry_mode: RegistryMode,
-    ) -> anyhow::Result<(
+    fn setup() -> anyhow::Result<(
         cosmwasm_std::OwnedDeps<
             cosmwasm_std::testing::MockStorage,
             cosmwasm_std::testing::MockApi,
@@ -222,12 +164,7 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             mock_info(SENDER, &[]),
-            InstantiateMsg {
-                count: 0,
-                registry_mode,
-                target_addr: Some(TARGET.to_string()),
-                valid_payload_increment: Some(7),
-            },
+            InstantiateMsg {},
         )?;
         Ok((deps, env))
     }
@@ -240,51 +177,74 @@ mod tests {
     }
 
     #[test]
-    fn registry_mode_empty_returns_no_dispatches() -> anyhow::Result<()> {
-        let (deps, env) = setup(RegistryMode::Empty {})?;
+    fn instantiate_starts_from_blank_state() -> anyhow::Result<()> {
+        let (deps, env) = setup()?;
 
-        let dispatches: Vec<HookDispatch> =
+        let state = query_state(deps.as_ref(), env.clone())?;
+        assert_eq!(state.count, 0);
+        assert!(!state.query_error);
+        assert!(state.wasm_sudo_msg_calls.is_empty());
+        assert_eq!(state.last_sudo, None);
+
+        let calls: Vec<WasmSudoMsg> =
             from_json(query(deps.as_ref(), env, QueryMsg::BeginBlockPlan {})?)?;
 
-        assert!(dispatches.is_empty());
+        assert!(calls.is_empty());
         Ok(())
     }
 
     #[test]
-    fn registry_mode_single_valid_returns_target_dispatch() -> anyhow::Result<()>
-    {
-        let (deps, env) = setup(RegistryMode::SingleValid {})?;
+    fn config_updates_wasm_sudo_msg_calls() -> anyhow::Result<()> {
+        let (mut deps, env) = setup()?;
+        let calls = vec![
+            WasmSudoMsg {
+                contract_addr: TARGET.to_string(),
+                msg: serde_json::to_value(SudoMsg::Increment { by: 7 })?,
+            },
+            WasmSudoMsg {
+                contract_addr: "target_two".to_string(),
+                msg: serde_json::to_value(SudoMsg::FailAfterWrite { by: 9 })?,
+            },
+        ];
 
-        let dispatches: Vec<HookDispatch> =
+        execute(
+            deps.as_mut(),
+            env.clone(),
+            mock_info(SENDER, &[]),
+            ExecuteMsg::Config {
+                count: Some(42),
+                query_error: Some(false),
+                wasm_sudo_msg_calls: Some(calls.clone()),
+            },
+        )?;
+
+        let state = query_state(deps.as_ref(), env.clone())?;
+        assert_eq!(state.count, 42);
+        assert_eq!(state.wasm_sudo_msg_calls, calls);
+
+        let queried_calls: Vec<WasmSudoMsg> =
             from_json(query(deps.as_ref(), env, QueryMsg::EndBlockPlan {})?)?;
 
-        assert_eq!(dispatches.len(), 1);
-        assert_eq!(dispatches[0].contract_addr, TARGET);
-        let sudo_msg: SudoMsg =
-            serde_json::from_value(dispatches[0].msg.clone())?;
+        assert_eq!(queried_calls, calls);
+        let sudo_msg: SudoMsg = serde_json::from_value(queried_calls[0].msg.clone())?;
         assert_eq!(sudo_msg, SudoMsg::Increment { by: 7 });
         Ok(())
     }
 
     #[test]
-    fn registry_mode_mixed_returns_valid_and_invalid_dispatches(
-    ) -> anyhow::Result<()> {
-        let (deps, env) = setup(RegistryMode::MixedValidAndInvalid {})?;
+    fn query_error_config_makes_registry_queries_fail() -> anyhow::Result<()> {
+        let (mut deps, env) = setup()?;
 
-        let dispatches: Vec<HookDispatch> =
-            from_json(query(deps.as_ref(), env, QueryMsg::BeginBlockPlan {})?)?;
-
-        assert_eq!(dispatches.len(), 3);
-        assert_eq!(dispatches[0].contract_addr, TARGET);
-        assert_eq!(dispatches[1].contract_addr, "not-a-wasm-contract-address");
-        assert!(serde_json::from_value::<SudoMsg>(dispatches[2].msg.clone())
-            .is_err());
-        Ok(())
-    }
-
-    #[test]
-    fn registry_mode_query_error_fails_query() -> anyhow::Result<()> {
-        let (deps, env) = setup(RegistryMode::QueryError {})?;
+        execute(
+            deps.as_mut(),
+            env.clone(),
+            mock_info(SENDER, &[]),
+            ExecuteMsg::Config {
+                count: None,
+                query_error: Some(true),
+                wasm_sudo_msg_calls: None,
+            },
+        )?;
 
         let err = query(deps.as_ref(), env, QueryMsg::BeginBlockPlan {})
             .expect_err("query should fail");
@@ -295,7 +255,7 @@ mod tests {
 
     #[test]
     fn sudo_increment_mutates_counter() -> anyhow::Result<()> {
-        let (mut deps, env) = setup(RegistryMode::Empty {})?;
+        let (mut deps, env) = setup()?;
 
         let res =
             sudo(deps.as_mut(), env.clone(), SudoMsg::Increment { by: 5 })?;
@@ -309,7 +269,7 @@ mod tests {
 
     #[test]
     fn sudo_fail_before_write_leaves_counter_unchanged() -> anyhow::Result<()> {
-        let (mut deps, env) = setup(RegistryMode::Empty {})?;
+        let (mut deps, env) = setup()?;
 
         let err = sudo(deps.as_mut(), env.clone(), SudoMsg::FailBeforeWrite {})
             .expect_err("sudo should fail");
@@ -324,7 +284,7 @@ mod tests {
     #[test]
     fn sudo_fail_after_write_mutates_before_returning_error(
     ) -> anyhow::Result<()> {
-        let (mut deps, env) = setup(RegistryMode::Empty {})?;
+        let (mut deps, env) = setup()?;
 
         let err = sudo(
             deps.as_mut(),
@@ -341,57 +301,41 @@ mod tests {
     }
 
     #[test]
-    fn execute_updates_registry_settings() -> anyhow::Result<()> {
-        let (mut deps, env) = setup(RegistryMode::Empty {})?;
+    fn config_can_replace_wasm_sudo_msg_calls() -> anyhow::Result<()> {
+        let (mut deps, env) = setup()?;
+        let first_calls = vec![WasmSudoMsg {
+            contract_addr: TARGET.to_string(),
+            msg: serde_json::to_value(SudoMsg::Increment { by: 7 })?,
+        }];
+        let second_calls = vec![WasmSudoMsg {
+            contract_addr: "other_target".to_string(),
+            msg: serde_json::to_value(SudoMsg::FailBeforeWrite {})?,
+        }];
 
         execute(
             deps.as_mut(),
             env.clone(),
             mock_info(SENDER, &[]),
-            ExecuteMsg::SetRegistryMode {
-                mode: RegistryMode::SingleValid {},
+            ExecuteMsg::Config {
+                count: None,
+                query_error: None,
+                wasm_sudo_msg_calls: Some(first_calls),
             },
         )?;
         execute(
             deps.as_mut(),
             env.clone(),
             mock_info(SENDER, &[]),
-            ExecuteMsg::SetTargetAddr {
-                target_addr: Some("other_target".to_string()),
+            ExecuteMsg::Config {
+                count: None,
+                query_error: None,
+                wasm_sudo_msg_calls: Some(second_calls.clone()),
             },
         )?;
 
-        let dispatches: Vec<HookDispatch> =
+        let calls: Vec<WasmSudoMsg> =
             from_json(query(deps.as_ref(), env, QueryMsg::BeginBlockPlan {})?)?;
-        assert_eq!(dispatches[0].contract_addr, "other_target");
-        Ok(())
-    }
-
-    #[test]
-    fn instantiate_defaults_target_to_contract_address() -> anyhow::Result<()> {
-        let mut deps = mock_dependencies();
-        let env = mock_env();
-        instantiate(
-            deps.as_mut(),
-            env.clone(),
-            mock_info(SENDER, &[]),
-            InstantiateMsg {
-                count: 0,
-                registry_mode: RegistryMode::SingleValid {},
-                target_addr: None,
-                valid_payload_increment: None,
-            },
-        )?;
-
-        let dispatches: Vec<HookDispatch> = from_json(query(
-            deps.as_ref(),
-            env.clone(),
-            QueryMsg::BeginBlockPlan {},
-        )?)?;
-        assert_eq!(
-            dispatches[0].contract_addr,
-            Addr::unchecked(env.contract.address).to_string()
-        );
+        assert_eq!(calls, second_calls);
         Ok(())
     }
 
@@ -399,32 +343,45 @@ mod tests {
     fn golden_json_payloads_are_stable() -> anyhow::Result<()> {
         let begin_block = serde_json::to_string(&QueryMsg::BeginBlockPlan {})?;
         let end_block = serde_json::to_string(&QueryMsg::EndBlockPlan {})?;
+        let instantiate = serde_json::to_string(&InstantiateMsg {})?;
         let increment = serde_json::to_string(&SudoMsg::Increment { by: 7 })?;
         let set = serde_json::to_string(&SudoMsg::Set { count: 42 })?;
         let fail_before = serde_json::to_string(&SudoMsg::FailBeforeWrite {})?;
         let fail_after =
             serde_json::to_string(&SudoMsg::FailAfterWrite { by: 9 })?;
-        let dispatch = serde_json::to_string(&HookDispatch {
+        let wasm_sudo_msg = serde_json::to_string(&WasmSudoMsg {
             contract_addr: TARGET.to_string(),
             msg: serde_json::to_value(SudoMsg::Increment { by: 7 })?,
+        })?;
+        let config = serde_json::to_string(&ExecuteMsg::Config {
+            count: Some(42),
+            query_error: Some(false),
+            wasm_sudo_msg_calls: Some(vec![WasmSudoMsg {
+                contract_addr: TARGET.to_string(),
+                msg: serde_json::to_value(SudoMsg::FailAfterWrite { by: 9 })?,
+            }]),
         })?;
 
         println!("begin_block_query={begin_block}");
         println!("end_block_query={end_block}");
+        println!("instantiate={instantiate}");
+        println!("config={config}");
         println!("sudo_increment={increment}");
         println!("sudo_set={set}");
         println!("sudo_fail_before_write={fail_before}");
         println!("sudo_fail_after_write={fail_after}");
-        println!("single_dispatch={dispatch}");
+        println!("wasm_sudo_msg={wasm_sudo_msg}");
 
         assert_eq!(begin_block, r#"{"begin_block_plan":{}}"#);
         assert_eq!(end_block, r#"{"end_block_plan":{}}"#);
+        assert_eq!(instantiate, r#"{}"#);
+        assert_eq!(config, r#"{"config":{"count":42,"query_error":false,"wasm_sudo_msg_calls":[{"contract_addr":"target_contract","msg":{"fail_after_write":{"by":9}}}]}}"#);
         assert_eq!(increment, r#"{"increment":{"by":7}}"#);
         assert_eq!(set, r#"{"set":{"count":42}}"#);
         assert_eq!(fail_before, r#"{"fail_before_write":{}}"#);
         assert_eq!(fail_after, r#"{"fail_after_write":{"by":9}}"#);
         assert_eq!(
-            dispatch,
+            wasm_sudo_msg,
             r#"{"contract_addr":"target_contract","msg":{"increment":{"by":7}}}"#
         );
         Ok(())

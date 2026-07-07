@@ -39,8 +39,8 @@ fn artifact_serialization_build() {
         cpu_feature.insert(CpuFeature::from_str("sse2").unwrap());
         let target = Target::new(triple, cpu_feature);
         for file_name in file_names {
-            let path = PathBuf::from("tests/compilers/fixtures/wasm")
-                .join(file_name);
+            let path =
+                PathBuf::from("tests/compilers/fixtures/wasm").join(file_name);
             let wasm_module = fs::read(path).unwrap();
             let config = get_default_compiler_config().unwrap();
             let mut engine =

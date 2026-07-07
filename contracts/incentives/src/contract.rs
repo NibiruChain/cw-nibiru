@@ -271,7 +271,7 @@ fn execute_withdraw_rewards(
         )
         .unwrap();
 
-    println!("distributing: {:?}", &to_distribute);
+    println!("distributing: {:?}", to_distribute);
     let to_distribute: Vec<Coin> = to_distribute
         .into_iter()
         .filter(|coin| !coin.amount.is_zero())
