@@ -15,7 +15,16 @@ env:
 
 jobs:
   rust-test:
-    runs-on: ubuntu-latest
+    name: rust-test (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: "Checkout branch"
         uses: actions/checkout@v4
@@ -31,7 +40,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          key: ${{ matrix.runner }}-cargo-${{ hashFiles('Cargo.lock') }}
       - name: "Run tests"
         # Test all packages
         run: cargo test --all --verbose
@@ -58,6 +67,29 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
       - name: "Compile all Rust code in workspace"
         run: cargo build
+
+  wasmer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout branch"
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: "Set up Rust caches"
+        uses: actions/cache@v4
+        id: rust-cache
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            packages/wasmer/target/
+          key: ${{ runner.os }}-wasmer-cargo-${{ hashFiles('packages/wasmer/Cargo.lock') }}
+      - name: "Install just"
+        uses: taiki-e/install-action@just
+      - name: "Run Wasmer tests"
+        run: just test-wasmer
 
   coverage:
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'
@@ -97,7 +129,7 @@ jobs:
         run: just test-coverage
         # run: cargo llvm-cov --locked --all-features --lcov --output-path lcov.info
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: false
         env:

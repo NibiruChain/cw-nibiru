@@ -25,3 +25,7 @@ anyhow = { workspace = true }
 nibiru-std = { workspace = true }
 
 [dev-dependencies]
+
+[[bin]]
+name = "nibi-stargate-schema"
+path = "src/bin/schema.rs"

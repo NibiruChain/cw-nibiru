@@ -1,6 +1,8 @@
-# CW Ownable
+# nibiru-ownable
 
-Utility for controlling ownership of [CosmWasm](https://github.com/CosmWasm/cosmwasm) smart contracts.
+> Utility for single-party ownership of CosmWasm smart contracts.
+
+`nibiru-ownable` provides a comprehensive ownership management system for CosmWasm smart contracts, inspired by OpenZeppelin's Ownable pattern for Ethereum. It implements a two-phase ownership transfer mechanism with optional expiration deadlines, designed for the CosmWasm execution model.
 
 ## How to use
 
@@ -22,13 +24,13 @@ pub fn instantiate(
 }
 ```
 
-Use the `#[cw_ownable_execute]` macro to extend your execute message:
+Use the `#[ownable_execute]` macro to extend your execute message:
 
 ```rust
 use cosmwasm_schema::cw_serde;
-use nibiru_ownable::cw_ownable_execute;
+use nibiru_ownable::ownable_execute;
 
-#[cw_ownable_execute]
+#[ownable_execute]
 #[cw_serde]
 enum ExecuteMsg {
     Foo {},
@@ -47,11 +49,11 @@ enum ExecuteMsg {
 }
 ```
 
-Where `Action` can be one of three:
+Where `nibiru_ownable::Action` is an enum with three variants:
 
-- Propose to transfer the contract's ownership to another account
-- Accept the proposed ownership transfer
-- Renounce the ownership, permanently setting the contract's owner to vacant
+- `Action::TransferOwnership { new_owner: String, expiry: Option<Expiration> }` - Propose to transfer ownership with optional deadline
+- `Action::AcceptOwnership` - Accept the proposed ownership transfer
+- `Action::RenounceOwnership` - Renounce ownership permanently, setting the contract's owner to None
 
 Handle the messages using the `update_ownership` function provided by this crate:
 
@@ -122,6 +124,16 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 ```
+
+## Core Types
+
+- `nibiru_ownable::Ownership<T>` - Struct containing current owner, pending owner, and expiry
+- `nibiru_ownable::Action` - Enum for ownership management actions
+- `nibiru_ownable::OwnershipError` - Error types for ownership operations
+
+## Documentation
+
+For detailed API documentation, visit [docs.rs/nibiru-ownable](https://docs.rs/nibiru-ownable).
 
 ## License
 

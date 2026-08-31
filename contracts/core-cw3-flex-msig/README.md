@@ -72,7 +72,7 @@ This contract is a multisig contract that is backed by a cw4 (group) contract, w
 }
 ```
 
-- **Vote** adds a vote to an existing proposal. It can be executed by anyone.
+- **Vote** adds or replaces the sender's vote on an active proposal. It can be executed by any voter with non-zero weight.
 
 ```js
 {
@@ -229,9 +229,11 @@ an expiration time for the voting process, or it defaults to the limit
 provided when creating the contract (so proposals can be closed after several
 days).
 
-Before the proposal has expired, any voter with non-zero weight can add their
-vote. Only "Yes" votes are tallied. If enough "Yes" votes were submitted before
-the proposal expiration date, the status is set to "Passed".
+Before the proposal has expired, any voter with non-zero weight can add or
+replace their vote. Replacing a vote updates the proposal tally and may move a
+proposal between "Open", "Passed", and "Rejected" while it is still active. If
+enough "Yes" votes were submitted before the proposal expiration date, the
+status is set to "Passed".
 
 Once a proposal is "Passed", anyone may submit an "Execute" message. This will
 trigger the proposal to send all stored messages from the proposal and update

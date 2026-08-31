@@ -336,7 +336,7 @@ impl DecimalExt {
             decimal_str.insert(0, '-');
         }
 
-        DecimalExt::from_str(&decimal_str).map_err(Into::into)
+        DecimalExt::from_str(&decimal_str)
     }
 }
 

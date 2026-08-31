@@ -1,7 +1,5 @@
 workspaces := "./packages"
 # workspaces := "./packages ./core"
-
-set dotenv-load
 # Displays available recipes by running `just -l`.
 setup:
   #!/usr/bin/env bash
@@ -17,10 +15,6 @@ install:
 
 wasm-all:
   bash scripts/wasm-out.sh
-
-# Move binding artifacts to teh local nibiru wasmbin
-wasm-export:
-  bash scripts/wasm-export.sh
 
 # Check if a Wasm smart contract binary is ready for the blockchain
 wasm-check:
@@ -72,10 +66,52 @@ test *pkg:
 test-all:
   cargo test
 
+# Run vendored Wasmer lib unit tests + compilers/WAST integration (CI job `wasmer`).
+test-wasmer:
+  #!/usr/bin/env bash
+  # TODO: Wire Wasmer validation into `just test`, `just test-all`, and/or `just tidy`
+  # once we decide how it should interact with root-workspace `cargo test` and
+  # package `cosmwasm-vm` (separate Cargo workspace, longer runtime, cache paths).
+  set -euo pipefail
+  cd packages/wasmer
+  cargo test -p wasmer --lib --no-default-features --features cranelift,singlepass,wat
+  cargo test --lib \
+    -p wasmer-vm \
+    -p wasmer-types \
+    -p wasmer-middlewares \
+    -p wasmer-compiler \
+    -p wasmer-compiler-singlepass \
+    -p wasmer-compiler-cranelift
+  # WAST spectests + hand-written compiler integration (~452 pass, ~119 ignored).
+  cargo test --test compilers --features 'cranelift,singlepass'
+
+# Wasmer coverage: same three test passes as test-wasmer, merged lcov at repo root.
+test-wasmer-cov:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  root="$(git rev-parse --show-toplevel)"
+  output="${root}/lcov-wasmer.info"
+  cd "${root}/packages/wasmer"
+  rustup component add llvm-tools-preview --toolchain 1.81
+  cargo llvm-cov clean --workspace
+  cargo llvm-cov --no-report -p wasmer --lib \
+    --no-default-features --features cranelift,singlepass,wat
+  cargo llvm-cov --no-report --lib \
+    -p wasmer-vm \
+    -p wasmer-types \
+    -p wasmer-middlewares \
+    -p wasmer-compiler \
+    -p wasmer-compiler-singlepass \
+    -p wasmer-compiler-cranelift
+  cargo llvm-cov --no-report --test compilers --features 'cranelift,singlepass'
+  cargo llvm-cov report --lcov --output-path "${output}" --no-default-ignore-filename-regex
+  echo "Wrote ${output}"
+
 # Test everything and output coverage report.
 test-coverage:
   cargo llvm-cov --lcov --output-path lcov.info \
     --ignore-filename-regex .*buf\/[^\/]+\.rs$
+  # TODO: Include wasmer workspace in coverage reporting.
 
 alias t := tidy
 
@@ -91,47 +127,55 @@ tidy-update: build-update
   just tidy
 
 gen-schema:
-    #!/usr/bin/env bash
-    initial_dir=$PWD
-    for dir in contracts/*; do
-        dir_name=$(basename $dir)
-        echo "Generating schema for $dir_name..."
-
-        # Change to the contract directory
-        if cd $dir; then
-            # Check if 'cargo schema' can be run successfully
-            if cargo schema; then
-                # Move back to the initial directory
-                cd $initial_dir
-                # Create target schema directory if it doesn't exist
-                mkdir -p schema/$dir_name
-                # Move the generated schema to the target directory
-                if ! mv $dir/schema schema/$dir_name; then
-                    echo "Failed to move schema directory for $dir_name."
-                fi
-            else
-                cd $initial_dir
-            fi
-        else
-            echo "Failed to change directory to $dir."
-        fi
-    done
+  #!/usr/bin/env bash
+  set -euo pipefail
+  root="$PWD"
+  mkdir -p "$root/schema"
+  for dir in contracts/*/; do
+    dir="${dir%/}"
+    if [ ! -f "$dir/src/bin/schema.rs" ] && [ ! -f "$dir/examples/schema.rs" ]; then
+      continue
+    fi
+    dir_name="${dir##*/}"
+    echo "Generating schema for $dir_name..."
+    (
+      cd "$dir"
+      cargo schema
+    )
+    if [ ! -d "$dir/schema" ]; then
+      echo "Schema generation for $dir_name produced no schema directory." >&2
+      exit 1
+    fi
+    mkdir -p "$root/schema/$dir_name"
+    cp -R "$dir/schema/." "$root/schema/$dir_name/"
+  done
 
 # Generate schema for all contracts and generate TypeScript code
 gen-ts:
-    #!/usr/bin/env bash
-    just gen-schema
+  #!/usr/bin/env bash
+  set -euo pipefail
+  just gen-schema
+  command -v cosmwasm-ts-codegen >/dev/null || {
+    echo "cosmwasm-ts-codegen is required to generate TypeScript clients." >&2
+    exit 1
+  }
+  mkdir -p ./dist
+  for schema_path in ./schema/*/; do
+    [ -d "$schema_path" ] || continue
+    contract_name="$(basename "$schema_path")"
+    echo "Generating TypeScript for $contract_name..."
+    cosmwasm-ts-codegen generate \
+      --plugin client \
+      --schema "$schema_path" \
+      --out "./dist/$contract_name" \
+      --name "$contract_name" \
+      --no-bundle
+  done
 
-    SCHEMA_DIR="./schema"
-    TS_OUT_DIR="./dist"
-    mkdir -p $TS_OUT_DIR
-    for schema_path in $(find $SCHEMA_DIR -name schema -type d | grep -v "^./schema$"); do
-        contract_name=$(basename $(dirname $schema_path))
-        echo "Generating TypeScript for $contract_name..."
-        cosmwasm-ts-codegen generate \
-            --plugin client \
-            --schema $schema_path \
-            --out $TS_OUT_DIR/$contract_name \
-            --name $contract_name \
-            --no-bundle
-    done
+# (Safe) Dry run for publishing coupled packages (default behavior)
+publish:
+  bash scripts/publish-coupled.sh
+
+# Publish coupled packages that share "workspace.version" to crates.io
+publish-run:
+  bash scripts/publish-coupled.sh --run

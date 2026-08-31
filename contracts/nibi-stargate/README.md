@@ -1,6 +1,6 @@
 # nibiru-wasm/contracts/nibi-stargate
 
-This smart contract showcases usage examples for creating and managing fungible tokens native to Nibiru Chain.
+This smart contract showcases usage examples for creating and managing fungible tokens native to Nibiru.
 
 Table of Contents
 

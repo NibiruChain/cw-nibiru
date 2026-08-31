@@ -36,9 +36,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Receive(msg) => {
-            receive_cw20(deps, env, info, msg).map_err(ContractError::from)
-        }
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::RegisterVestingAccount {
             master_address,
             address,

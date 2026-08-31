@@ -23,6 +23,23 @@ pub enum NibiruError {
 
     #[error("{0}")]
     MathError(#[from] MathError),
+
+    #[error("Invalid bech32 address: {0}")]
+    Bech32Error(#[from] bech32::Error),
+
+    #[error("Invalid bech32 prefix: expected '{expected}', got '{actual}'")]
+    InvalidBech32Prefix { expected: String, actual: String },
+
+    #[error(
+        "Invalid address length: Ethereum addresses must be at least 20 bytes"
+    )]
+    InvalidAddressLength,
+
+    #[error("Invalid Ethereum address format: {0}")]
+    InvalidEthAddress(String),
+
+    #[error("Failed to parse hex: {0}")]
+    HexError(#[from] hex::FromHexError),
 }
 
 #[derive(Error, Debug, PartialEq)]

@@ -35,3 +35,8 @@ cw4-group = { workspace = true }
 cw-multi-test = { workspace = true }
 cw20-base = { workspace = true }
 easy-addr = { workspace = true }
+anyhow = { workspace = true }
+
+[[bin]]
+name = "cw3-flex-multisig-schema"
+path = "src/bin/schema.rs"

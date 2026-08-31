@@ -3,7 +3,7 @@
 
 use prost::Name;
 
-use crate::proto::nibiru;
+use crate::proto::{eth, nibiru};
 
 const PACKAGE_TOKENFACTORY: &str = "nibiru.tokenfactory.v1";
 const PACKAGE_ORACLE: &str = "nibiru.oracle.v1";
@@ -13,6 +13,7 @@ const PACKAGE_PERP: &str = "nibiru.perp.v2";
 const PACKAGE_INFLATION: &str = "nibiru.inflation.v1";
 const PACKAGE_DEVGAS: &str = "nibiru.devgas.v1";
 const PACKAGE_SUDO: &str = "nibiru.sudo.v1";
+const PACKAGE_EVM: &str = "eth.evm.v1";
 
 // TOKENFACTORY tx msg
 
@@ -385,13 +386,32 @@ impl Name for nibiru::sudo::QuerySudoersRequest {
     const PACKAGE: &'static str = PACKAGE_SUDO;
 }
 
+// EVM tx msg
+
+impl Name for eth::evm::MsgEthereumTx {
+    const NAME: &'static str = "MsgEthereumTx";
+    const PACKAGE: &'static str = PACKAGE_EVM;
+}
+impl Name for eth::evm::MsgUpdateParams {
+    const NAME: &'static str = "MsgUpdateParams";
+    const PACKAGE: &'static str = PACKAGE_EVM;
+}
+impl Name for eth::evm::MsgCreateFunToken {
+    const NAME: &'static str = "MsgCreateFunToken";
+    const PACKAGE: &'static str = PACKAGE_EVM;
+}
+impl Name for eth::evm::MsgConvertCoinToEvm {
+    const NAME: &'static str = "MsgConvertCoinToEvm";
+    const PACKAGE: &'static str = PACKAGE_EVM;
+}
+
 #[cfg(test)]
 pub mod tests {
 
     use crate::{
         errors::TestResult,
         proto::{
-            cosmos,
+            cosmos, eth,
             nibiru::{self},
             NibiruProstMsg, NibiruStargateMsg, NibiruStargateQuery,
         },
@@ -490,6 +510,46 @@ pub mod tests {
         for (pb_msg, want_bz) in &test_cases {
             println!("pb_msg {{ value: {:?} }}", pb_msg.to_bytes(),);
             assert_eq!(*want_bz, pb_msg.to_bytes(), "pb_msg: {pb_msg:?}");
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn stargate_evm_msgs() -> TestResult {
+        let test_cases: Vec<(&str, cw::CosmosMsg)> = vec![
+            (
+                "/eth.evm.v1.MsgEthereumTx",
+                eth::evm::MsgEthereumTx::default().into_stargate_msg(),
+            ),
+            (
+                "/eth.evm.v1.MsgUpdateParams",
+                eth::evm::MsgUpdateParams::default().into_stargate_msg(),
+            ),
+            (
+                "/eth.evm.v1.MsgCreateFunToken",
+                eth::evm::MsgCreateFunToken::default().into_stargate_msg(),
+            ),
+            (
+                "/eth.evm.v1.MsgConvertCoinToEvm",
+                eth::evm::MsgConvertCoinToEvm::default().into_stargate_msg(),
+            ),
+        ];
+
+        for test_case in test_cases {
+            let (tc_type_url, stargate_msg) = test_case;
+            if let cw::CosmosMsg::Stargate {
+                type_url,
+                value: _value,
+            } = stargate_msg.clone()
+            {
+                assert_eq!(tc_type_url, type_url)
+            } else {
+                panic!(
+                    "Expected CosmosMsg::Stargate from CosmosMsg: {:#?}",
+                    stargate_msg
+                )
+            }
         }
 
         Ok(())

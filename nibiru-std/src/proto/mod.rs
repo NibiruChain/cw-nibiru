@@ -266,11 +266,21 @@ pub mod tendermint {
     }
 }
 
+pub mod eth {
+    pub mod evm {
+        include!("buf/eth.evm.v1.rs");
+    }
+    pub mod types {
+        include!("buf/eth.types.v1.rs");
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
     use super::{
         cosmos::{self, base::v1beta1::Coin},
+        eth,
         nibiru::perp,
     };
 
@@ -295,6 +305,19 @@ mod tests {
                 denom: "unibi".to_string(),
                 amount: "123".to_string(),
             }],
+        };
+    }
+
+    #[test]
+    fn eth_imports() {
+        let _ = eth::evm::MsgEthereumTx {
+            data: Some(prost_types::Any {
+                type_url: String::from(""),
+                value: vec![0, 1, 2],
+            }),
+            from: "0xfrom".to_string(), // dummy
+            hash: "0xhash".to_string(), // dummy
+            size: 420f64,
         };
     }
 }

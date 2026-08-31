@@ -23,6 +23,8 @@ For more information on this contract, please check out the
 */
 
 pub mod contract;
+#[cfg(test)]
+mod contract_test;
 pub mod error;
 pub mod msg;
 pub mod state;

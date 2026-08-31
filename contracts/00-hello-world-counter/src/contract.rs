@@ -133,7 +133,7 @@ pub mod tests {
                 sender: TEST_OWNER,
                 exec_msg: ExecuteMsg::Reset { count: 25 },
                 err: None,
-                start_count: std::i64::MAX,
+                start_count: i64::MAX,
                 want_count_after: 25,
             },
             TestCaseExec {

@@ -73,7 +73,7 @@ pub struct DenomAuthorityMetadata {
 /// For IBC token transfers, it's unclear who should pay the fee—the contract,
 /// the relayer, or the original sender?
 /// > "Charging fees will mess up composability, the same way Terra transfer tax
-///    caused all kinds of headaches for contract devs." - @ethanfrey
+/// > caused all kinds of headaches for contract devs." - @ethanfrey
 ///
 /// ### Recommended Solution
 ///
@@ -287,5 +287,45 @@ pub struct MsgSetDenomMetadata {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgSetDenomMetadataResponse {
+}
+/// MsgSudoSetDenomMetadata: sdk.Msg (TxMsg) enabling Nibiru's "sudoers" to change
+/// bank metadata.
+/// \[SUDO\] Only callable by sudoers.
+///
+/// Use Cases:
+///    - To define metadata for ICS20 assets brought
+///      over to the chain via IBC, as they don't have metadata by default.
+///    - To set metadata for Bank Coins created via the Token Factory
+///      module in case the admin forgets to do so. This is important because of
+///      the relationship Token Factory assets can have with ERC20s with the
+///      [FunToken Mechanism].
+///
+/// [FunToken Mechanism]: <https://nibiru.fi/docs/evm/funtoken.html>
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgSudoSetDenomMetadata {
+    #[prost(string, tag="1")]
+    pub sender: ::prost::alloc::string::String,
+    /// Metadata: Official x/bank metadata for the denom. The "metadata.base" is
+    /// the denom.
+    #[prost(message, optional, tag="2")]
+    pub metadata: ::core::option::Option<crate::proto::cosmos::bank::v1beta1::Metadata>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgSudoSetDenomMetadataResponse {
+}
+/// Burn a native token such as unibi
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgBurnNative {
+    #[prost(string, tag="1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(message, optional, tag="2")]
+    pub coin: ::core::option::Option<crate::proto::cosmos::base::v1beta1::Coin>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgBurnNativeResponse {
 }
 // @@protoc_insertion_point(module)

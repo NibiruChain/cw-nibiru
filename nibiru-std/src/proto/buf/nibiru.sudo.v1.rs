@@ -22,7 +22,7 @@ pub struct GenesisState {
 pub struct EventUpdateSudoers {
     #[prost(message, optional, tag="1")]
     pub sudoers: ::core::option::Option<Sudoers>,
-    /// Action is the type of update that occured to the "sudoers"
+    /// Action is the type of update that occurred to the "sudoers"
     #[prost(string, tag="2")]
     pub action: ::prost::alloc::string::String,
 }

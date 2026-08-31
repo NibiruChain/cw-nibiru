@@ -1,16 +1,16 @@
-/// scripts/proto_clean.rs:
-///
-/// Run with: `cargo run --bin proto_clean`
-///
-/// ## Procedure
-///
-/// 1. Walk through all the files in the nibiru-std/src/proto directory.
-/// 2. For each file, read its content and identify lines that import types with
-///    multiple super components.
-/// 3. Classify each import based on the first non-super part, then replace the
-///    super components with crate::proto::cosmo or crate::proto::tendemint based
-///    on the classification.
-/// 4. Write the modified content back to each file.
+//! scripts/proto_clean.rs:
+//!
+//! Run with: `cargo run --bin proto_clean`
+//!
+//! ## Procedure
+//!
+//! 1. Walk through all the files in the nibiru-std/src/proto directory.
+//! 2. For each file, read its content and identify lines that import types with
+//!    multiple super components.
+//! 3. Classify each import based on the first non-super part, then replace the
+//!    super components with crate::proto::cosmo or crate::proto::tendemint based
+//!    on the classification.
+//! 4. Write the modified content back to each file.
 
 pub static PROTO_PATH: &str = "../nibiru-std/src/proto/buf";
 
@@ -24,8 +24,10 @@ pub fn main() {
         // filter out directories
         .filter(|e| !e.file_type().is_dir())
         .filter(|e| {
-            e.file_name().to_string_lossy().starts_with("cosmos")
-                || e.file_name().to_string_lossy().starts_with("nibiru")
+            let fname = e.file_name().to_string_lossy();
+            fname.starts_with("cosmos")
+                || fname.starts_with("nibiru")
+                || fname.starts_with("eth")
         })
     {
         // Get the path of the file we're going to clean.
@@ -109,6 +111,7 @@ pub fn super_import_to_clean(
         prefix = "crate::proto::cosmos"
     } else if proto_submodules::is_mod_tendermint(elem)
         || proto_submodules::is_mod_cosmos(elem)
+        || proto_submodules::is_mod_eth(elem)
     {
         prefix = "crate::proto"
     } else if proto_submodules::is_submod_cosmos_base(elem) {
@@ -117,6 +120,8 @@ pub fn super_import_to_clean(
         prefix = "crate::proto::cosmos::tx"
     } else if proto_submodules::is_submod_cosmos_crypto(elem) {
         prefix = "crate::proto::cosmos::crypto"
+    } else if proto_submodules::is_submod_eth(elem) {
+        prefix = "crate::proto::eth"
     } else {
         return Err(Box::new(CustomError(format!(
             "Unrecognized import submodule: {}",
@@ -150,6 +155,12 @@ mod proto_submodules {
         matches!(s, "cosmos")
     }
 
+    pub fn is_mod_eth(s: &str) -> bool {
+        matches!(s, "eth")
+    }
+
+    /// List of all proto package names beginning with "cosmos". This list only
+    /// contains immediate children.
     pub static COSMOS: [&str; 25] = [
         "base",
         "bank",
@@ -193,6 +204,17 @@ mod proto_submodules {
     }
 
     pub static TENDERMINT: [&str; 1] = ["tendermint"];
+
+    /// List of all proto package names beginning with "eth". This list only
+    /// contains immediate children.
+    pub static ETH: [&str; 2] = ["evm", "types"];
+
+    /// True if the proto package name is a an immediate child of "eth".
+    /// For example, the existence of "eth.evm.v1.rs" implies that "evm" will
+    /// return true.
+    pub fn is_submod_eth(s: &str) -> bool {
+        ETH.contains(&s)
+    }
 }
 
 #[cfg(test)]
@@ -235,6 +257,11 @@ mod tests {
                 input: "super::super::cosmos::base::v1beta1::Coin",
                 want_err: false,
                 want_out: Some("crate::proto::cosmos::base::v1beta1::Coin"),
+            },
+            TestCase {
+                input: "::super::super::eth::evm::v1::FunToken",
+                want_err: false,
+                want_out: Some("crate::proto::eth::evm::v1::FunToken"),
             },
         ];
 

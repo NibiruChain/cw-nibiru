@@ -8,9 +8,7 @@ edition = "2021"
 [dependencies]
 walkdir = "2.4.0"
 regex = "1.9.6"
-bash-rs = { workspace = true }
 anyhow = { workspace = true }
-clap = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
@@ -21,8 +19,3 @@ tempfile = "3.8"
 [[bin]]
 name = "proto_clean"
 path = "proto_clean.rs"
-
-# cargo run --bin wasm_out -- all
-[[bin]]
-name = "wasm_out"
-path = "wasm_out.rs"

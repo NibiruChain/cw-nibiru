@@ -32,3 +32,7 @@ cw20 = { workspace = true }
 cw20-base = { workspace = true }
 cw-multi-test = { workspace = true }
 easy-addr = { workspace = true }
+
+[[bin]]
+name = "cw3-fixed-multisig-schema"
+path = "src/bin/schema.rs"

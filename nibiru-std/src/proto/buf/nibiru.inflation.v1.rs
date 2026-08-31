@@ -71,6 +71,11 @@ pub struct Params {
     /// paid off. After this period, inflation will be disabled.
     #[prost(uint64, tag="6")]
     pub max_period: u64,
+    /// has_inflation_started is the parameter that indicates if inflation has
+    /// started. It's set to false at the starts, and stays at true when we toggle
+    /// inflation on. It's used to track num skipped epochs
+    #[prost(bool, tag="7")]
+    pub has_inflation_started: bool,
 }
 /// QueryPeriodRequest is the request type for the Query/Period RPC method.
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -158,5 +163,53 @@ pub struct QueryParamsResponse {
     /// params defines the parameters of the module.
     #[prost(message, optional, tag="1")]
     pub params: ::core::option::Option<Params>,
+}
+/// MsgToggleInflation defines a message to enable or disable inflation.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgToggleInflation {
+    #[prost(string, tag="1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(bool, tag="2")]
+    pub enable: bool,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgEditInflationParams {
+    #[prost(string, tag="1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(bool, tag="2")]
+    pub inflation_enabled: bool,
+    #[prost(string, repeated, tag="3")]
+    pub polynomial_factors: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, optional, tag="4")]
+    pub inflation_distribution: ::core::option::Option<InflationDistribution>,
+    #[prost(string, tag="5")]
+    pub epochs_per_period: ::prost::alloc::string::String,
+    #[prost(string, tag="6")]
+    pub periods_per_year: ::prost::alloc::string::String,
+    #[prost(string, tag="7")]
+    pub max_period: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgToggleInflationResponse {
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgEditInflationParamsResponse {
+}
+/// MsgBurn: allows burning of any token
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgBurn {
+    #[prost(string, tag="1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(message, optional, tag="2")]
+    pub coin: ::core::option::Option<crate::proto::cosmos::base::v1beta1::Coin>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgBurnResponse {
 }
 // @@protoc_insertion_point(module)

@@ -84,7 +84,7 @@ impl<'a> IndexList<Lock> for LockIndexes<'a> {
     }
 }
 
-pub fn locks() -> IndexedMap<u64, Lock, LockIndexes<'static>> {
+pub fn locks() -> IndexedMap<'static, u64, Lock, LockIndexes<'static>> {
     let indexes = LockIndexes {
         addr_denom_end: MultiIndex::new(
             |_bz, lock: &Lock| -> (_, _, _) {

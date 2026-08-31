@@ -182,9 +182,9 @@ mod integration_test {
             &mut app,
             &Addr::unchecked(ADDR_ROOT),
             &[
-                Coin::new(1_000_000u32, "ATOM"),
-                Coin::new(1_000_000u32, "OSMO"),
-                Coin::new(1_000_000u32, "LUNA"),
+                Coin::new(1_000_000u128, "ATOM"),
+                Coin::new(1_000_000u128, "OSMO"),
+                Coin::new(1_000_000u128, "LUNA"),
             ],
         );
 
@@ -194,7 +194,7 @@ mod integration_test {
             &mut app,
             contracts.clone(),
             &alice,
-            &[Coin::new(100u32, "NIBI_LP")],
+            &[Coin::new(100u128, "NIBI_LP")],
             blocks,
         );
 
@@ -213,7 +213,7 @@ mod integration_test {
             &mut app,
             contracts.clone(),
             1,
-            &[Coin::new(1_000u32, "ATOM")],
+            &[Coin::new(1_000u128, "ATOM")],
         );
 
         println!("{:?}", balance,);
@@ -240,14 +240,14 @@ mod integration_test {
             withdraw_rewards(&mut app, contracts.clone(), &alice, 1);
 
         // expected: 200ATOM coins
-        assert_eq!(vec![Coin::new(200u32, "ATOM")], alice_rewards,);
+        assert_eq!(vec![Coin::new(200u128, "ATOM")], alice_rewards,);
 
         // add bob lock
         mint_and_lock(
             &mut app,
             contracts.clone(),
             &bob,
-            &[Coin::new(200u32, "NIBI_LP")],
+            &[Coin::new(200u128, "NIBI_LP")],
             300,
         );
 
@@ -265,13 +265,16 @@ mod integration_test {
             withdraw_rewards(&mut app, contracts.clone(), &alice, 1);
 
         // expected: 200 + 0.33*200 ATOM coins
-        assert_eq!(vec![Coin::new(200u32 + 66u32, "ATOM")], alice_balance,);
+        assert_eq!(
+            vec![Coin::new((200u32 + 66u32).into(), "ATOM")],
+            alice_balance,
+        );
 
         // withdraw rewards for bob at epoch 2
         let bob_balance = withdraw_rewards(&mut app, contracts.clone(), &bob, 1);
 
         // expected: 200 * 0.66666666 ATOM
-        assert_eq!(vec![Coin::new(133u32, "ATOM")], bob_balance,);
+        assert_eq!(vec![Coin::new(133u128, "ATOM")], bob_balance,);
 
         app.update_block(|block| block.height += 1);
 
@@ -280,7 +283,7 @@ mod integration_test {
             &mut app,
             contracts.clone(),
             1,
-            &[Coin::new(1000u32, "OSMO")],
+            &[Coin::new(1000u128, "OSMO")],
         );
 
         // go to epoch 3 block and process it
@@ -301,12 +304,12 @@ mod integration_test {
         let bob_balance = withdraw_rewards(&mut app, contracts.clone(), &bob, 1);
 
         assert_eq!(
-            vec![Coin::new(399u32, "ATOM"), Coin::new(444u32, "OSMO")],
+            vec![Coin::new(399u128, "ATOM"), Coin::new(444u128, "OSMO")],
             bob_balance,
         );
 
         assert_eq!(
-            vec![Coin::new(398u32, "ATOM"), Coin::new(222u32, "OSMO")],
+            vec![Coin::new(398u128, "ATOM"), Coin::new(222u128, "OSMO")],
             alice_balance,
         );
 
@@ -315,7 +318,7 @@ mod integration_test {
             &mut app,
             contracts.clone(),
             1,
-            &[Coin::new(1000u32, "OSMO")],
+            &[Coin::new(1000u128, "OSMO")],
         );
         // fast forward to epoch 5
         app.update_block(|block| block.height += 5);
@@ -330,13 +333,13 @@ mod integration_test {
             withdraw_rewards(&mut app, contracts.clone(), &alice, 1);
 
         assert_eq!(
-            vec![Coin::new(464u32, "ATOM"), Coin::new(666u32, "OSMO")],
+            vec![Coin::new(464u128, "ATOM"), Coin::new(666u128, "OSMO")],
             alice_balance,
         );
 
         let bob_balance = withdraw_rewards(&mut app, contracts, &bob, 1);
         assert_eq!(
-            vec![Coin::new(532u32, "ATOM"), Coin::new(1332u32, "OSMO")],
+            vec![Coin::new(532u128, "ATOM"), Coin::new(1332u128, "OSMO")],
             bob_balance,
         );
         Ok(())
