@@ -1,6 +1,5 @@
 workspaces := "./packages"
 # workspaces := "./packages ./core"
-
 # Displays available recipes by running `just -l`.
 setup:
   #!/usr/bin/env bash
@@ -129,13 +128,48 @@ tidy-update: build-update
 
 gen-schema:
   #!/usr/bin/env bash
+  set -euo pipefail
+  root="$PWD"
+  mkdir -p "$root/schema"
   for dir in contracts/*/; do
-    dir_name=$(basename $dir)
+    dir="${dir%/}"
+    if [ ! -f "$dir/src/bin/schema.rs" ] && [ ! -f "$dir/examples/schema.rs" ]; then
+      continue
+    fi
+    dir_name="${dir##*/}"
+    echo "Generating schema for $dir_name..."
+    (
+      cd "$dir"
+      cargo schema
+    )
+    if [ ! -d "$dir/schema" ]; then
+      echo "Schema generation for $dir_name produced no schema directory." >&2
+      exit 1
+    fi
+    mkdir -p "$root/schema/$dir_name"
+    cp -R "$dir/schema/." "$root/schema/$dir_name/"
+  done
 
-    echo "Generating schema for $dir"
-    cd $dir
-    cargo schema
-    mv ./schema ../../schema/$dir_name
+# Generate schema for all contracts and generate TypeScript code
+gen-ts:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  just gen-schema
+  command -v cosmwasm-ts-codegen >/dev/null || {
+    echo "cosmwasm-ts-codegen is required to generate TypeScript clients." >&2
+    exit 1
+  }
+  mkdir -p ./dist
+  for schema_path in ./schema/*/; do
+    [ -d "$schema_path" ] || continue
+    contract_name="$(basename "$schema_path")"
+    echo "Generating TypeScript for $contract_name..."
+    cosmwasm-ts-codegen generate \
+      --plugin client \
+      --schema "$schema_path" \
+      --out "./dist/$contract_name" \
+      --name "$contract_name" \
+      --no-bundle
   done
 
 # (Safe) Dry run for publishing coupled packages (default behavior)
